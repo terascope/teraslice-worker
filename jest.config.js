@@ -8,6 +8,7 @@ module.exports = {
     },
     bail: true,
     resetMocks: true,
+    setupFiles: ['<rootDir>/env-setup.js'],
     collectCoverage: true,
     coverageReporters: ['json', 'lcov', 'text', 'html'],
     coverageDirectory: 'coverage',

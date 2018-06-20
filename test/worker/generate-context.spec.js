@@ -9,7 +9,7 @@ describe('Terafoundation Context', () => {
         context = generateContext();
     });
 
-    it('should return have the correct apis', () => {
+    it('should have the correct apis', () => {
         expect(context.apis.foundation).toHaveProperty('makeLogger');
         expect(context.foundation).toHaveProperty('makeLogger');
         expect(context.apis.foundation).toHaveProperty('getSystemEvents');
@@ -19,6 +19,12 @@ describe('Terafoundation Context', () => {
         expect(context.apis.foundation).not.toHaveProperty('startWorkers');
         expect(context.foundation).not.toHaveProperty('startWorkers');
         expect(context.apis).toHaveProperty('registerAPI');
+    });
+
+    it('should have the correct metadata', () => {
+        expect(context).toHaveProperty('name', 'teraslice-worker');
+        expect(context.sysconfig).toHaveProperty('teraslice');
+        expect(context.sysconfig).toHaveProperty('terafoundation');
     });
 });
 
