@@ -1277,7 +1277,7 @@ error-ex@^1.2.0:
   dependencies:
     is-arrayish "^0.2.1"
 
-"error_parser@github:terascope/error_parser":
+error_parser@terascope/error_parser:
   version "1.0.0"
   resolved "https://codeload.github.com/terascope/error_parser/tar.gz/0b988710381f42b869e0ddc15b3e14e38dee1b61"
   dependencies:

@@ -1,6 +1,6 @@
 'use strict';
 
-const { validateConfig } = require('../../').Worker;
+const { validateConfig } = require('../../');
 
 describe('Worker Config Validation', () => {
     describe('when constructed nothing', () => {

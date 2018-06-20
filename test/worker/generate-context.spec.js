@@ -1,27 +1,24 @@
 'use strict';
 
-const { Context } = require('../../');
+const { generateContext } = require('../../');
 
 describe('Terafoundation Context', () => {
     let context;
+
     beforeEach(() => {
-        context = new Context();
+        context = generateContext();
     });
 
-    it('should return a limited terafoundation context', () => {
-        const expected = {};
-        return expect(context.generate()).resolves.toEqual(expected);
-    });
-
-    it('should set the proper config', () => {
-        expect(context.config).toEqual({
-            name: 'teraslice-worker',
-            config_schema: Context.configSchema,
-            schema_formats: Context.schemaFormats,
-            ops_directory: Context.opsDirectory,
-            cluster_name: Context.clusterName,
-            logging_connection: Context.loggingConnection
-        });
+    it('should return have the correct apis', () => {
+        expect(context.apis.foundation).toHaveProperty('makeLogger');
+        expect(context.foundation).toHaveProperty('makeLogger');
+        expect(context.apis.foundation).toHaveProperty('getSystemEvents');
+        expect(context.foundation).toHaveProperty('getEventEmitter');
+        expect(context.apis.foundation).toHaveProperty('getConnection');
+        expect(context.foundation).toHaveProperty('getConnection');
+        expect(context.apis.foundation).not.toHaveProperty('startWorkers');
+        expect(context.foundation).not.toHaveProperty('startWorkers');
+        expect(context.apis).toHaveProperty('registerAPI');
     });
 });
 

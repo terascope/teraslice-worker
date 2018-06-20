@@ -1,6 +1,6 @@
 'use strict';
 
-const { Worker } = require('../..');
+const Worker = require('../..');
 
 describe('Worker Assignment', () => {
     let worker;
