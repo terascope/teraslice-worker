@@ -1,3 +1,7 @@
 'use strict';
 
-module.exports = {};
+const Worker = require('./lib/worker');
+
+module.exports = {
+    Worker,
+};
