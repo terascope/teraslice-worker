@@ -11,6 +11,10 @@ module.exports = {
     collectCoverage: true,
     coverageReporters: ['json', 'lcov', 'text', 'html'],
     coverageDirectory: 'coverage',
+    coveragePathIgnorePatterns: [
+        '<rootDir>/lib/terafoundation',
+        '<rootDir>/lib/teraslice',
+    ],
     coverageThreshold: {
         global: {
             branches: 80,
