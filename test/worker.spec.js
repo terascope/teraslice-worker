@@ -3,17 +3,52 @@
 const { Worker } = require('../');
 
 describe('Worker', () => {
-    let worker;
-    beforeEach(() => {
-        worker = new Worker();
+    describe('when constructed nothing', () => {
+        test('should throw an error', () => {
+            expect(() => new Worker()).toThrow('Worker requires a valid configuration');
+        });
     });
 
-    test('should return a instance of the worker', () => {
-        expect(worker instanceof Worker).toBe(true);
+    describe('when constructed without a assignment', () => {
+        test('should throw an error', () => {
+            expect(() => new Worker({ example: true })).toThrow('Worker configuration requires a valid assignment');
+        });
     });
 
-    test('should have a method start', () => {
-        expect(typeof worker.start).toEqual('function');
+    describe('when constructed without a job', () => {
+        test('should throw an error', () => {
+            const config = {
+                assignment: 'example',
+            };
+            expect(() => new Worker(config)).toThrow('Worker configuration requires a valid job');
+        });
+    });
+
+    describe('when constructed without a valid job', () => {
+        test('should throw an error', () => {
+            const config = {
+                assignment: 'example',
+                job: 'this-should-fail'
+            };
+            expect(() => new Worker(config)).toThrow('Worker configuration requires a valid');
+        });
+    });
+
+    describe('given a "worker" assignment', () => {
+        let worker;
+        beforeEach(() => {
+            worker = new Worker({
+                assignment: 'worker',
+                job: {
+                    example: true
+                }
+            });
+        });
+
+        describe('->start', () => {
+            beforeEach(() => worker.start());
+
+            test('should have the method', () => { });
+        });
     });
 });
-
