@@ -7,7 +7,7 @@
     "start": "node command.js",
     "lint": "eslint *.js lib spec",
     "lint:fix": "eslint --fix *.js lib spec",
-    "test": "jest --forceExit --detectOpenHandles",
+    "test": "jest",
     "report-coverage": "codecov"
   },
   "repository": "git@github.com:terascope/teraslice-worker.git",
@@ -24,9 +24,9 @@
     "jest": "^23.1.0"
   },
   "dependencies": {
+    "bluebird": "^3.5.1",
     "lodash": "^4.17.10",
     "terafoundation": "^0.2.1",
-    "teraslice": "^0.36.5",
-    "yargs": "^11.0.0"
+    "teraslice": "^0.36.5"
   }
 }

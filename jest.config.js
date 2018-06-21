@@ -8,13 +8,14 @@ module.exports = {
     },
     bail: true,
     resetMocks: true,
-    setupFiles: ['<rootDir>/env-setup.js'],
+    setupFiles: ['<rootDir>/test/env-setup.js'],
     collectCoverage: true,
     coverageReporters: ['json', 'lcov', 'text', 'html'],
     coverageDirectory: 'coverage',
     coveragePathIgnorePatterns: [
         '<rootDir>/lib/terafoundation',
         '<rootDir>/lib/teraslice',
+        '<rootDir>/test/env-setup.js',
     ],
     coverageThreshold: {
         global: {
