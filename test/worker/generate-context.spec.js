@@ -24,6 +24,14 @@ describe('Terafoundation Context', () => {
         });
     });
 
+    it('should throw an error when given no config', () => {
+        expect(() => { generateContext(); }).toThrowError('Worker requires a valid terafoundation configuration');
+    });
+
+    it('should throw an error when given an invalid config', () => {
+        expect(() => { generateContext('hello'); }).toThrowError('Worker requires a valid terafoundation configuration');
+    });
+
     it('should have the correct apis', () => {
         expect(context.apis.foundation).toHaveProperty('makeLogger');
         expect(context.foundation).toHaveProperty('makeLogger');
@@ -42,7 +50,6 @@ describe('Terafoundation Context', () => {
         expect(context.sysconfig).toHaveProperty('terafoundation');
         expect(context.sysconfig.teraslice).toMatchObject({
             shutdown_timeout: 60000,
-            workers: 4,
             master_hostname: 'localhost',
             port: 5678,
             name: 'test-teraslice-cluster',
@@ -65,7 +72,6 @@ describe('Terafoundation Context', () => {
             log_buffer_limit: 30,
             log_buffer_interval: 60000,
             log_index_rollover_frequency: 'monthly',
-            workers: 4
         });
     });
 

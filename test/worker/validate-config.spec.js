@@ -1,17 +1,17 @@
 'use strict';
 
-const { validateConfig } = require('../../');
+const { validateJobConfig } = require('../../');
 
 describe('Worker Config Validation', () => {
     describe('when constructed nothing', () => {
         it('should throw an error', () => {
-            expect(() => validateConfig()).toThrow('Worker requires a valid configuration');
+            expect(() => validateJobConfig()).toThrow('Worker requires a valid job configuration');
         });
     });
 
     describe('when constructed without a assignment', () => {
         it('should throw an error', () => {
-            expect(() => validateConfig({ example: true })).toThrow('Worker configuration requires a valid assignment');
+            expect(() => validateJobConfig({ example: true })).toThrow('Job configuration requires a valid assignment');
         });
     });
 
@@ -20,7 +20,7 @@ describe('Worker Config Validation', () => {
             const config = {
                 assignment: 'example',
             };
-            expect(() => validateConfig(config)).toThrow('Worker configuration requires a valid job');
+            expect(() => validateJobConfig(config)).toThrow('Job configuration requires a valid job');
         });
     });
 
@@ -30,7 +30,7 @@ describe('Worker Config Validation', () => {
                 assignment: 'example',
                 job: 'this-should-fail'
             };
-            expect(() => validateConfig(config)).toThrow('Worker configuration requires a valid');
+            expect(() => validateJobConfig(config)).toThrow('Job configuration requires a valid');
         });
     });
 
@@ -41,7 +41,7 @@ describe('Worker Config Validation', () => {
                 job: { hello: true },
                 exId: null
             };
-            expect(() => validateConfig(config)).toThrow('Worker configuration requires a valid exId');
+            expect(() => validateJobConfig(config)).toThrow('Job configuration requires a valid exId');
         });
     });
 
@@ -53,7 +53,7 @@ describe('Worker Config Validation', () => {
                 exId: 'example',
                 jobId: null
             };
-            expect(() => validateConfig(config)).toThrow('Worker configuration requires a valid jobId');
+            expect(() => validateJobConfig(config)).toThrow('Job configuration requires a valid jobId');
         });
     });
 
@@ -66,7 +66,7 @@ describe('Worker Config Validation', () => {
                 jobId: 'example',
                 slicerPort: null
             };
-            expect(() => validateConfig(config)).toThrow('Worker configuration requires a valid slicerPort');
+            expect(() => validateJobConfig(config)).toThrow('Job configuration requires a valid slicerPort');
         });
     });
 
@@ -79,7 +79,7 @@ describe('Worker Config Validation', () => {
                 jobId: 'example',
                 slicerPort: 1234
             };
-            expect(() => validateConfig(config)).not.toThrow();
+            expect(() => validateJobConfig(config)).not.toThrow();
         });
     });
 });
