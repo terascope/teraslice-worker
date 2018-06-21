@@ -1,7 +1,7 @@
 'use strict';
 
 const { EventEmitter } = require('events');
-const { TerasliceWorker } = require('../..');
+const TerasliceWorker = require('../../lib');
 
 describe('TerasliceWorker', () => {
     let worker;

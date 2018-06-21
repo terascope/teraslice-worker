@@ -2,7 +2,8 @@
 
 const shortid = require('shortid');
 const ElasticsearchClient = require('elasticsearch').Client;
-const { Worker, TerasliceWorker } = require('../../..');
+const { Worker } = require('../../..');
+const TerasliceWorker = require('../../../lib');
 const overrideLogger = require('../../helpers/override-logger');
 const terasliceConfig = require('../../helpers/teraslice-config');
 
