@@ -1,5 +1,6 @@
 'use strict';
 
+const os = require('os');
 const Worker = require('../..');
 
 describe('Worker Assignment', () => {
@@ -37,13 +38,19 @@ describe('Worker Assignment', () => {
         beforeEach(() => worker.start());
 
         it('should create a logger', () => {
-            expect(worker.context).toHaveProperty('logger');
-            expect(worker.context.logger).toHaveProperty('flush');
-            expect(worker.context.logger).toHaveProperty('debug');
-            expect(worker.context.logger).toHaveProperty('info');
-            expect(worker.context.logger).toHaveProperty('trace');
-            expect(worker.context.logger).toHaveProperty('error');
-            expect(worker.context.logger).toHaveProperty('warn');
+            expect(worker).toHaveProperty('logger');
+            expect(worker.logger).toHaveProperty('flush');
+            expect(worker.logger).toHaveProperty('debug');
+            expect(worker.logger).toHaveProperty('info');
+            expect(worker.logger).toHaveProperty('trace');
+            expect(worker.logger).toHaveProperty('error');
+            expect(worker.logger).toHaveProperty('warn');
+        });
+
+        it('should have have workerId', () => {
+            expect(worker).toHaveProperty('workerId');
+            const { hostname } = worker.context.sysconfig.teraslice;
+            expect(worker.workerId).toContain(hostname);
         });
     });
 });
