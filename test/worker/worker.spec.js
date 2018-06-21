@@ -1,7 +1,6 @@
 'use strict';
 
-const { EventEmitter } = require('events');
-const Worker = require('../..');
+const { Worker, TerasliceWorker } = require('../..');
 
 describe('Worker', () => {
     let worker;
@@ -23,7 +22,7 @@ describe('Worker', () => {
             }
         };
         const jobConfig = {
-            assignment: 'example',
+            type: 'worker',
             job: {
                 example: true
             },
@@ -34,23 +33,15 @@ describe('Worker', () => {
         worker = new Worker(config, jobConfig);
     });
 
-    it('should create a logger', () => {
-        expect(worker).toHaveProperty('logger');
-        expect(worker.logger).toHaveProperty('flush');
-        expect(worker.logger).toHaveProperty('debug');
-        expect(worker.logger).toHaveProperty('info');
-        expect(worker.logger).toHaveProperty('trace');
-        expect(worker.logger).toHaveProperty('error');
-        expect(worker.logger).toHaveProperty('warn');
+    it('should be an instance of TerasliceWorker', () => {
+        expect(worker instanceof TerasliceWorker).toBe(true);
     });
 
-    it('should have have workerId', () => {
-        expect(worker).toHaveProperty('workerId');
-        const { hostname } = worker.context.sysconfig.teraslice;
-        expect(worker.workerId).toContain(hostname);
-    });
+    describe('->start', () => {
+        beforeEach(() => worker.start());
 
-    it('should have an event emitter', () => {
-        expect(worker.events instanceof EventEmitter).toBe(true);
+        afterEach(() => worker.shutdown());
+
+        it('should get here', () => {});
     });
 });

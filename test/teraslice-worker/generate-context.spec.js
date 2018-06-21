@@ -1,6 +1,6 @@
 'use strict';
 
-const { generateContext } = require('../../');
+const { generateContext } = require('../../').TerasliceWorker;
 
 describe('Terafoundation Context', () => {
     let context;

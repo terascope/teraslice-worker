@@ -1,6 +1,6 @@
 'use strict';
 
-const { validateJobConfig } = require('../../');
+const { validateJobConfig } = require('../../').TerasliceWorker;
 
 describe('Worker Config Validation', () => {
     describe('when constructed nothing', () => {
@@ -9,16 +9,16 @@ describe('Worker Config Validation', () => {
         });
     });
 
-    describe('when constructed without a assignment', () => {
+    describe('when constructed without a type', () => {
         it('should throw an error', () => {
-            expect(() => validateJobConfig({ example: true })).toThrow('Job configuration requires a valid assignment');
+            expect(() => validateJobConfig({ example: true })).toThrow('Job configuration requires a valid type');
         });
     });
 
     describe('when constructed without a job', () => {
         it('should throw an error', () => {
             const config = {
-                assignment: 'example',
+                type: 'worker',
             };
             expect(() => validateJobConfig(config)).toThrow('Job configuration requires a valid job');
         });
@@ -27,7 +27,7 @@ describe('Worker Config Validation', () => {
     describe('when constructed without a valid job', () => {
         it('should throw an error', () => {
             const config = {
-                assignment: 'example',
+                type: 'worker',
                 job: 'this-should-fail'
             };
             expect(() => validateJobConfig(config)).toThrow('Job configuration requires a valid');
@@ -37,7 +37,7 @@ describe('Worker Config Validation', () => {
     describe('when constructed without a valid exId', () => {
         it('should throw an error', () => {
             const config = {
-                assignment: 'example',
+                type: 'worker',
                 job: { hello: true },
                 exId: null
             };
@@ -48,7 +48,7 @@ describe('Worker Config Validation', () => {
     describe('when constructed without a valid jobId', () => {
         it('should throw an error', () => {
             const config = {
-                assignment: 'example',
+                type: 'worker',
                 job: { hello: true },
                 exId: 'example',
                 jobId: null
@@ -60,7 +60,7 @@ describe('Worker Config Validation', () => {
     describe('when constructed without a valid slicerPort', () => {
         it('should throw an error', () => {
             const config = {
-                assignment: 'example',
+                type: 'worker',
                 job: { hello: true },
                 exId: 'example',
                 jobId: 'example',
@@ -73,7 +73,7 @@ describe('Worker Config Validation', () => {
     describe('when constructed valid input', () => {
         it('should not throw an error', () => {
             const config = {
-                assignment: 'example',
+                type: 'worker',
                 job: { hello: true },
                 exId: 'example',
                 jobId: 'example',
