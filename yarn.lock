@@ -1220,6 +1220,14 @@ elasticsearch@^14.2.1:
     lodash.isempty "^4.4.0"
     lodash.trimend "^4.5.1"
 
+elasticsearch@^15.0.0:
+  version "15.0.0"
+  resolved "https://registry.yarnpkg.com/elasticsearch/-/elasticsearch-15.0.0.tgz#d888ceb858bba30221b68698d72c54bdcfdf2fba"
+  dependencies:
+    agentkeepalive "^3.4.1"
+    chalk "^1.0.0"
+    lodash "^4.17.10"
+
 emoji-regex@^6.1.0:
   version "6.5.1"
   resolved "https://registry.yarnpkg.com/emoji-regex/-/emoji-regex-6.5.1.tgz#9baea929b155565c11ea41c6626eaa65cef992c2"
@@ -4509,9 +4517,9 @@ terafoundation@^0.2.1:
     redis "^2.8.0"
     yargs "^11.0.0"
 
-teraslice@^0.36.5:
+teraslice@terascope/teraslice#clean-up-timers:
   version "0.36.5"
-  resolved "https://registry.yarnpkg.com/teraslice/-/teraslice-0.36.5.tgz#d883da527dbf6a0d1c815949e23dc3e3989967a7"
+  resolved "https://codeload.github.com/terascope/teraslice/tar.gz/21fbb8e464368715a0803eb1e4fc41b072a46945"
   dependencies:
     "@terascope/elasticsearch-api" "^1.0.1"
     "@terascope/error-parser" "^1.0.0"

@@ -1,30 +1,20 @@
 'use strict';
 
+const Promise = require('bluebird');
+const shortid = require('shortid');
+const ElasticsearchClient = require('elasticsearch').Client;
 const { Worker, TerasliceWorker } = require('../..');
 const overrideLogger = require('../helpers/override-logger');
-// const elasticsearchMock = require('@terascope/elasticsearch-api')
-
-jest.mock('@terascope/elasticsearch-api');
+const terasliceConfig = require('../helpers/teraslice-config');
 
 describe('Worker', () => {
     let worker;
+    let clusterName;
+    let es;
+
     beforeEach(() => {
-        const config = {
-            terafoundation: {
-                environment: 'development',
-                connectors: {
-                    elasticsearch: {
-                        default: {
-                            host: ['example.dev:9200']
-                        }
-                    }
-                }
-            },
-            teraslice: {
-                name: 'test-teraslice-cluster',
-                master_hostname: 'localhost'
-            }
-        };
+        clusterName = `tmp_${shortid.generate()}`.toLowerCase();
+        const config = terasliceConfig({ clusterName });
         const jobConfig = {
             type: 'worker',
             job: {
@@ -36,20 +26,31 @@ describe('Worker', () => {
         };
         worker = new Worker(config, jobConfig);
         overrideLogger(worker);
+        es = new ElasticsearchClient({
+            host: 'http://localhost:9200',
+            log: '' // This suppresses error logging from the ES library.
+        });
+    });
+
+    afterEach(async () => {
+        await worker.shutdown();
+        await es.indices.delete({ index: `${clusterName}*` });
     });
 
     it('should be an instance of TerasliceWorker', () => {
         expect(worker instanceof TerasliceWorker).toBe(true);
     });
 
-    it('should create the correct stores', async () => {
-        await expect(worker.start()).resolves.toBeUndefined();
-        expect(worker).toHaveProperty('assetStore');
-        expect(worker.assetStore).toHaveProperty('shutdown');
-        expect(worker).toHaveProperty('stateStore');
-        expect(worker.stateStore).toHaveProperty('shutdown');
-        expect(worker).toHaveProperty('analyticsStore');
-        expect(worker.analyticsStore).toHaveProperty('shutdown');
-        await expect(worker.shutdown()).resolves.toBeUndefined();
+    describe('when setting up', () => {
+        beforeEach(() => worker.setup());
+
+        it('should create the correct stores', () => {
+            expect(worker.assetStore).toBeDefined();
+            expect(worker.assetStore).toHaveProperty('shutdown');
+            expect(worker.stateStore).toBeDefined();
+            expect(worker.stateStore).toHaveProperty('shutdown');
+            expect(worker.analyticsStore).toBeDefined();
+            expect(worker.analyticsStore).toHaveProperty('shutdown');
+        });
     });
 });
