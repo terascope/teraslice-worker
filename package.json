@@ -8,6 +8,7 @@
     "lint": "eslint *.js lib spec",
     "lint:fix": "eslint --fix *.js lib spec",
     "test": "jest",
+    "debug:test": "env DEBUG='*teraslice*error*' jest --detectOpenHandles",
     "report-coverage": "codecov"
   },
   "repository": "git@github.com:terascope/teraslice-worker.git",
@@ -16,6 +17,7 @@
   "private": false,
   "devDependencies": {
     "codecov": "^3.0.2",
+    "debug": "^3.1.0",
     "eslint": "^4.19.1",
     "eslint-config-airbnb": "^16.1.0",
     "eslint-plugin-import": "^2.12.0",

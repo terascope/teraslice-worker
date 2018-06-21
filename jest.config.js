@@ -15,7 +15,9 @@ module.exports = {
     coveragePathIgnorePatterns: [
         '<rootDir>/lib/terafoundation',
         '<rootDir>/lib/teraslice',
+        '<rootDir>/test/helpers',
         '<rootDir>/test/env-setup.js',
+        '<rootDir>/node_modules'
     ],
     coverageThreshold: {
         global: {

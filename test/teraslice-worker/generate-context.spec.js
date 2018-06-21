@@ -73,6 +73,7 @@ describe('Terafoundation Context', () => {
             log_buffer_interval: 60000,
             log_index_rollover_frequency: 'monthly',
         });
+        expect(context.cluster.worker).toHaveProperty('id');
     });
 
 

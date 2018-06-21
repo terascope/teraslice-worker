@@ -47,7 +47,8 @@ describe('TerasliceWorker', () => {
     it('should have have workerId', () => {
         expect(worker).toHaveProperty('workerId');
         const { hostname } = worker.context.sysconfig.teraslice;
-        expect(worker.workerId).toContain(hostname);
+        const { id } = worker.context.cluster.worker;
+        expect(worker.workerId).toEqual(`${hostname}__${id}`);
     });
 
     it('should have an event emitter', () => {
