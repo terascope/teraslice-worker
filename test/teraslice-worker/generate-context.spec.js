@@ -1,6 +1,6 @@
 'use strict';
 
-const { generateContext } = require('../../lib/utils/worker');
+const { generateContext } = require('../../lib/utils');
 const terasliceConfig = require('../helpers/teraslice-config');
 
 describe('Terafoundation Context', () => {

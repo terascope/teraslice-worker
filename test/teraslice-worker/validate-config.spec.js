@@ -1,6 +1,6 @@
 'use strict';
 
-const { validateJobConfig } = require('../../lib/utils/worker');
+const { validateJobConfig } = require('../../lib/utils');
 
 describe('Worker Config Validation', () => {
     describe('when constructed nothing', () => {

@@ -1,6 +1,5 @@
 'use strict';
 
-const Promise = require('bluebird');
 const shortid = require('shortid');
 const ElasticsearchClient = require('elasticsearch').Client;
 const { Worker, TerasliceWorker } = require('../..');
