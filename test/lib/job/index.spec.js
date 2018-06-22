@@ -13,7 +13,15 @@ describe('Job', () => {
         const jobConfig = {
             type: 'example',
             job: {
-                example: true
+                example: true,
+                operations: [
+                    {
+                        _op: 'example-op-one',
+                    },
+                    {
+                        _op: 'example-op-two',
+                    }
+                ]
             },
             exId: 'example-ex-id',
             jobId: 'example-job-id',
@@ -30,6 +38,16 @@ describe('Job', () => {
         const jobRunnerApis = get(job, 'context.apis.job_runner');
         expect(jobRunnerApis).toHaveProperty('getOpConfig');
         expect(typeof jobRunnerApis.getOpConfig).toEqual('function');
+    });
+
+    it('getOpConfig should return the matching op', () => {
+        expect(job.getOpConfig('example-op-one')).toEqual({
+            _op: 'example-op-one',
+        });
+    });
+
+    it('getOpConfig should return nothing if none found', () => {
+        expect(job.getOpConfig('this-op-does-not-exist')).not.toBe(expect.anything());
     });
 });
 
