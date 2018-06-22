@@ -2,6 +2,7 @@
 
 const get = require('lodash/get');
 const path = require('path');
+const shortid = require('shortid');
 const Job = require('../../../lib/job');
 const testContext = require('../../helpers/test-context');
 
@@ -66,20 +67,20 @@ describe('Worker Job', () => {
         });
 
         it('getOpConfig should return nothing if none found', () => {
-            expect(job.getOpConfig('this-op-does-not-exist')).not.toBeEmpty();
+            expect(job.getOpConfig('this-op-does-not-exist')).toBeNil();
 
             const getOpConfig = get(job, 'context.apis.job_runner.getOpConfig');
-            expect(getOpConfig('this-op-does-not-exist')).not.toBeEmpty();
+            expect(getOpConfig('this-op-does-not-exist')).toBeNil();
         });
 
         it('should create an opRunner', () => {
             expect(job).toHaveProperty('loadOp');
-            expect(typeof job.loadOp).toBe('function');
+            expect(job.loadOp).toBeFunction();
         });
     });
 
     describe('->initialize', () => {
-        describe('when analyitics is not enabled', () => {
+        describe('when analytics is not enabled', () => {
             let executionApi;
             let job;
             let jobConfig;
@@ -111,14 +112,14 @@ describe('Worker Job', () => {
 
                 return job.initialize().then((_executionApi) => {
                     executionApi = _executionApi;
-                    expect(_executionApi).not.toBeEmpty();
+                    expect(_executionApi).not.toBeNil();
                 }).catch((err) => {
-                    expect(err).toBeEmpty();
+                    expect(err).toBeNil();
                 });
             });
 
             it('should resolve an execution api', () => {
-                expect(executionApi).not.toBeEmpty();
+                expect(executionApi).not.toBeNil();
                 const {
                     queue,
                     config,
@@ -131,8 +132,8 @@ describe('Worker Job', () => {
                 expect(queue[1]).toBeFunction();
                 expect(reader).toEqual(queue[0]);
                 expect(config).toEqual(jobConfig.job);
-                expect(reporter).not.toBeEmpty();
-                expect(slicer).not.toBeEmpty();
+                expect(reporter).toBeNil();
+                expect(slicer).toBeNil();
             });
 
             it('should load the ops', () => {
@@ -149,7 +150,7 @@ describe('Worker Job', () => {
             });
         });
 
-        describe('when analyitics is enabled', () => {
+        describe('when analytics is enabled', () => {
             let executionApi;
             let job;
             let jobConfig;
@@ -161,7 +162,7 @@ describe('Worker Job', () => {
                     type: 'worker',
                     job: {
                         assets: [],
-                        analyitics: true,
+                        analytics: true,
                         operations: [
                             {
                                 _op: path.join(opsPath, 'example-reader'),
@@ -182,14 +183,14 @@ describe('Worker Job', () => {
 
                 return job.initialize().then((_executionApi) => {
                     executionApi = _executionApi;
-                    expect(_executionApi).not.toBeEmpty();
+                    expect(_executionApi).not.toBeNil();
                 }).catch((err) => {
-                    expect(err).toBeEmpty();
+                    expect(err).toBeNil();
                 });
             });
 
             it('should resolve an execution api', () => {
-                expect(executionApi).not.toBeEmpty();
+                expect(executionApi).not.toBeNil();
                 const {
                     queue,
                     config,
@@ -202,8 +203,8 @@ describe('Worker Job', () => {
                 expect(queue[1]).toBeFunction();
                 expect(reader).toEqual(queue[0]);
                 expect(config).toEqual(jobConfig.job);
-                expect(reporter).not.toBeEmpty();
-                expect(slicer).not.toBeEmpty();
+                expect(reporter).toBeNil();
+                expect(slicer).toBeNil();
             });
 
             it('should load the ops', () => {
@@ -217,6 +218,61 @@ describe('Worker Job', () => {
                     _op: path.join(opsPath, 'example-op'),
                     exampleProp: 123
                 }, jobConfig.job);
+            });
+        });
+
+
+        xdescribe('when using assets', () => {
+            let executionApi;
+            let job;
+            let jobConfig;
+            let context;
+            beforeEach(() => {
+                const { _context } = testContext('worker-job');
+                context = _context;
+                jobConfig = {
+                    type: 'worker',
+                    job: {
+                        assets: [shortid.generate()],
+                        operations: [
+                            {
+                                _op: 'example-asset-reader',
+                            },
+                            {
+                                _op: 'example-asset-op',
+                            }
+                        ]
+                    },
+                    exId: 'example-ex-id',
+                    jobId: 'example-job-id'
+                };
+                job = new Job(context, jobConfig);
+                return job.initialize().then((_executionApi) => {
+                    executionApi = _executionApi;
+                    expect(_executionApi).not.toBeNil();
+                }).catch((err) => {
+                    expect(err).toBeNil();
+                });
+            });
+
+            it('should resolve an execution api', () => {
+                expect(executionApi).not.toBeNil();
+                const {
+                    queue,
+                    config,
+                    reader,
+                    reporter,
+                    slicer
+                } = executionApi;
+                expect(queue).toBeArrayOfSize(0);
+                expect(reader).toBeNil();
+                expect(config).toEqual(jobConfig.job);
+                expect(reporter).toBeNil();
+                expect(slicer).toBeNil();
+            });
+
+            it('should load the ops', () => {
+                expect.hasAssertions();
             });
         });
     });

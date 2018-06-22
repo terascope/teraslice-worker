@@ -7,8 +7,8 @@
     "start": "node command.js",
     "lint": "eslint *.js lib spec",
     "lint:fix": "eslint --fix *.js lib spec",
-    "test": "jest --forceExit --detectOpenHandles --maxWorkers=1",
-    "debug:test": "env DEBUG='*teraslice*' jest --detectOpenHandles --coverage=false --maxWorkers=1",
+    "test": "jest --forceExit",
+    "debug:test": "env DEBUG='*teraslice*' jest --detectOpenHandles --coverage=false",
     "report-coverage": "codecov"
   },
   "repository": "git@github.com:terascope/teraslice-worker.git",
