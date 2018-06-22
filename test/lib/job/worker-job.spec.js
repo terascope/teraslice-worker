@@ -79,72 +79,145 @@ describe('Worker Job', () => {
     });
 
     describe('->initialize', () => {
-        let executionApi;
-        let job;
-        let jobConfig;
-        let context;
-        beforeEach(() => {
-            const { _context } = testContext('worker-job');
-            context = _context;
-            jobConfig = {
-                type: 'worker',
-                job: {
-                    assets: [],
-                    operations: [
-                        {
-                            _op: path.join(opsPath, 'example-reader'),
-                            exampleProp: 321
-                        },
-                        {
-                            _op: path.join(opsPath, 'example-op'),
-                            exampleProp: 123
-                        }
-                    ]
-                },
-                exId: 'example-ex-id',
-                jobId: 'example-job-id'
-            };
-            job = new Job(context, jobConfig);
-            exampleReaderMock.mockResolvedValue(jest.fn());
-            exampleOpMock.mockResolvedValue(jest.fn());
+        describe('when analyitics is not enabled', () => {
+            let executionApi;
+            let job;
+            let jobConfig;
+            let context;
+            beforeEach(() => {
+                const { _context } = testContext('worker-job');
+                context = _context;
+                jobConfig = {
+                    type: 'worker',
+                    job: {
+                        assets: [],
+                        operations: [
+                            {
+                                _op: path.join(opsPath, 'example-reader'),
+                                exampleProp: 321
+                            },
+                            {
+                                _op: path.join(opsPath, 'example-op'),
+                                exampleProp: 123
+                            }
+                        ]
+                    },
+                    exId: 'example-ex-id',
+                    jobId: 'example-job-id'
+                };
+                job = new Job(context, jobConfig);
+                exampleReaderMock.mockResolvedValue(jest.fn());
+                exampleOpMock.mockResolvedValue(jest.fn());
 
-            return job.initialize().then((_executionApi) => {
-                executionApi = _executionApi;
-                expect(_executionApi).not.toBeEmpty();
-            }).catch((err) => {
-                expect(err).toBeEmpty();
+                return job.initialize().then((_executionApi) => {
+                    executionApi = _executionApi;
+                    expect(_executionApi).not.toBeEmpty();
+                }).catch((err) => {
+                    expect(err).toBeEmpty();
+                });
+            });
+
+            it('should resolve an execution api', () => {
+                expect(executionApi).not.toBeEmpty();
+                const {
+                    queue,
+                    config,
+                    reader,
+                    reporter,
+                    slicer
+                } = executionApi;
+                expect(queue).toBeArrayOfSize(2);
+                expect(queue[0]).toBeFunction();
+                expect(queue[1]).toBeFunction();
+                expect(reader).toEqual(queue[0]);
+                expect(config).toEqual(jobConfig.job);
+                expect(reporter).not.toBeEmpty();
+                expect(slicer).not.toBeEmpty();
+            });
+
+            it('should load the ops', () => {
+                expect(exampleReaderMock).toHaveBeenCalledTimes(1);
+                expect(exampleReaderMock).toHaveBeenCalledWith(context, {
+                    _op: path.join(opsPath, 'example-reader'),
+                    exampleProp: 321
+                }, jobConfig.job);
+                expect(exampleOpMock).toHaveBeenCalledTimes(1);
+                expect(exampleOpMock).toHaveBeenCalledWith(context, {
+                    _op: path.join(opsPath, 'example-op'),
+                    exampleProp: 123
+                }, jobConfig.job);
             });
         });
 
-        it('should resolve an execution api', () => {
-            expect(executionApi).not.toBeEmpty();
-            const {
-                queue,
-                config,
-                reader,
-                reporter,
-                slicer
-            } = executionApi;
-            expect(queue).toBeArrayOfSize(2);
-            expect(queue[0]).toBeFunction();
-            expect(queue[1]).toBeFunction();
-            expect(reader).toEqual(queue[0]);
-            expect(config).toEqual(jobConfig.job);
-            expect(reporter).not.toBeEmpty();
-            expect(slicer).not.toBeEmpty();
-        });
+        describe('when analyitics is enabled', () => {
+            let executionApi;
+            let job;
+            let jobConfig;
+            let context;
+            beforeEach(() => {
+                const { _context } = testContext('worker-job');
+                context = _context;
+                jobConfig = {
+                    type: 'worker',
+                    job: {
+                        assets: [],
+                        analyitics: true,
+                        operations: [
+                            {
+                                _op: path.join(opsPath, 'example-reader'),
+                                exampleProp: 321
+                            },
+                            {
+                                _op: path.join(opsPath, 'example-op'),
+                                exampleProp: 123
+                            }
+                        ]
+                    },
+                    exId: 'example-ex-id',
+                    jobId: 'example-job-id'
+                };
+                job = new Job(context, jobConfig);
+                exampleReaderMock.mockResolvedValue(jest.fn());
+                exampleOpMock.mockResolvedValue(jest.fn());
 
-        it('should load the ops', () => {
-            expect(exampleReaderMock).toHaveBeenCalledTimes(1);
-            expect(exampleReaderMock).toHaveBeenCalledWith(context, {
-                _op: path.join(opsPath, 'example-reader'),
-                exampleProp: 321
-            }, jobConfig.job);
-            expect(exampleOpMock).toHaveBeenCalledTimes(1);
-            expect(exampleOpMock).toHaveBeenCalledWith(context, {
-                _op: path.join(opsPath, 'example-op'),
-                exampleProp: 123
-            }, jobConfig.job);
+                return job.initialize().then((_executionApi) => {
+                    executionApi = _executionApi;
+                    expect(_executionApi).not.toBeEmpty();
+                }).catch((err) => {
+                    expect(err).toBeEmpty();
+                });
+            });
+
+            it('should resolve an execution api', () => {
+                expect(executionApi).not.toBeEmpty();
+                const {
+                    queue,
+                    config,
+                    reader,
+                    reporter,
+                    slicer
+                } = executionApi;
+                expect(queue).toBeArrayOfSize(2);
+                expect(queue[0]).toBeFunction();
+                expect(queue[1]).toBeFunction();
+                expect(reader).toEqual(queue[0]);
+                expect(config).toEqual(jobConfig.job);
+                expect(reporter).not.toBeEmpty();
+                expect(slicer).not.toBeEmpty();
+            });
+
+            it('should load the ops', () => {
+                expect(exampleReaderMock).toHaveBeenCalledTimes(1);
+                expect(exampleReaderMock).toHaveBeenCalledWith(context, {
+                    _op: path.join(opsPath, 'example-reader'),
+                    exampleProp: 321
+                }, jobConfig.job);
+                expect(exampleOpMock).toHaveBeenCalledTimes(1);
+                expect(exampleOpMock).toHaveBeenCalledWith(context, {
+                    _op: path.join(opsPath, 'example-op'),
+                    exampleProp: 123
+                }, jobConfig.job);
+            });
         });
     });
 });
