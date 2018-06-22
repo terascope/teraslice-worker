@@ -222,7 +222,7 @@ describe('Worker Job', () => {
         });
 
 
-        xdescribe('when using assets', () => {
+        describe('when using assets', () => {
             let executionApi;
             let job;
             let jobConfig;
