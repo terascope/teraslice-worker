@@ -7,8 +7,8 @@
     "start": "node command.js",
     "lint": "eslint *.js lib spec",
     "lint:fix": "eslint --fix *.js lib spec",
-    "test": "jest",
-    "debug:test": "env DEBUG='*teraslice*error*' jest --detectOpenHandles",
+    "test": "jest --forceExit --detectOpenHandles",
+    "debug:test": "env DEBUG='*teraslice*' jest --detectOpenHandles --coverage=false",
     "report-coverage": "codecov"
   },
   "repository": "git@github.com:terascope/teraslice-worker.git",
@@ -24,7 +24,8 @@
     "eslint-plugin-import": "^2.12.0",
     "eslint-plugin-jsx-a11y": "^6.0.3",
     "eslint-plugin-react": "^7.9.1",
-    "jest": "^23.1.0"
+    "jest": "^23.1.0",
+    "jest-extended": "^0.7.2"
   },
   "dependencies": {
     "bluebird": "^3.5.1",

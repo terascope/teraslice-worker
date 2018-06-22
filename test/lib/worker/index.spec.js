@@ -4,7 +4,7 @@ const shortid = require('shortid');
 const ElasticsearchClient = require('elasticsearch').Client;
 const { Worker } = require('../../..');
 const TerasliceWorker = require('../../../lib');
-const overrideLogger = require('../../helpers/override-logger');
+const { overrideLoggerOnWorker } = require('../../helpers/override-logger');
 const terasliceConfig = require('../../helpers/teraslice-config');
 
 describe('Worker', () => {
@@ -25,7 +25,7 @@ describe('Worker', () => {
             slicerPort: 0
         };
         worker = new Worker(config, jobConfig);
-        overrideLogger(worker);
+        overrideLoggerOnWorker(worker, 'worker');
         es = new ElasticsearchClient({
             host: 'http://localhost:9200',
             log: '' // This suppresses error logging from the ES library.

@@ -22,10 +22,18 @@ const newLogger = name => ({
     flush: jest.fn(() => Promise.resolve())
 });
 
+function overrideLoggerOnContext(context, name = 'idk') {
+    context.logger = newLogger(`${name}:terafoundation`);
+    context.apis.foundation.makeLogger = ({ module }) => newLogger(`${name}:${module}`);
+    return context;
+}
 
-module.exports = (worker, name = 'idk') => {
+
+function overrideLoggerOnWorker(worker, name = 'idk') {
     worker.logger = newLogger(`${name}`);
     worker.context.logger = newLogger(`${name}:terafoundation`);
     worker.context.apis.foundation.makeLogger = ({ module }) => newLogger(`${name}:${module}`);
     return worker;
-};
+}
+
+module.exports = { overrideLoggerOnWorker, overrideLoggerOnContext };

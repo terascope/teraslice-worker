@@ -9,6 +9,7 @@ module.exports = {
     bail: true,
     resetMocks: true,
     setupFiles: ['<rootDir>/test/env-setup.js'],
+    setupTestFrameworkScriptFile: 'jest-extended',
     collectCoverage: true,
     coverageReporters: ['json', 'lcov', 'text', 'html'],
     coverageDirectory: 'coverage',
@@ -16,6 +17,7 @@ module.exports = {
         '<rootDir>/lib/terafoundation',
         '<rootDir>/lib/teraslice',
         '<rootDir>/test/helpers',
+        '<rootDir>/test/fixtures',
         '<rootDir>/test/env-setup.js',
         '<rootDir>/node_modules'
     ],

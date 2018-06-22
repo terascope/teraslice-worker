@@ -6,7 +6,9 @@ module.exports = ({ clusterName = 'test-teraslice-cluster', timeout = 5000 } = {
         connectors: {
             elasticsearch: {
                 default: {
-                    host: ['localhost:9200']
+                    host: ['127.0.0.1:9200'],
+                    requestTimeout: timeout,
+                    deadTimeout: timeout,
                 }
             }
         }
