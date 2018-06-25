@@ -25,6 +25,8 @@ class TestContext {
     }
 
     async cleanup() {
+        const events = this.context.apis.foundation.getSystemEvents();
+        events.removeAllListeners();
         cleanupTempDirs();
         await this.es.indices.delete({ index: `${this.clusterName}*` });
     }

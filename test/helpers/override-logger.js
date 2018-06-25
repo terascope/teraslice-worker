@@ -28,7 +28,6 @@ function overrideLoggerOnContext(context, name = 'idk') {
     return context;
 }
 
-
 function overrideLoggerOnWorker(worker, name = 'idk') {
     worker.logger = newLogger(`${name}`);
     worker.context.logger = newLogger(`${name}:terafoundation`);
