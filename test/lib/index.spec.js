@@ -32,6 +32,7 @@ describe('TerasliceWorker', () => {
             slicerPort: 0
         };
         worker = new TerasliceWorker(config, jobConfig);
+        worker.makeLogger();
     });
 
     it('should create a logger', () => {
