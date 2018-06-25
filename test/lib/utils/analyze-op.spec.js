@@ -147,4 +147,3 @@ describe('Operation Analytics', () => {
         console.dir({ bigTest, smallTest }); // eslint-disable-line
     });
 });
-

@@ -46,4 +46,3 @@ describe('Terafoundation Context', () => {
         expect(context).toHaveProperty('logger');
     });
 });
-

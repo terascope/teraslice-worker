@@ -7,4 +7,3 @@ describe('Slice', () => {
         expect(() => new Slice()).not.toThrow();
     });
 });
-

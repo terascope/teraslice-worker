@@ -2,20 +2,22 @@
 
 const get = require('lodash/get');
 const path = require('path');
-const shortid = require('shortid');
 const Job = require('../../../lib/job');
-const testContext = require('../../helpers/test-context');
+const TestContext = require('../../helpers/test-context');
+const saveAsset = require('../../helpers/save-asset');
 
 const opsPath = path.join(__dirname, '..', '..', 'fixtures', 'ops');
 const exampleReaderMock = require(path.join(opsPath, 'example-reader')).newReader;
 const exampleOpMock = require(path.join(opsPath, 'example-op')).newProcessor;
+const exampleAssetDir = path.join(opsPath, 'example-asset');
 
 describe('Worker Job', () => {
     describe('when constructing', () => {
         let job;
         let jobConfig;
+        let _testContext;
         beforeEach(() => {
-            const { context } = testContext();
+            _testContext = new TestContext('worker-job');
             jobConfig = {
                 type: 'example',
                 job: {
@@ -34,14 +36,15 @@ describe('Worker Job', () => {
                 jobId: 'example-job-id',
                 slicerPort: 0
             };
-            job = new Job(context, jobConfig);
+            job = new Job(_testContext.context, jobConfig);
         });
 
+        afterEach(() => _testContext.cleanup());
+
         it('should throw an error if reporters are specified', () => {
-            const { context } = testContext();
-            context.sysconfig.teraslice.reporter = true;
+            _testContext.context.sysconfig.teraslice.reporter = true;
             expect(() => {
-                new Job(context, { hello: true }); // eslint-disable-line no-new
+                new Job(_testContext.context, { hello: true }); // eslint-disable-line no-new
             }).toThrowError('reporters are not functional at this time, please do not set one in the configuration');
         });
 
@@ -74,8 +77,8 @@ describe('Worker Job', () => {
         });
 
         it('should create an opRunner', () => {
-            expect(job).toHaveProperty('loadOp');
-            expect(job.loadOp).toBeFunction();
+            expect(job).toHaveProperty('opRunner');
+            expect(job.opRunner.findOp).toBeFunction();
         });
     });
 
@@ -84,10 +87,9 @@ describe('Worker Job', () => {
             let executionApi;
             let job;
             let jobConfig;
-            let context;
+            let _testContext;
             beforeEach(() => {
-                const { _context } = testContext('worker-job');
-                context = _context;
+                _testContext = new TestContext('worker-job:analytics');
                 jobConfig = {
                     type: 'worker',
                     job: {
@@ -104,9 +106,10 @@ describe('Worker Job', () => {
                         ]
                     },
                     exId: 'example-ex-id',
-                    jobId: 'example-job-id'
+                    jobId: 'example-job-id',
+                    slicerPort: 0,
                 };
-                job = new Job(context, jobConfig);
+                job = new Job(_testContext.context, jobConfig);
                 exampleReaderMock.mockResolvedValue(jest.fn());
                 exampleOpMock.mockResolvedValue(jest.fn());
 
@@ -114,9 +117,12 @@ describe('Worker Job', () => {
                     executionApi = _executionApi;
                     expect(_executionApi).not.toBeNil();
                 }).catch((err) => {
+                    console.error(err.stack); // eslint-disable-line no-console
                     expect(err).toBeNil();
                 });
             });
+
+            afterEach(() => _testContext.cleanup());
 
             it('should resolve an execution api', () => {
                 expect(executionApi).not.toBeNil();
@@ -138,12 +144,12 @@ describe('Worker Job', () => {
 
             it('should load the ops', () => {
                 expect(exampleReaderMock).toHaveBeenCalledTimes(1);
-                expect(exampleReaderMock).toHaveBeenCalledWith(context, {
+                expect(exampleReaderMock).toHaveBeenCalledWith(_testContext.context, {
                     _op: path.join(opsPath, 'example-reader'),
                     exampleProp: 321
                 }, jobConfig.job);
                 expect(exampleOpMock).toHaveBeenCalledTimes(1);
-                expect(exampleOpMock).toHaveBeenCalledWith(context, {
+                expect(exampleOpMock).toHaveBeenCalledWith(_testContext.context, {
                     _op: path.join(opsPath, 'example-op'),
                     exampleProp: 123
                 }, jobConfig.job);
@@ -154,10 +160,9 @@ describe('Worker Job', () => {
             let executionApi;
             let job;
             let jobConfig;
-            let context;
+            let _testContext;
             beforeEach(() => {
-                const { _context } = testContext('worker-job');
-                context = _context;
+                _testContext = new TestContext('worker-job:no-analytics');
                 jobConfig = {
                     type: 'worker',
                     job: {
@@ -175,9 +180,10 @@ describe('Worker Job', () => {
                         ]
                     },
                     exId: 'example-ex-id',
-                    jobId: 'example-job-id'
+                    jobId: 'example-job-id',
+                    slicerPort: 0,
                 };
-                job = new Job(context, jobConfig);
+                job = new Job(_testContext.context, jobConfig);
                 exampleReaderMock.mockResolvedValue(jest.fn());
                 exampleOpMock.mockResolvedValue(jest.fn());
 
@@ -185,9 +191,12 @@ describe('Worker Job', () => {
                     executionApi = _executionApi;
                     expect(_executionApi).not.toBeNil();
                 }).catch((err) => {
+                    console.error(err.stack); // eslint-disable-line no-console
                     expect(err).toBeNil();
                 });
             });
+
+            afterEach(() => _testContext.cleanup());
 
             it('should resolve an execution api', () => {
                 expect(executionApi).not.toBeNil();
@@ -209,12 +218,12 @@ describe('Worker Job', () => {
 
             it('should load the ops', () => {
                 expect(exampleReaderMock).toHaveBeenCalledTimes(1);
-                expect(exampleReaderMock).toHaveBeenCalledWith(context, {
+                expect(exampleReaderMock).toHaveBeenCalledWith(_testContext.context, {
                     _op: path.join(opsPath, 'example-reader'),
                     exampleProp: 321
                 }, jobConfig.job);
                 expect(exampleOpMock).toHaveBeenCalledTimes(1);
-                expect(exampleOpMock).toHaveBeenCalledWith(context, {
+                expect(exampleOpMock).toHaveBeenCalledWith(_testContext.context, {
                     _op: path.join(opsPath, 'example-op'),
                     exampleProp: 123
                 }, jobConfig.job);
@@ -226,14 +235,14 @@ describe('Worker Job', () => {
             let executionApi;
             let job;
             let jobConfig;
-            let context;
-            beforeEach(() => {
-                const { _context } = testContext('worker-job');
-                context = _context;
+            let _testContext;
+            beforeAll(async () => {
+                _testContext = new TestContext('worker-job:assets');
+                await saveAsset(_testContext.context, exampleAssetDir);
                 jobConfig = {
                     type: 'worker',
                     job: {
-                        assets: [shortid.generate()],
+                        assets: ['example-asset'],
                         operations: [
                             {
                                 _op: 'example-asset-reader',
@@ -244,16 +253,20 @@ describe('Worker Job', () => {
                         ]
                     },
                     exId: 'example-ex-id',
-                    jobId: 'example-job-id'
+                    jobId: 'example-job-id',
+                    slicerPort: 0,
                 };
-                job = new Job(context, jobConfig);
+                job = new Job(_testContext.context, jobConfig);
                 return job.initialize().then((_executionApi) => {
                     executionApi = _executionApi;
                     expect(_executionApi).not.toBeNil();
                 }).catch((err) => {
+                    console.error(err.stack); // eslint-disable-line no-console
                     expect(err).toBeNil();
                 });
             });
+
+            afterAll(() => _testContext.cleanup());
 
             it('should resolve an execution api', () => {
                 expect(executionApi).not.toBeNil();
@@ -271,10 +284,12 @@ describe('Worker Job', () => {
                 expect(slicer).toBeNil();
             });
 
-            it('should load the ops', () => {
-                expect.hasAssertions();
+            it('should load the ops', async () => {
+                const readerResults = await executionApi.reader();
+                expect(readerResults).toBeArrayOfSize(100);
+                const opResults = await executionApi.queue[1](readerResults);
+                expect(opResults).toBeArrayOfSize(100);
             });
         });
     });
 });
-

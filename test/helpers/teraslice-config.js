@@ -1,6 +1,6 @@
 'use strict';
 
-module.exports = ({ clusterName = 'test-teraslice-cluster', timeout = 5000 } = {}) => ({
+module.exports = ({ clusterName = 'test-teraslice-cluster', timeout = 5000, assetDir } = {}) => ({
     terafoundation: {
         environment: 'development',
         connectors: {
@@ -14,6 +14,7 @@ module.exports = ({ clusterName = 'test-teraslice-cluster', timeout = 5000 } = {
         }
     },
     teraslice: {
+        assets_directory: assetDir,
         shutdown_timeout: timeout,
         action_timeout: timeout,
         network_latency_buffer: timeout,
@@ -26,4 +27,3 @@ module.exports = ({ clusterName = 'test-teraslice-cluster', timeout = 5000 } = {
         master_hostname: 'localhost'
     }
 });
-
