@@ -14,6 +14,8 @@ module.exports = {
     coverageReporters: ['json', 'lcov', 'text', 'html'],
     coverageDirectory: 'coverage',
     coveragePathIgnorePatterns: [
+        '<rootDir>/lib/teraslice',
+        '<rootDir>/lib/terafoundation',
         '<rootDir>/test/helpers',
         '<rootDir>/test/fixtures',
         '<rootDir>/test/env-setup.js',
