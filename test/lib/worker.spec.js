@@ -2,10 +2,10 @@
 
 const shortid = require('shortid');
 const ElasticsearchClient = require('elasticsearch').Client;
-const { Worker } = require('../../..');
-const TerasliceWorker = require('../../../lib');
-const { overrideLoggerOnWorker } = require('../../helpers/override-logger');
-const terasliceConfig = require('../../helpers/teraslice-config');
+const { Worker } = require('../..');
+const BaseWorker = require('../../lib/base-worker');
+const { overrideLoggerOnWorker } = require('../helpers/override-logger');
+const terasliceConfig = require('../helpers/teraslice-config');
 
 describe('Worker', () => {
     let worker;
@@ -40,8 +40,8 @@ describe('Worker', () => {
         await es.indices.delete({ index: `${clusterName}*` });
     });
 
-    it('should be an instance of TerasliceWorker', () => {
-        expect(worker instanceof TerasliceWorker).toBe(true);
+    it('should be an instance of BaseWorker', () => {
+        expect(worker instanceof BaseWorker).toBe(true);
     });
 
     describe('when setting up', () => {

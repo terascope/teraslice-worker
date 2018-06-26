@@ -1,9 +1,9 @@
 'use strict';
 
 const { EventEmitter } = require('events');
-const TerasliceWorker = require('../../lib');
+const BaseWorker = require('../../lib/base-worker');
 
-describe('TerasliceWorker', () => {
+describe('BaseWorker', () => {
     let worker;
     beforeEach(() => {
         const config = {
@@ -31,7 +31,7 @@ describe('TerasliceWorker', () => {
             job_id: 'example-job-id',
             slicer_port: 0
         };
-        worker = new TerasliceWorker(config, jobConfig);
+        worker = new BaseWorker(config, jobConfig);
         worker.makeLogger();
     });
 

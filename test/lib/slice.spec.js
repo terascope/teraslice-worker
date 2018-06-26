@@ -5,14 +5,14 @@ const shortid = require('shortid');
 const times = require('lodash/times');
 const random = require('lodash/random');
 const path = require('path');
-const Slice = require('../../../lib/worker/slice');
-const Job = require('../../../lib/job');
-const TestContext = require('../../helpers/test-context');
-const { overrideLoggerOnWorker } = require('../../helpers/override-logger');
+const Slice = require('../../lib/slice');
+const Job = require('../../lib/job');
+const TestContext = require('../helpers/test-context');
+const { overrideLoggerOnWorker } = require('../helpers/override-logger');
 
-const opsPath = path.join(__dirname, '..', '..', 'fixtures', 'ops');
-const exampleReader = require('../../fixtures/ops/example-reader');
-const exampleOp = require('../../fixtures/ops/example-op');
+const opsPath = path.join(__dirname, '..', 'fixtures', 'ops');
+const exampleReader = require('../fixtures/ops/example-reader');
+const exampleOp = require('../fixtures/ops/example-op');
 
 const newId = prefix => `${prefix}-${shortid.generate()}`.toLowerCase();
 
