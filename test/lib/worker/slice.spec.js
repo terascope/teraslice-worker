@@ -289,7 +289,7 @@ describe('Slice', () => {
             });
 
             it('should have reject with the error', () => {
-                expect(err).toThrowError('Slice failed processing: Error: Bad news bears');
+                expect(err.toString()).toContain('Slice failed processing: Error: Bad news bears');
             });
 
             it('should call all of the operations', () => {
