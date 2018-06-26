@@ -10,12 +10,25 @@ const { overrideLoggerOnWorker } = require('../../helpers/override-logger');
 const opsPath = path.join(__dirname, '..', '..', 'fixtures', 'ops');
 const exampleReaderMock = require(path.join(opsPath, 'example-reader')).newReader;
 const exampleOpMock = require(path.join(opsPath, 'example-op')).newProcessor;
-const readerFn = jest.fn();
-const opFn = jest.fn();
 
 
 describe('Slice', () => {
     let jobConfig;
+    const eventMocks = {
+        'slice:success': jest.fn(),
+        'slice:finalize': jest.fn(),
+        'slice:failure': jest.fn(),
+        'slice:retry': jest.fn(),
+    };
+    const readerFn = jest.fn();
+    const opFn = jest.fn();
+
+    function mockEvents(events) {
+        Object.keys(eventMocks).forEach((name) => {
+            const mock = eventMocks[name];
+            events.on(name, mock);
+        });
+    }
 
     beforeEach(() => {
         jobConfig = {
@@ -37,13 +50,14 @@ describe('Slice', () => {
             jobId: 'example-job-id',
             slicerPort: 0,
         };
-
-        exampleReaderMock.mockRestore();
+        Object.values(eventMocks).forEach((mock) => {
+            mock.mockRestore();
+        });
         readerFn.mockRestore();
-        exampleReaderMock.mockResolvedValue(readerFn);
-
-        exampleOpMock.mockRestore();
         opFn.mockRestore();
+        exampleReaderMock.mockRestore();
+        exampleOpMock.mockRestore();
+        exampleReaderMock.mockResolvedValue(readerFn);
         exampleOpMock.mockResolvedValue(opFn);
     });
 
@@ -56,7 +70,6 @@ describe('Slice', () => {
             let slice;
             let _testContext;
             let results;
-            let successFn;
 
             beforeEach(async () => {
                 _testContext = new TestContext('slice:analytics');
@@ -76,8 +89,7 @@ describe('Slice', () => {
                 await slice.initialize(executionApi, sliceConfig);
                 overrideLoggerOnWorker(slice, 'slice:no-analytics');
 
-                successFn = jest.fn();
-                slice.events.on('slice:success', successFn);
+                mockEvents(slice.events);
 
                 results = await slice.start();
             });
@@ -103,8 +115,13 @@ describe('Slice', () => {
                 expect(slice.specData.time).toBeArrayOfSize(2);
             });
 
-            it('should call slice success', () => {
-                expect(successFn).toHaveBeenCalled();
+            it('should call the correct events', () => {
+                expect(eventMocks['slice:success']).toHaveBeenCalledTimes(1);
+                expect(eventMocks['slice:success']).toHaveBeenCalled();
+                expect(eventMocks['slice:finalize']).toHaveBeenCalledTimes(1);
+                expect(eventMocks['slice:finalize']).toHaveBeenCalled();
+                expect(eventMocks['slice:failure']).not.toHaveBeenCalled();
+                expect(eventMocks['slice:retry']).not.toHaveBeenCalled();
             });
         });
     });
@@ -117,7 +134,6 @@ describe('Slice', () => {
         describe('when the slice succeeds', () => {
             let slice;
             let _testContext;
-            let successFn;
             let results;
 
             beforeEach(async () => {
@@ -138,9 +154,8 @@ describe('Slice', () => {
                 };
                 await slice.initialize(executionApi, sliceConfig);
                 overrideLoggerOnWorker(slice, 'slice:no-analytics');
-                successFn = jest.fn();
-                slice.events.on('slice:success', successFn);
 
+                mockEvents(slice.events);
 
                 results = await slice.start();
             });
@@ -163,8 +178,13 @@ describe('Slice', () => {
                 expect(slice).not.toHaveProperty('specData');
             });
 
-            it('should call slice success', () => {
-                expect(successFn).toHaveBeenCalled();
+            it('should call the correct events', () => {
+                expect(eventMocks['slice:success']).toHaveBeenCalledTimes(1);
+                expect(eventMocks['slice:success']).toHaveBeenCalled();
+                expect(eventMocks['slice:finalize']).toHaveBeenCalledTimes(1);
+                expect(eventMocks['slice:finalize']).toHaveBeenCalled();
+                expect(eventMocks['slice:retry']).not.toHaveBeenCalled();
+                expect(eventMocks['slice:failure']).not.toHaveBeenCalled();
             });
         });
 
@@ -172,17 +192,10 @@ describe('Slice', () => {
             let slice;
             let _testContext;
             let results;
-            let successFn;
-            let retryFn;
             let sliceConfig;
 
-            beforeEach(() => {
-                retryFn = jest.fn();
-                successFn = jest.fn();
-                jobConfig.job.max_retries = 3;
-            });
-
             beforeEach(async () => {
+                jobConfig.job.max_retries = 3;
                 _testContext = new TestContext('slice:retry');
                 readerFn.mockRejectedValueOnce(new Error('Bad news bears'));
                 readerFn.mockResolvedValue(times(10, () => 'hello'));
@@ -201,8 +214,7 @@ describe('Slice', () => {
                 await slice.initialize(executionApi, sliceConfig);
                 overrideLoggerOnWorker(slice, 'slice:retry');
 
-                slice.events.on('slice:retry', retryFn);
-                slice.events.on('slice:success', successFn);
+                mockEvents(slice.events);
 
                 results = await slice.start();
             });
@@ -225,14 +237,14 @@ describe('Slice', () => {
                 expect(slice).not.toHaveProperty('specData');
             });
 
-            it('should emit "slice:retry"', () => {
-                expect(retryFn).toHaveBeenCalledTimes(1);
-                expect(retryFn).toHaveBeenCalledWith(sliceConfig);
-            });
-
-            it('should emit "slice:success"', () => {
-                expect(successFn).toHaveBeenCalledTimes(1);
-                expect(successFn).toHaveBeenCalledWith(sliceConfig);
+            it('should call the correct events', () => {
+                expect(eventMocks['slice:retry']).toHaveBeenCalledTimes(1);
+                expect(eventMocks['slice:retry']).toHaveBeenCalledWith(sliceConfig);
+                expect(eventMocks['slice:success']).toHaveBeenCalledTimes(1);
+                expect(eventMocks['slice:success']).toHaveBeenCalledWith(sliceConfig);
+                expect(eventMocks['slice:finalize']).toHaveBeenCalledTimes(1);
+                expect(eventMocks['slice:finalize']).toHaveBeenCalledWith(sliceConfig);
+                expect(eventMocks['slice:failure']).not.toHaveBeenCalled();
             });
         });
 
@@ -240,20 +252,11 @@ describe('Slice', () => {
             let slice;
             let _testContext;
             let results;
-            let retryFn;
-            let failureFn;
-            let successFn;
             let err;
             let sliceConfig;
 
-            beforeEach(() => {
-                retryFn = jest.fn();
-                failureFn = jest.fn();
-                successFn = jest.fn();
-                jobConfig.job.max_retries = 5;
-            });
-
             beforeEach(async () => {
+                jobConfig.job.max_retries = 5;
                 _testContext = new TestContext('slice:failure');
                 readerFn.mockResolvedValue(times(10, () => 'hello'));
                 opFn.mockRejectedValue(new Error('Bad news bears'));
@@ -271,9 +274,7 @@ describe('Slice', () => {
                 await slice.initialize(executionApi, sliceConfig);
                 overrideLoggerOnWorker(slice, 'slice:failure');
 
-                slice.events.on('slice:retry', retryFn);
-                slice.events.on('slice:failure', failureFn);
-                slice.events.on('slice:success', successFn);
+                mockEvents(slice.events);
 
                 try {
                     results = await slice.start();
@@ -303,11 +304,13 @@ describe('Slice', () => {
             });
 
             it('should emit the events', () => {
-                expect(retryFn).toHaveBeenCalledTimes(5);
-                expect(retryFn).toHaveBeenCalledWith(sliceConfig);
-                expect(failureFn).toHaveBeenCalledTimes(1);
-                expect(failureFn).toHaveBeenCalledWith(sliceConfig);
-                expect(successFn).not.toHaveBeenCalled();
+                expect(eventMocks['slice:retry']).toHaveBeenCalledTimes(5);
+                expect(eventMocks['slice:retry']).toHaveBeenCalledWith(sliceConfig);
+                expect(eventMocks['slice:failure']).toHaveBeenCalledTimes(1);
+                expect(eventMocks['slice:failure']).toHaveBeenCalledWith(sliceConfig);
+                expect(eventMocks['slice:success']).not.toHaveBeenCalled();
+                expect(eventMocks['slice:finalize']).toHaveBeenCalledTimes(1);
+                expect(eventMocks['slice:finalize']).toHaveBeenCalledWith(sliceConfig);
             });
         });
     });
