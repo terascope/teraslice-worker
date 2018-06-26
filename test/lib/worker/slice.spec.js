@@ -236,7 +236,7 @@ describe('Slice', () => {
             });
         });
 
-        describe('when the slice failes', () => {
+        describe('when the slice fails', () => {
             let slice;
             let _testContext;
             let results;
@@ -289,7 +289,7 @@ describe('Slice', () => {
             });
 
             it('should have reject with the error', () => {
-                expect(err.message).toEqual('Bad news bears');
+                expect(err).toThrowError('Slice failed processing: Error: Bad news bears');
             });
 
             it('should call all of the operations', () => {
@@ -302,21 +302,11 @@ describe('Slice', () => {
                 expect(opFn).toHaveBeenCalledWith(readerResults, slice.logger, sliceRequest);
             });
 
-            it('should have have the spec data', () => {
-                expect(slice).not.toHaveProperty('specData');
-            });
-
-            it('should emit "slice:retry"', () => {
-                expect(retryFn).toHaveBeenCalledTimes(1);
+            it('should emit the events', () => {
+                expect(retryFn).toHaveBeenCalledTimes(5);
                 expect(retryFn).toHaveBeenCalledWith(sliceConfig);
-            });
-
-            it('should emit "slice:failure"', () => {
                 expect(failureFn).toHaveBeenCalledTimes(1);
                 expect(failureFn).toHaveBeenCalledWith(sliceConfig);
-            });
-
-            it('should not emit "slice:success"', () => {
                 expect(successFn).not.toHaveBeenCalled();
             });
         });

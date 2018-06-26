@@ -460,7 +460,7 @@ describe('Worker Job', () => {
             afterAll(() => _testContext.cleanup());
 
             it('should reject with a error', () => {
-                const errMsg = 'Cannot find module \'failing-asset-reader\'';
+                const errMsg = new RegExp('Could not retrieve code for: failing-asset-reader');
                 return expect(job.initialize()).rejects.toThrowError(errMsg);
             });
         });
