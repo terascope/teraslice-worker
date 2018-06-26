@@ -34,9 +34,9 @@ describe('Worker Job', () => {
                         }
                     ]
                 },
-                exId: 'example-ex-id',
-                jobId: 'example-job-id',
-                slicerPort: 0
+                ex_id: 'example-ex-id',
+                job_id: 'example-job-id',
+                slicer_port: 0
             };
             job = new Job(_testContext.context, jobConfig);
         });
@@ -102,9 +102,9 @@ describe('Worker Job', () => {
                             }
                         ]
                     },
-                    exId: 'example-ex-id',
-                    jobId: 'example-job-id',
-                    slicerPort: 0,
+                    ex_id: 'example-ex-id',
+                    job_id: 'example-job-id',
+                    slicer_port: 0,
                 };
                 job = new Job(_testContext.context, jobConfig);
             });
@@ -140,9 +140,9 @@ describe('Worker Job', () => {
                             }
                         ]
                     },
-                    exId: 'example-ex-id',
-                    jobId: 'example-job-id',
-                    slicerPort: 0,
+                    ex_id: 'example-ex-id',
+                    job_id: 'example-job-id',
+                    slicer_port: 0,
                 };
                 job = new Job(_testContext.context, jobConfig);
                 exampleReaderMock.mockResolvedValue(jest.fn());
@@ -215,9 +215,9 @@ describe('Worker Job', () => {
                             }
                         ]
                     },
-                    exId: 'example-ex-id',
-                    jobId: 'example-job-id',
-                    slicerPort: 0,
+                    ex_id: 'example-ex-id',
+                    job_id: 'example-job-id',
+                    slicer_port: 0,
                 };
                 job = new Job(_testContext.context, jobConfig);
                 exampleReaderMock.mockResolvedValue(jest.fn());
@@ -288,9 +288,9 @@ describe('Worker Job', () => {
                             }
                         ]
                     },
-                    exId: 'example-ex-id',
-                    jobId: 'example-job-id',
-                    slicerPort: 0,
+                    ex_id: 'example-ex-id',
+                    job_id: 'example-job-id',
+                    slicer_port: 0,
                 };
                 job = new Job(_testContext.context, jobConfig);
                 return job.initialize().then((_executionApi) => {
@@ -354,9 +354,9 @@ describe('Worker Job', () => {
                             }
                         ]
                     },
-                    exId: 'example-ex-id',
-                    jobId: 'example-job-id',
-                    slicerPort: 0,
+                    ex_id: 'example-ex-id',
+                    job_id: 'example-job-id',
+                    slicer_port: 0,
                 };
                 job = new Job(_testContext.context, jobConfig);
                 return job.initialize().then((_executionApi) => {
@@ -416,9 +416,9 @@ describe('Worker Job', () => {
                             }
                         ]
                     },
-                    exId: 'example-ex-id',
-                    jobId: 'example-job-id',
-                    slicerPort: 0,
+                    ex_id: 'example-ex-id',
+                    job_id: 'example-job-id',
+                    slicer_port: 0,
                 };
                 job = new Job(_testContext.context, jobConfig);
             });
@@ -450,9 +450,9 @@ describe('Worker Job', () => {
                             }
                         ]
                     },
-                    exId: 'example-ex-id',
-                    jobId: 'example-job-id',
-                    slicerPort: 0,
+                    ex_id: 'example-ex-id',
+                    job_id: 'example-job-id',
+                    slicer_port: 0,
                 };
                 job = new Job(_testContext.context, jobConfig);
             });

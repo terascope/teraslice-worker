@@ -20,9 +20,9 @@ describe('Worker', () => {
             job: {
                 example: true
             },
-            exId: 'example-ex-id',
-            jobId: 'example-job-id',
-            slicerPort: 0
+            ex_id: 'example-ex-id',
+            job_id: 'example-job-id',
+            slicer_port: 0
         };
         worker = new Worker(config, jobConfig);
         overrideLoggerOnWorker(worker, 'worker');

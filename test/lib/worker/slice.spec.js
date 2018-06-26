@@ -64,9 +64,9 @@ describe('Slice', () => {
                     }
                 ]
             },
-            exId: newId('ex-id'),
-            jobId: newId('job-id'),
-            slicerPort: 0,
+            ex_id: newId('ex-id'),
+            job_id: newId('job-id'),
+            slicer_port: 0,
         };
         const testContext = new TestContext('slice:analytics');
         const job = new Job(testContext.context, jobConfig);
@@ -86,10 +86,11 @@ describe('Slice', () => {
         };
 
         await testContext.addStateStore(slice.context);
-        const { stateStore } = testContext.stores;
-        await stateStore.createState(jobConfig.exId, sliceConfig, 'start');
+        await testContext.addAnalyticsStore(slice.context);
+        const { stores } = testContext;
+        await stores.stateStore.createState(jobConfig.exId, sliceConfig, 'start');
 
-        await slice.initialize(executionApi, sliceConfig, { stateStore });
+        await slice.initialize(executionApi, sliceConfig, stores);
 
         cleanupTasks.push(() => testContext.cleanup());
 

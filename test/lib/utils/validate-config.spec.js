@@ -34,39 +34,39 @@ describe('Worker Config Validation', () => {
         });
     });
 
-    describe('when constructed without a valid exId', () => {
+    describe('when constructed without a valid ex_id', () => {
         it('should throw an error', () => {
             const config = {
                 type: 'worker',
                 job: { hello: true },
-                exId: null
+                ex_id: null
             };
-            expect(() => validateJobConfig(config)).toThrow('Job configuration requires a valid exId');
+            expect(() => validateJobConfig(config)).toThrow('Job configuration requires a valid ex_id');
         });
     });
 
-    describe('when constructed without a valid jobId', () => {
+    describe('when constructed without a valid job_id', () => {
         it('should throw an error', () => {
             const config = {
                 type: 'worker',
                 job: { hello: true },
-                exId: 'example',
-                jobId: null
+                ex_id: 'example',
+                job_id: null
             };
-            expect(() => validateJobConfig(config)).toThrow('Job configuration requires a valid jobId');
+            expect(() => validateJobConfig(config)).toThrow('Job configuration requires a valid job_id');
         });
     });
 
-    describe('when constructed without a valid slicerPort', () => {
+    describe('when constructed without a valid slicer_port', () => {
         it('should throw an error', () => {
             const config = {
                 type: 'worker',
                 job: { hello: true },
-                exId: 'example',
-                jobId: 'example',
-                slicerPort: null
+                ex_id: 'example',
+                job_id: 'example',
+                slicer_port: null
             };
-            expect(() => validateJobConfig(config)).toThrow('Job configuration requires a valid slicerPort');
+            expect(() => validateJobConfig(config)).toThrow('Job configuration requires a valid slicer_port');
         });
     });
 
@@ -75,9 +75,9 @@ describe('Worker Config Validation', () => {
             const config = {
                 type: 'worker',
                 job: { hello: true },
-                exId: 'example',
-                jobId: 'example',
-                slicerPort: 1234
+                ex_id: 'example',
+                job_id: 'example',
+                slicer_port: 1234
             };
             expect(() => validateJobConfig(config)).not.toThrow();
         });
