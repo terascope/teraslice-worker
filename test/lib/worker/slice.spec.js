@@ -140,11 +140,11 @@ describe('Slice', () => {
                 expect(results).toEqual(times(10, () => 'hi'));
             });
 
-            it('should modify change the specData', () => {
-                expect(slice.specData).toBeObject();
-                expect(slice.specData.memory).toBeArrayOfSize(2);
-                expect(slice.specData.size).toBeArrayOfSize(2);
-                expect(slice.specData.time).toBeArrayOfSize(2);
+            it('should modify change the analyticsData', () => {
+                expect(slice.analyticsData).toBeObject();
+                expect(slice.analyticsData.memory).toBeArrayOfSize(2);
+                expect(slice.analyticsData.size).toBeArrayOfSize(2);
+                expect(slice.analyticsData.time).toBeArrayOfSize(2);
             });
 
             it('should call the correct events', () => {
@@ -188,7 +188,7 @@ describe('Slice', () => {
             });
 
             it('should have have the spec data', () => {
-                expect(slice).not.toHaveProperty('specData');
+                expect(slice).not.toHaveProperty('analyticsData');
             });
 
             it('should call the correct events', () => {
@@ -231,7 +231,7 @@ describe('Slice', () => {
             });
 
             it('should have have the spec data', () => {
-                expect(slice).not.toHaveProperty('specData');
+                expect(slice).not.toHaveProperty('analyticsData');
             });
 
             it('should call the correct events', () => {

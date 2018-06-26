@@ -34,32 +34,32 @@ describe('Operation Analytics', () => {
                 const add = n => Promise.delay(count).then(() => n + 1);
                 return Promise.mapSeries(data, add);
             };
-            const analyticsObj = { time: [], size: [], memory: [] };
+            const analyticsData = { time: [], size: [], memory: [] };
             const numberOfOps = 5;
             const expectedMem = getMemoryUsage();
 
-            await Promise.each(times(numberOfOps), async (index) => {
-                const analyzedFn = analyzeOp(op, index);
+            await Promise.each(times(numberOfOps), async (i) => {
+                const analyzedFn = analyzeOp(op, i);
 
-                const result = await analyzedFn(analyticsObj, input);
+                const result = await analyzedFn(analyticsData, input);
 
                 expect(result).toEqual(map(input, n => n + 1));
 
-                expect(analyticsObj).toContainAllKeys(['time', 'size', 'memory']);
+                expect(analyticsData).toContainAllKeys(['time', 'size', 'memory']);
 
                 const expectedTime = count * count;
-                expect(analyticsObj.time[index]).toBeWithin(expectedTime, expectedTime + TIME_DIFF);
+                expect(analyticsData.time[i]).toBeWithin(expectedTime, expectedTime + TIME_DIFF);
 
-                expect(analyticsObj.size[index]).toEqual(count);
+                expect(analyticsData.size[i]).toEqual(count);
 
                 const memLower = expectedMem - MEM_DIFF;
                 const memUpper = expectedMem + MEM_DIFF;
-                expect(analyticsObj.memory[index]).toBeWithin(memLower, memUpper);
+                expect(analyticsData.memory[i]).toBeWithin(memLower, memUpper);
             });
 
-            expect(analyticsObj.time).toBeArrayOfSize(numberOfOps);
-            expect(analyticsObj.size).toBeArrayOfSize(numberOfOps);
-            expect(analyticsObj.memory).toBeArrayOfSize(numberOfOps);
+            expect(analyticsData.time).toBeArrayOfSize(numberOfOps);
+            expect(analyticsData.size).toBeArrayOfSize(numberOfOps);
+            expect(analyticsData.memory).toBeArrayOfSize(numberOfOps);
         });
     });
 
@@ -76,14 +76,14 @@ describe('Operation Analytics', () => {
                 return Promise.mapSeries(data.hits.hits, add)
                     .then(hits => ({ hits: { hits } }));
             };
-            const analyticsObj = { time: [], size: [], memory: [] };
+            const analyticsData = { time: [], size: [], memory: [] };
             const numberOfOps = 5;
             const expectedMem = getMemoryUsage();
 
-            await Promise.each(times(numberOfOps), async (index) => {
-                const analyzedFn = analyzeOp(op, index);
+            await Promise.each(times(numberOfOps), async (i) => {
+                const analyzedFn = analyzeOp(op, i);
 
-                const result = await analyzedFn(analyticsObj, input);
+                const result = await analyzedFn(analyticsData, input);
                 const expectedResult = {
                     hits: {
                         hits: times(count, n => n * 2)
@@ -91,36 +91,36 @@ describe('Operation Analytics', () => {
                 };
                 expect(result).toEqual(expectedResult);
 
-                expect(analyticsObj).toContainAllKeys(['time', 'size', 'memory']);
+                expect(analyticsData).toContainAllKeys(['time', 'size', 'memory']);
 
                 const expectedTime = count * count;
-                expect(analyticsObj.time[index]).toBeWithin(expectedTime, expectedTime + TIME_DIFF);
+                expect(analyticsData.time[i]).toBeWithin(expectedTime, expectedTime + TIME_DIFF);
 
-                expect(analyticsObj.size[index]).toEqual(count);
+                expect(analyticsData.size[i]).toEqual(count);
 
                 const memLower = expectedMem - MEM_DIFF;
                 const memUpper = expectedMem + MEM_DIFF;
-                expect(analyticsObj.memory[index]).toBeWithin(memLower, memUpper);
+                expect(analyticsData.memory[i]).toBeWithin(memLower, memUpper);
             });
 
-            expect(analyticsObj.time).toBeArrayOfSize(numberOfOps);
-            expect(analyticsObj.size).toBeArrayOfSize(numberOfOps);
-            expect(analyticsObj.memory).toBeArrayOfSize(numberOfOps);
+            expect(analyticsData.time).toBeArrayOfSize(numberOfOps);
+            expect(analyticsData.size).toBeArrayOfSize(numberOfOps);
+            expect(analyticsData.memory).toBeArrayOfSize(numberOfOps);
         });
     });
 
     it('should return size of 0 if returning a non-array as the result', async () => {
-        const analyticsObj = { time: [], size: [], memory: [] };
+        const analyticsData = { time: [], size: [], memory: [] };
         const op = () => 'hello';
         const analyzedFn = analyzeOp(op, 0);
-        await analyzedFn(analyticsObj, []);
-        expect(analyticsObj.size).toBeArrayOfSize(1);
-        expect(analyticsObj.size[0]).toEqual(0);
+        await analyzedFn(analyticsData, []);
+        expect(analyticsData.size).toBeArrayOfSize(1);
+        expect(analyticsData.size[0]).toEqual(0);
     });
 
     xit('should be performant', async () => {
         const runTest = (size) => {
-            const analyticsObj = { time: [], size: [], memory: [] };
+            const analyticsData = { time: [], size: [], memory: [] };
             let str = '';
             return Promise.each(times(100), (index) => {
                 const op = () => {
@@ -128,11 +128,11 @@ describe('Operation Analytics', () => {
                     return Promise.delay(1);
                 };
                 const analyzedFn = analyzeOp(op, index);
-                return analyzedFn(analyticsObj, []);
+                return analyzedFn(analyticsData, []);
             }).then(() => {
                 expect(str.length).toBeGreaterThan(size);
-                const meanMem = mean(analyticsObj.memory);
-                const meanTime = mean(analyticsObj.time);
+                const meanMem = mean(analyticsData.memory);
+                const meanTime = mean(analyticsData.time);
                 return { meanTime, meanMem };
             });
         };
