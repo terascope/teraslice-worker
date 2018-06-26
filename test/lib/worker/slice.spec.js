@@ -11,7 +11,6 @@ const opsPath = path.join(__dirname, '..', '..', 'fixtures', 'ops');
 const exampleReaderMock = require(path.join(opsPath, 'example-reader')).newReader;
 const exampleOpMock = require(path.join(opsPath, 'example-op')).newProcessor;
 
-
 describe('Slice', () => {
     let jobConfig;
     const eventMocks = {
@@ -73,21 +72,25 @@ describe('Slice', () => {
 
             beforeEach(async () => {
                 _testContext = new TestContext('slice:analytics');
+
                 readerFn.mockResolvedValue(times(10, () => 'hello'));
                 opFn.mockResolvedValue(times(10, () => 'hi'));
 
                 const job = new Job(_testContext.context, jobConfig);
                 const executionApi = await job.initialize();
 
-                slice = new Slice(_testContext.config, jobConfig);
+                slice = new Slice(_testContext.config, jobConfig, _testContext.stores);
+                overrideLoggerOnWorker(slice, 'slice:no-analytics');
+
                 const sliceConfig = {
                     sliceId: 'some-slice-id',
                     request: {
                         example: 'slice-data'
                     }
                 };
+
+                await _testContext.addStateStore(slice.context);
                 await slice.initialize(executionApi, sliceConfig);
-                overrideLoggerOnWorker(slice, 'slice:no-analytics');
 
                 mockEvents(slice.events);
 
@@ -146,14 +149,18 @@ describe('Slice', () => {
                 const executionApi = await job.initialize();
 
                 slice = new Slice(_testContext.config, jobConfig);
+                overrideLoggerOnWorker(slice, 'slice:no-analytics');
+
                 const sliceConfig = {
                     sliceId: 'some-slice-id',
                     request: {
                         example: 'slice-data'
                     }
                 };
-                await slice.initialize(executionApi, sliceConfig);
-                overrideLoggerOnWorker(slice, 'slice:no-analytics');
+
+                await _testContext.addStateStore(slice.context);
+
+                await slice.initialize(executionApi, sliceConfig, _testContext.stores);
 
                 mockEvents(slice.events);
 
@@ -197,6 +204,7 @@ describe('Slice', () => {
             beforeEach(async () => {
                 jobConfig.job.max_retries = 3;
                 _testContext = new TestContext('slice:retry');
+
                 readerFn.mockRejectedValueOnce(new Error('Bad news bears'));
                 readerFn.mockResolvedValue(times(10, () => 'hello'));
                 opFn.mockResolvedValueOnce(times(10, () => 'hi'));
@@ -205,14 +213,18 @@ describe('Slice', () => {
                 const executionApi = await job.initialize();
 
                 slice = new Slice(_testContext.config, jobConfig);
+                overrideLoggerOnWorker(slice, 'slice:retry');
+
                 sliceConfig = {
                     sliceId: 'some-slice-id',
                     request: {
                         example: 'slice-data'
                     }
                 };
-                await slice.initialize(executionApi, sliceConfig);
-                overrideLoggerOnWorker(slice, 'slice:retry');
+
+                await _testContext.addStateStore(slice.context);
+
+                await slice.initialize(executionApi, sliceConfig, _testContext.stores);
 
                 mockEvents(slice.events);
 
@@ -258,6 +270,7 @@ describe('Slice', () => {
             beforeEach(async () => {
                 jobConfig.job.max_retries = 5;
                 _testContext = new TestContext('slice:failure');
+
                 readerFn.mockResolvedValue(times(10, () => 'hello'));
                 opFn.mockRejectedValue(new Error('Bad news bears'));
 
@@ -265,14 +278,17 @@ describe('Slice', () => {
                 const executionApi = await job.initialize();
 
                 slice = new Slice(_testContext.config, jobConfig);
+                overrideLoggerOnWorker(slice, 'slice:failure');
+
                 sliceConfig = {
                     sliceId: 'some-slice-id',
                     request: {
                         example: 'slice-data'
                     }
                 };
-                await slice.initialize(executionApi, sliceConfig);
-                overrideLoggerOnWorker(slice, 'slice:failure');
+
+                await _testContext.addStateStore(slice.context);
+                await slice.initialize(executionApi, sliceConfig, _testContext.stores);
 
                 mockEvents(slice.events);
 

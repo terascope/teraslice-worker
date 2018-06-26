@@ -1,9 +1,15 @@
 'use strict';
 
+const Promise = require('bluebird');
 const { createTempDirSync, cleanupTempDirs } = require('jest-fixtures');
 const shortid = require('shortid');
 const ElasticsearchClient = require('elasticsearch').Client;
 const terasliceConfig = require('./teraslice-config');
+const {
+    assetStore: makeAssetStore,
+    stateStore: makeStateStore,
+    analyticsStore: makeAnalyticsStore
+} = require('../../lib/teraslice');
 const { overrideLoggerOnContext } = require('./override-logger');
 const { generateContext } = require('../../lib/utils');
 
@@ -22,9 +28,24 @@ class TestContext {
             host: 'http://localhost:9200',
             log: '' // This suppresses error logging from the ES library.
         });
+        this.stores = {};
+    }
+
+    async addAssetStore(context) {
+        this.stores.assetStore = await makeAssetStore(context);
+    }
+
+    async addStateStore(context) {
+        this.stores.stateStore = await makeStateStore(context);
+    }
+
+    async addAnalyticsStore(context) {
+        this.stores.analyticsStore = await makeAnalyticsStore(context);
     }
 
     async cleanup() {
+        const stores = Object.values(this.stores);
+        await Promise.map(stores, store => store.shutdown());
         const events = this.context.apis.foundation.getSystemEvents();
         events.removeAllListeners();
         cleanupTempDirs();
