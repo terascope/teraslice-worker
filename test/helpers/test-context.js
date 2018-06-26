@@ -29,6 +29,7 @@ class TestContext {
             log: '' // This suppresses error logging from the ES library.
         });
         this.stores = {};
+        this.clean = false;
     }
 
     async addAssetStore(context) {
@@ -44,12 +45,15 @@ class TestContext {
     }
 
     async cleanup() {
+        if (this.clean) return;
+
         const stores = Object.values(this.stores);
         await Promise.map(stores, store => store.shutdown());
         const events = this.context.apis.foundation.getSystemEvents();
         events.removeAllListeners();
         cleanupTempDirs();
         await this.es.indices.delete({ index: `${this.clusterName}*` });
+        this.clean = true;
     }
 }
 
