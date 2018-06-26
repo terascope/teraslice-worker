@@ -7,7 +7,7 @@ module.exports = {
         __DEV__: true
     },
     bail: false,
-    restoreMocks: true,
+    resetMocks: true,
     setupFiles: ['<rootDir>/test/env-setup.js'],
     setupTestFrameworkScriptFile: 'jest-extended',
     collectCoverage: true,
