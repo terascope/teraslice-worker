@@ -15,6 +15,7 @@ describe('Worker', () => {
     beforeEach(() => {
         clusterName = `tmp_${shortid.generate()}`.toLowerCase();
         const config = terasliceConfig({ clusterName });
+
         const jobConfig = {
             type: 'worker',
             job: {
@@ -24,8 +25,10 @@ describe('Worker', () => {
             job_id: 'example-job-id',
             slicer_port: 0
         };
+
         worker = new Worker(config, jobConfig);
         overrideLoggerOnWorker(worker, 'worker');
+
         es = new ElasticsearchClient({
             host: 'http://localhost:9200',
             log: '' // This suppresses error logging from the ES library.
@@ -45,12 +48,10 @@ describe('Worker', () => {
         beforeEach(() => worker.setup());
 
         it('should create the correct stores', () => {
-            expect(worker.assetStore).toBeDefined();
-            expect(worker.assetStore).toHaveProperty('shutdown');
-            expect(worker.stateStore).toBeDefined();
-            expect(worker.stateStore).toHaveProperty('shutdown');
-            expect(worker.analyticsStore).toBeDefined();
-            expect(worker.analyticsStore).toHaveProperty('shutdown');
+            expect(worker.stores.stateStore).toBeDefined();
+            expect(worker.stores.stateStore).toHaveProperty('shutdown');
+            expect(worker.stores.analyticsStore).toBeDefined();
+            expect(worker.stores.analyticsStore).toHaveProperty('shutdown');
         });
     });
 });
