@@ -40,6 +40,7 @@
     "lodash": "^4.17.10",
     "nested-error-stacks": "^2.0.1",
     "shortid": "^2.2.8",
+    "socket.io-client": "^2.1.1",
     "terafoundation": "^0.2.1",
     "teraslice": "terascope/teraslice#clean-up-timers"
   }
