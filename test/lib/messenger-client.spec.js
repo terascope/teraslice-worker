@@ -1,6 +1,7 @@
 'use strict';
 
 const porty = require('porty');
+const shortid = require('shortid');
 const MessengerClient = require('../../lib/messenger-client');
 const MessengerServer = require('../../lib/messenger-server');
 
@@ -33,6 +34,7 @@ describe('MessengerClient', () => {
         let server;
         let serverHandlers;
         let clientHandlers;
+        let workerId;
 
         beforeEach(async () => {
             serverHandlers = {
@@ -54,12 +56,13 @@ describe('MessengerClient', () => {
 
             const host = `http://localhost:${server.port}`;
 
+            workerId = shortid.generate();
             client = new MessengerClient(host, {
                 timeout: 1000,
                 reconnection: false,
             }, clientHandlers);
 
-            await client.start(clientHandlers);
+            await client.start(workerId, clientHandlers);
         });
 
         afterEach(async () => {
@@ -69,7 +72,7 @@ describe('MessengerClient', () => {
 
         describe('when sending worker:ready', () => {
             beforeEach(async () => {
-                await client.send('worker:ready', { worker_id: 'some-random-worker-id' });
+                await client.send('worker:ready', { example: 'worker-ready-message' });
             });
 
             it('should emit worker:ready on the server', () => {
@@ -84,7 +87,7 @@ describe('MessengerClient', () => {
 
         describe('when sending worker:slice:complete', () => {
             beforeEach(async () => {
-                await client.send('worker:slice:complete', { worker_id: 'some-random-worker-id' });
+                await client.send('worker:slice:complete', { example: 'worker-slice-complete' });
             });
 
             it('should emit worker:slice:complete on the server', () => {
@@ -99,7 +102,7 @@ describe('MessengerClient', () => {
 
         describe('when receiving slicer:slice:new', () => {
             beforeEach(async () => {
-                await server.send('slicer:slice:new', { worker_id: 'some-random-worker-id' });
+                await server.send(workerId, 'slicer:slice:new', { example: 'slice-new-message' });
             });
 
             it('should emit slicer:slice:new on the server', () => {
