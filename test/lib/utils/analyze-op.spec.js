@@ -8,7 +8,7 @@ const { analyzeOp, getMemoryUsage } = require('../../../lib/utils');
 
 const MB = 1024 * 1024;
 const MEM_DIFF = MB * 100;
-const TIME_DIFF = 100;
+const TIME_DIFF = 1000;
 
 describe('Operation Analytics', () => {
     it('should throw an error if constructed without a fn', () => {
