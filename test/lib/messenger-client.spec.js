@@ -2,24 +2,27 @@
 
 const porty = require('porty');
 const shortid = require('shortid');
-const MessengerClient = require('../../lib/messenger-client');
-const MessengerServer = require('../../lib/messenger-server');
+const WorkerMessenger = require('../../lib/messenger/worker');
+const ExecutionControllerMessenger = require('../../lib/messenger/execution-controller');
 
-describe('MessengerClient', () => {
+describe('WorkerMessenger', () => {
     describe('when constructed without a host', () => {
         it('should throw an error', () => {
             expect(() => {
-                new MessengerClient(); // eslint-disable-line
-            }).toThrowError('MessengerClient requires a valid host');
+                new WorkerMessenger(); // eslint-disable-line
+            }).toThrowError('WorkerMessenger requires a valid host');
         });
     });
 
     describe('when constructed with an invalid host', () => {
         let client;
         beforeEach(() => {
-            client = new MessengerClient('http://idk.example.com', {
-                timeout: 1000,
-                reconnection: false,
+            client = new WorkerMessenger({
+                host: 'http://idk.example.com',
+                options: {
+                    timeout: 1000,
+                    reconnection: false,
+                }
             });
         });
 
@@ -32,37 +35,27 @@ describe('MessengerClient', () => {
     describe('when constructed with an valid host', () => {
         let client;
         let server;
-        let serverHandlers;
-        let clientHandlers;
         let workerId;
 
         beforeEach(async () => {
-            serverHandlers = {
-                error: jest.fn(),
-                disconnect: jest.fn(),
-                'worker:ready': jest.fn(),
-                'worker:slice:complete': jest.fn()
-            };
-
-            clientHandlers = {
-                'slicer:slice:new': jest.fn(),
-            };
-
             const port = await porty.find();
 
-            server = new MessengerServer(port);
+            server = new ExecutionControllerMessenger({ port });
 
-            await server.start(serverHandlers);
+            await server.start();
 
             const host = `http://localhost:${server.port}`;
 
             workerId = shortid.generate();
-            client = new MessengerClient(host, {
-                timeout: 1000,
-                reconnection: false,
-            }, clientHandlers);
+            client = new WorkerMessenger({
+                host,
+                options: {
+                    timeout: 1000,
+                    reconnection: false,
+                },
+            });
 
-            await client.start(workerId, clientHandlers);
+            await client.start();
         });
 
         afterEach(async () => {
@@ -71,42 +64,46 @@ describe('MessengerClient', () => {
         });
 
         describe('when sending worker:ready', () => {
+            let workerReadyFn;
             beforeEach(async () => {
-                await client.send('worker:ready', { example: 'worker-ready-message' });
+                workerReadyFn = jest.fn();
+                server.on(`${workerId}:worker:ready`, workerReadyFn);
+                await client.ready();
             });
 
-            it('should emit worker:ready on the server', () => {
-                expect(serverHandlers['worker:ready']).toHaveBeenCalled();
+            it('should add the worker the server', () => {
+                expect(server.workers).toHaveProperty(workerId);
             });
 
-            it('should not emit error or disconnect on the sever', () => {
-                expect(serverHandlers.disconnect).not.toHaveBeenCalled();
-                expect(serverHandlers.error).not.toHaveBeenCalled();
+            it('should call worker ready on the server', () => {
+                expect(workerReadyFn).toHaveBeenCalled();
             });
         });
 
         describe('when sending worker:slice:complete', () => {
+            let sliceCompleteFn;
             beforeEach(async () => {
+                sliceCompleteFn = jest.fn();
+                server.on('worker:slice:complete', sliceCompleteFn);
                 await client.send('worker:slice:complete', { example: 'worker-slice-complete' });
             });
 
             it('should emit worker:slice:complete on the server', () => {
-                expect(serverHandlers['worker:slice:complete']).toHaveBeenCalled();
-            });
-
-            it('should not emit error or disconnect on the sever', () => {
-                expect(serverHandlers.disconnect).not.toHaveBeenCalled();
-                expect(serverHandlers.error).not.toHaveBeenCalled();
+                expect(sliceCompleteFn).toHaveBeenCalled();
             });
         });
 
         describe('when receiving slicer:slice:new', () => {
+            let sliceNewFn;
             beforeEach(async () => {
-                await server.send(workerId, 'slicer:slice:new', { example: 'slice-new-message' });
+                sliceNewFn = jest.fn();
+                client.on('slicer:slice:new', sliceNewFn);
+                await client.ready();
+                await server.sendToWorker(workerId, 'slicer:slice:new', { example: 'slice-new-message' });
             });
 
-            it('should emit slicer:slice:new on the server', () => {
-                expect(clientHandlers['slicer:slice:new']).toHaveBeenCalled();
+            it('should emit slicer:slice:new on the client', () => {
+                expect(sliceNewFn).toHaveBeenCalled();
             });
         });
     });
