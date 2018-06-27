@@ -9,7 +9,7 @@ module.exports = {
     bail: false,
     resetMocks: true,
     setupFiles: ['<rootDir>/test/env-setup.js'],
-    setupTestFrameworkScriptFile: 'jest-extended',
+    setupTestFrameworkScriptFile: '<rootDir>/test/jest.setup.js',
     collectCoverage: true,
     coverageReporters: ['json', 'lcov', 'text', 'html'],
     coverageDirectory: 'coverage',
