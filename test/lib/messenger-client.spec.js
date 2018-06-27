@@ -1,6 +1,5 @@
 'use strict';
 
-const forOwn = require('lodash/forOwn');
 const porty = require('porty');
 const MessengerClient = require('../../lib/messenger-client');
 const MessengerServer = require('../../lib/messenger-server');
@@ -32,25 +31,19 @@ describe('MessengerClient', () => {
     describe('when constructed with an valid host', () => {
         let client;
         let server;
-        let events;
-        let onConnectionFn;
+        let handlers;
 
         beforeEach(async () => {
-            onConnectionFn = jest.fn((socket) => {
-                forOwn(events, (mock, eventName) => {
-                    socket.on(eventName, mock);
-                });
-            });
-
-            events = {
+            handlers = {
                 error: jest.fn(),
                 disconnect: jest.fn(),
-                'worker:ready': jest.fn()
+                'worker:ready': jest.fn(),
+                'worker:slice:complete': jest.fn()
             };
+
             const port = await porty.find();
 
-            server = new MessengerServer(port);
-            server.on('connection', onConnectionFn);
+            server = new MessengerServer(port, handlers);
 
             await server.start();
 
@@ -69,25 +62,33 @@ describe('MessengerClient', () => {
             client.close();
         });
 
-        it('should call connect on the server', () => {
-            expect(onConnectionFn).toHaveBeenCalled();
-        });
-
         describe('when sending worker:ready', () => {
             beforeEach(async () => {
-                events['worker:ready'].mockImplementation((msg, cb) => {
-                    cb();
-                });
                 await client.send('worker:ready', { worker_id: 'some-random-worker-id' });
             });
 
             it('should emit worker:ready on the server', () => {
-                expect(events['worker:ready']).toHaveBeenCalled();
+                expect(handlers['worker:ready']).toHaveBeenCalled();
             });
 
             it('should not emit error or disconnect on the sever', () => {
-                expect(events.disconnect).not.toHaveBeenCalled();
-                expect(events.error).not.toHaveBeenCalled();
+                expect(handlers.disconnect).not.toHaveBeenCalled();
+                expect(handlers.error).not.toHaveBeenCalled();
+            });
+        });
+
+        describe('when sending worker:slice:complete', () => {
+            beforeEach(async () => {
+                await client.send('worker:slice:complete', { worker_id: 'some-random-worker-id' });
+            });
+
+            it('should emit worker:slice:complete on the server', () => {
+                expect(handlers['worker:slice:complete']).toHaveBeenCalled();
+            });
+
+            it('should not emit error or disconnect on the sever', () => {
+                expect(handlers.disconnect).not.toHaveBeenCalled();
+                expect(handlers.error).not.toHaveBeenCalled();
             });
         });
     });
