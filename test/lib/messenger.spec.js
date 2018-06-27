@@ -5,12 +5,29 @@ const shortid = require('shortid');
 const WorkerMessenger = require('../../lib/messenger/worker');
 const ExecutionControllerMessenger = require('../../lib/messenger/execution-controller');
 
-describe('WorkerMessenger', () => {
-    describe('when constructed without a host', () => {
+describe('Messenger', () => {
+    describe('when worker is constructed without a host', () => {
         it('should throw an error', () => {
             expect(() => {
                 new WorkerMessenger(); // eslint-disable-line
             }).toThrowError('WorkerMessenger requires a valid host');
+        });
+    });
+
+    describe('when server is constructed without a port', () => {
+        it('should throw an error', () => {
+            expect(() => {
+                new ExecutionControllerMessenger(); // eslint-disable-line
+            }).toThrowError('ExecutionControllerMessenger requires a valid port');
+        });
+    });
+
+    describe('when server started twice', () => {
+        it('should throw an error', async () => {
+            const port = await porty.find();
+            const server = new ExecutionControllerMessenger({ port });
+            await server.start();
+            return expect(server.start()).rejects.toThrowError(`Port ${port} is already in-use`);
         });
     });
 
@@ -115,6 +132,14 @@ describe('WorkerMessenger', () => {
                     expect(msg).toEqual({ example: 'slice-new-message' });
                     done();
                 });
+            });
+        });
+
+        describe('when the worker is not ready', () => {
+            it('should throw an error', () => {
+                expect(() => {
+                    server.sendToWorker(workerId, 'slicer:slice:new', { example: 'slice-new-message' });
+                }).toThrowError(`Cannot send message to worker ${workerId}`);
             });
         });
     });
