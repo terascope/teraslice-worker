@@ -22,44 +22,49 @@ describe('MessengerClient', () => {
             });
         });
 
-        it('connect should throw an error', () => {
+        it('start should throw an error', () => {
             const errMsg = /^Unable to connect to host/;
-            return expect(client.connect()).rejects.toThrowError(errMsg);
+            return expect(client.start()).rejects.toThrowError(errMsg);
         });
     });
 
     describe('when constructed with an valid host', () => {
         let client;
         let server;
-        let handlers;
+        let serverHandlers;
+        let clientHandlers;
 
         beforeEach(async () => {
-            handlers = {
+            serverHandlers = {
                 error: jest.fn(),
                 disconnect: jest.fn(),
                 'worker:ready': jest.fn(),
                 'worker:slice:complete': jest.fn()
             };
 
+            clientHandlers = {
+                'slicer:slice:new': jest.fn(),
+            };
+
             const port = await porty.find();
 
-            server = new MessengerServer(port, handlers);
+            server = new MessengerServer(port);
 
-            await server.start();
+            await server.start(serverHandlers);
 
             const host = `http://localhost:${server.port}`;
 
             client = new MessengerClient(host, {
                 timeout: 1000,
                 reconnection: false,
-            });
+            }, clientHandlers);
 
-            await client.connect();
+            await client.start(clientHandlers);
         });
 
         afterEach(async () => {
             await server.close();
-            client.close();
+            await client.close();
         });
 
         describe('when sending worker:ready', () => {
@@ -68,12 +73,12 @@ describe('MessengerClient', () => {
             });
 
             it('should emit worker:ready on the server', () => {
-                expect(handlers['worker:ready']).toHaveBeenCalled();
+                expect(serverHandlers['worker:ready']).toHaveBeenCalled();
             });
 
             it('should not emit error or disconnect on the sever', () => {
-                expect(handlers.disconnect).not.toHaveBeenCalled();
-                expect(handlers.error).not.toHaveBeenCalled();
+                expect(serverHandlers.disconnect).not.toHaveBeenCalled();
+                expect(serverHandlers.error).not.toHaveBeenCalled();
             });
         });
 
@@ -83,12 +88,22 @@ describe('MessengerClient', () => {
             });
 
             it('should emit worker:slice:complete on the server', () => {
-                expect(handlers['worker:slice:complete']).toHaveBeenCalled();
+                expect(serverHandlers['worker:slice:complete']).toHaveBeenCalled();
             });
 
             it('should not emit error or disconnect on the sever', () => {
-                expect(handlers.disconnect).not.toHaveBeenCalled();
-                expect(handlers.error).not.toHaveBeenCalled();
+                expect(serverHandlers.disconnect).not.toHaveBeenCalled();
+                expect(serverHandlers.error).not.toHaveBeenCalled();
+            });
+        });
+
+        describe('when receiving slicer:slice:new', () => {
+            beforeEach(async () => {
+                await server.send('slicer:slice:new', { worker_id: 'some-random-worker-id' });
+            });
+
+            it('should emit slicer:slice:new on the server', () => {
+                expect(clientHandlers['slicer:slice:new']).toHaveBeenCalled();
             });
         });
     });
