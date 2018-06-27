@@ -1,22 +1,23 @@
 'use strict';
 
 const forOwn = require('lodash/forOwn');
-const Messenger = require('../../lib/messenger');
-const SocketIOServer = require('../helpers/socket-io-server');
+const porty = require('porty');
+const MessengerClient = require('../../lib/messenger-client');
+const MessengerServer = require('../../lib/messenger-server');
 
-describe('Messenger', () => {
+describe('MessengerClient', () => {
     describe('when constructed without a host', () => {
         it('should throw an error', () => {
             expect(() => {
-                new Messenger(); // eslint-disable-line
-            }).toThrowError('Messenger requires a valid host');
+                new MessengerClient(); // eslint-disable-line
+            }).toThrowError('MessengerClient requires a valid host');
         });
     });
 
     describe('when constructed with an invalid host', () => {
-        let messenger;
+        let client;
         beforeEach(() => {
-            messenger = new Messenger('http://idk.example.com', {
+            client = new MessengerClient('http://idk.example.com', {
                 timeout: 1000,
                 reconnection: false,
             });
@@ -24,47 +25,52 @@ describe('Messenger', () => {
 
         it('connect should throw an error', () => {
             const errMsg = /^Unable to connect to host/;
-            return expect(messenger.connect()).rejects.toThrowError(errMsg);
+            return expect(client.connect()).rejects.toThrowError(errMsg);
         });
     });
 
     describe('when constructed with an valid host', () => {
-        let messenger;
+        let client;
         let server;
         let events;
+        let onConnectionFn;
 
         beforeEach(async () => {
-            events = {
-                error: jest.fn(),
-                disconnect: jest.fn(),
-                'worker:ready': jest.fn()
-            };
-
-            server = new SocketIOServer();
-            server.events.connection.mockImplementation((socket) => {
-                socket.emit('handshake');
+            onConnectionFn = jest.fn((socket) => {
                 forOwn(events, (mock, eventName) => {
                     socket.on(eventName, mock);
                 });
             });
 
+            events = {
+                error: jest.fn(),
+                disconnect: jest.fn(),
+                'worker:ready': jest.fn()
+            };
+            const port = await porty.find();
+
+            server = new MessengerServer(port);
+            server.on('connection', onConnectionFn);
+
             await server.start();
 
-            messenger = new Messenger(server.host, {
+            const host = `http://localhost:${server.port}`;
+
+            client = new MessengerClient(host, {
                 timeout: 1000,
                 reconnection: false,
             });
 
-            await messenger.connect();
+            await client.connect();
         });
 
         afterEach(async () => {
             await server.close();
-            messenger.close();
+            client.close();
         });
 
         it('should call connect on the server', () => {
-            expect(server.events.connection).toHaveBeenCalled();
+            expect(onConnectionFn).toHaveBeenCalled();
         });
 
         describe('when sending worker:ready', () => {
@@ -72,7 +78,7 @@ describe('Messenger', () => {
                 events['worker:ready'].mockImplementation((msg, cb) => {
                     cb();
                 });
-                await messenger.send('worker:ready', { worker_id: 'some-random-worker-id' });
+                await client.send('worker:ready', { worker_id: 'some-random-worker-id' });
             });
 
             it('should emit worker:ready on the server', () => {
