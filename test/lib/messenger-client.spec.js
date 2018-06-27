@@ -48,6 +48,7 @@ describe('WorkerMessenger', () => {
 
             workerId = shortid.generate();
             client = new WorkerMessenger({
+                workerId,
                 host,
                 options: {
                     timeout: 1000,
@@ -64,46 +65,56 @@ describe('WorkerMessenger', () => {
         });
 
         describe('when sending worker:ready', () => {
-            let workerReadyFn;
-            beforeEach(async () => {
-                workerReadyFn = jest.fn();
-                server.on(`${workerId}:worker:ready`, workerReadyFn);
-                await client.ready();
+            beforeEach(() => {
+                client.ready();
             });
 
-            it('should add the worker the server', () => {
-                expect(server.workers).toHaveProperty(workerId);
-            });
-
-            it('should call worker ready on the server', () => {
-                expect(workerReadyFn).toHaveBeenCalled();
+            it('should call worker ready on the server', (done) => {
+                server.once('worker:ready', (msg) => {
+                    expect(msg).toEqual({
+                        payload: { worker_id: workerId },
+                        worker_id: workerId,
+                    });
+                    expect(server.workers).toHaveProperty(workerId);
+                    done();
+                });
             });
         });
 
         describe('when sending worker:slice:complete', () => {
-            let sliceCompleteFn;
-            beforeEach(async () => {
-                sliceCompleteFn = jest.fn();
-                server.on('worker:slice:complete', sliceCompleteFn);
-                await client.send('worker:slice:complete', { example: 'worker-slice-complete' });
+            beforeEach((done) => {
+                client.ready();
+                server.once('worker:ready', () => {
+                    client.send('worker:slice:complete', { example: 'worker-slice-complete' });
+                    done();
+                });
             });
 
-            it('should emit worker:slice:complete on the server', () => {
-                expect(sliceCompleteFn).toHaveBeenCalled();
+            it('should emit worker:slice:complete on the server', (done) => {
+                server.once('worker:slice:complete', (msg) => {
+                    expect(msg).toEqual({
+                        payload: { example: 'worker-slice-complete' },
+                        worker_id: workerId,
+                    });
+                    done();
+                });
             });
         });
 
         describe('when receiving slicer:slice:new', () => {
-            let sliceNewFn;
-            beforeEach(async () => {
-                sliceNewFn = jest.fn();
-                client.on('slicer:slice:new', sliceNewFn);
-                await client.ready();
-                await server.sendToWorker(workerId, 'slicer:slice:new', { example: 'slice-new-message' });
+            beforeEach((done) => {
+                client.ready();
+                server.once('worker:ready', () => {
+                    server.sendToWorker(workerId, 'slicer:slice:new', { example: 'slice-new-message' });
+                    done();
+                });
             });
 
-            it('should emit slicer:slice:new on the client', () => {
-                expect(sliceNewFn).toHaveBeenCalled();
+            it('should emit slicer:slice:new on the client', (done) => {
+                client.once('slicer:slice:new', (msg) => {
+                    expect(msg).toEqual({ example: 'slice-new-message' });
+                    done();
+                });
             });
         });
     });
