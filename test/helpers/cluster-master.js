@@ -51,7 +51,6 @@ class ClusterMaster extends EventEmitter {
                 };
 
                 this._emit('worker:ready', workerId, payload);
-
                 if (isFunction(cb)) {
                     cb();
                 }
@@ -59,7 +58,6 @@ class ClusterMaster extends EventEmitter {
 
             socket.on('execution:error:terminal', (payload, cb) => {
                 this._emit('execution:error:terminal', workerId, payload);
-
                 if (isFunction(cb)) {
                     cb();
                 }
@@ -92,7 +90,7 @@ class ClusterMaster extends EventEmitter {
         if (this.workers[workerId]) {
             return Promise.resolve(this.workers[workerId].worker);
         }
-        return onMessage(this, 'worker:ready', this.timeoutMs);
+        return onMessage(this, `worker:ready:${workerId}`, this.timeoutMs);
     }
 
     // do this to make it easier to listen for a specific message
@@ -101,10 +99,7 @@ class ClusterMaster extends EventEmitter {
             worker_id: workerId,
             payload,
         });
-        this.emit(`${eventName}:${workerId}`, {
-            worker_id: workerId,
-            payload,
-        });
+        this.emit(`${eventName}:${workerId}`, payload);
     }
 }
 

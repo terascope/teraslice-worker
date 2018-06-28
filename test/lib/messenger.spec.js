@@ -82,6 +82,7 @@ describe('Messenger', () => {
         beforeEach(async () => {
             const port = await porty.find();
             server = new ExecutionControllerMessenger({ port });
+
             await server.start();
 
             client = new WorkerMessenger({
@@ -96,19 +97,11 @@ describe('Messenger', () => {
         });
 
         afterEach(async () => {
-            try {
-                await server.close();
-            } catch (err) {
-                expect(err).toBeNil();
-            }
-            try {
-                await client.close();
-            } catch (err) {
-                expect(err).not.toBeNil();
-            }
+            await server.close();
+            await client.close();
         });
 
-        it('start should throw an error', () => {
+        it('start should throw an error', async () => {
             const errMsg = /^Unable to connect to cluster master/;
             return expect(client.start()).rejects.toThrowError(errMsg);
         });
@@ -128,13 +121,7 @@ describe('Messenger', () => {
                 timeoutMs: 1000
             });
 
-            try {
-                await server.start();
-            } catch (err) {
-                console.error(err);
-                expect(err).toBeNil();
-                return;
-            }
+            await server.start();
 
             const clusterMasterPort = await porty.find();
             const clusterMasterUrl = `http://localhost:${clusterMasterPort}`;
@@ -143,14 +130,7 @@ describe('Messenger', () => {
                 timeoutMs: 1000
             });
 
-            try {
-                await clusterMaster.start();
-            } catch (err) {
-                console.error(err);
-                expect(err).toBeNil();
-                return;
-            }
-
+            await clusterMaster.start();
 
             workerId = shortid.generate();
             client = new WorkerMessenger({
@@ -164,30 +144,13 @@ describe('Messenger', () => {
                 },
             });
 
-            try {
-                await client.start();
-            } catch (err) {
-                console.error(err);
-                expect(err).toBeNil();
-            }
+            await client.start();
         });
 
         afterEach(async () => {
-            try {
-                await server.close();
-            } catch (err) {
-                console.error(err);
-            }
-            try {
-                await clusterMaster.close();
-            } catch (err) {
-                console.error(err);
-            }
-            try {
-                await client.close();
-            } catch (err) {
-                console.error(err);
-            }
+            await server.close();
+            await clusterMaster.close();
+            await client.close();
         });
 
         describe('when the worker is ready', () => {
@@ -213,10 +176,7 @@ describe('Messenger', () => {
 
                 it('should emit worker:slice:complete on the server', async () => {
                     const msg = await server.onMessage(`worker:slice:complete:${workerId}`);
-                    expect(msg).toEqual({
-                        payload: { example: 'worker-slice-complete' },
-                        worker_id: workerId,
-                    });
+                    expect(msg).toEqual({ example: 'worker-slice-complete' });
                 });
             });
 
