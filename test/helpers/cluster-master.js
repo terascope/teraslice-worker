@@ -6,16 +6,16 @@ const isFunction = require('lodash/isFunction');
 const Server = require('socket.io');
 const porty = require('porty');
 const { EventEmitter } = require('events');
-const { emitMessage, onMessage } = require('./helpers');
+const { emitMessage, onMessage } = require('../../lib/messenger/helpers');
 
-class ExecutionControllerMessenger extends EventEmitter {
+class ClusterMaster extends EventEmitter {
     constructor({ port, timeoutMs = 60000 } = {}) {
         super();
         if (!isNumber(port)) {
-            throw new Error('ExecutionControllerMessenger requires a valid port');
+            throw new Error('ClusterMaster requires a valid port');
         }
-        this.timeoutMs = timeoutMs;
         this.port = port;
+        this.timeoutMs = timeoutMs;
         this.workers = {};
         this.server = new Server();
     }
@@ -57,8 +57,9 @@ class ExecutionControllerMessenger extends EventEmitter {
                 }
             });
 
-            socket.on('worker:slice:complete', (payload, cb) => {
-                this._emit('worker:slice:complete', workerId, payload);
+            socket.on('execution:error:terminal', (payload, cb) => {
+                this._emit('execution:error:terminal', workerId, payload);
+
                 if (isFunction(cb)) {
                     cb();
                 }
@@ -94,7 +95,7 @@ class ExecutionControllerMessenger extends EventEmitter {
         return onMessage(this, 'worker:ready', this.timeoutMs);
     }
 
-    // do this to make it easier to listen for a specific worker message
+    // do this to make it easier to listen for a specific message
     _emit(eventName, workerId, payload) {
         this.emit(`${eventName}`, {
             worker_id: workerId,
@@ -107,4 +108,4 @@ class ExecutionControllerMessenger extends EventEmitter {
     }
 }
 
-module.exports = ExecutionControllerMessenger;
+module.exports = ClusterMaster;
