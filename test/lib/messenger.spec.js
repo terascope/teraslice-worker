@@ -153,6 +153,10 @@ describe('Messenger', () => {
             await client.close();
         });
 
+        describe('when calling start on the worker again', () => {
+            it('should not throw an error', () => expect(client.start()).resolves.toBeNil());
+        });
+
         describe('when the worker is ready', () => {
             let slicerReadyMsg;
             let clusterMasterReadyMsg;
@@ -197,7 +201,6 @@ describe('Messenger', () => {
                 });
             });
 
-
             describe('when sending execution:error:terminal', () => {
                 beforeEach(() => {
                     client.sendToClusterMaster('execution:error:terminal', {
@@ -221,6 +224,13 @@ describe('Messenger', () => {
                 it('should emit slicer:slice:new on the client', async () => {
                     const msg = await client.onMessage('slicer:slice:new');
                     expect(msg).toEqual({ example: 'slice-new-message' });
+                });
+            });
+
+            describe('when waiting for message that will never come', () => {
+                it('should throw a timeout error', () => {
+                    const errMsg = 'Timeout waiting for event "mystery:message"';
+                    return expect(client.onMessage('mystery:message')).rejects.toThrowError(errMsg);
                 });
             });
         });
