@@ -4,6 +4,7 @@
 
 const porty = require('porty');
 const shortid = require('shortid');
+const { formatURL } = require('../../lib/utils');
 const WorkerMessenger = require('../../lib/messenger/worker');
 const ExecutionControllerMessenger = require('../../lib/messenger/execution-controller');
 const ClusterMaster = require('../helpers/cluster-master');
@@ -86,7 +87,7 @@ describe('Messenger', () => {
             await server.start();
 
             client = new WorkerMessenger({
-                slicerUrl: `http://localhost:${port}`,
+                slicerUrl: formatURL('localhost', port),
                 clusterMasterUrl: 'http://idk.example.com',
                 workerId: 'hello',
                 socketOptions: {
@@ -115,7 +116,7 @@ describe('Messenger', () => {
 
         beforeEach(async () => {
             const slicerPort = await porty.find();
-            const slicerUrl = `http://localhost:${slicerPort}`;
+            const slicerUrl = formatURL('localhost', slicerPort);
             server = new ExecutionControllerMessenger({
                 port: slicerPort,
                 timeoutMs: 1000
@@ -124,7 +125,7 @@ describe('Messenger', () => {
             await server.start();
 
             const clusterMasterPort = await porty.find();
-            const clusterMasterUrl = `http://localhost:${clusterMasterPort}`;
+            const clusterMasterUrl = formatURL('localhost', clusterMasterPort);
             clusterMaster = new ClusterMaster({
                 port: clusterMasterPort,
                 timeoutMs: 1000
