@@ -61,7 +61,7 @@ describe('Worker', () => {
     });
 
     describe('when setting up', () => {
-        beforeEach(() => worker.setup());
+        beforeEach(() => worker.start());
 
         it('should create the correct stores', () => {
             expect(worker.stores.stateStore).toBeDefined();
