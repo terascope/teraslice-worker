@@ -7,7 +7,7 @@ const shortid = require('shortid');
 const { formatURL } = require('../../lib/utils');
 const WorkerMessenger = require('../../lib/messenger/worker');
 const ExecutionControllerMessenger = require('../../lib/messenger/execution-controller');
-const ClusterMaster = require('../helpers/cluster-master');
+const ClusterMasterMessenger = require('../helpers/cluster-master-messenger');
 
 describe('Messenger', () => {
     describe('when worker is constructed without a slicerUrl', () => {
@@ -126,7 +126,7 @@ describe('Messenger', () => {
 
             const clusterMasterPort = await porty.find();
             const clusterMasterUrl = formatURL('localhost', clusterMasterPort);
-            clusterMaster = new ClusterMaster({
+            clusterMaster = new ClusterMasterMessenger({
                 port: clusterMasterPort,
                 timeoutMs: 1000
             });

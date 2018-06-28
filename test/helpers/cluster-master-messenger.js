@@ -8,7 +8,7 @@ const porty = require('porty');
 const { EventEmitter } = require('events');
 const { emitMessage, onMessage } = require('../../lib/messenger/helpers');
 
-class ClusterMaster extends EventEmitter {
+class ClusterMasterMessenger extends EventEmitter {
     constructor({ port, timeoutMs = 60000 } = {}) {
         super();
         if (!isNumber(port)) {
@@ -103,4 +103,4 @@ class ClusterMaster extends EventEmitter {
     }
 }
 
-module.exports = ClusterMaster;
+module.exports = ClusterMasterMessenger;

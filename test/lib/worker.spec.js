@@ -1,20 +1,33 @@
 'use strict';
 
+const porty = require('porty');
 const shortid = require('shortid');
 const ElasticsearchClient = require('elasticsearch').Client;
 const { Worker } = require('../..');
 const BaseWorker = require('../../lib/base-worker');
 const { overrideLoggerOnWorker } = require('../helpers/override-logger');
 const terasliceConfig = require('../helpers/teraslice-config');
+const ExecutionControllerMessenger = require('../../lib/messenger/execution-controller');
+const ClusterMasterMessenger = require('../helpers/cluster-master-messenger');
 
 describe('Worker', () => {
     let worker;
     let clusterName;
+    let executionController;
+    let clusterMaster;
     let es;
 
-    beforeEach(() => {
+    beforeEach(async () => {
         clusterName = `tmp_${shortid.generate()}`.toLowerCase();
-        const config = terasliceConfig({ clusterName });
+
+        const clusterMasterPort = await porty.find();
+        const config = terasliceConfig({ clusterName, clusterMasterPort });
+        const slicerPort = await porty.find({ avoids: [clusterMasterPort] });
+
+        clusterMaster = new ClusterMasterMessenger({ port: clusterMasterPort });
+        executionController = new ExecutionControllerMessenger({ port: slicerPort });
+        await clusterMaster.start();
+        await executionController.start();
 
         const jobConfig = {
             type: 'worker',
@@ -23,7 +36,8 @@ describe('Worker', () => {
             },
             ex_id: 'example-ex-id',
             job_id: 'example-job-id',
-            slicer_port: 0
+            slicer_port: slicerPort,
+            slicer_hostname: 'localhost'
         };
 
         worker = new Worker(config, jobConfig);
@@ -36,6 +50,8 @@ describe('Worker', () => {
     });
 
     afterEach(async () => {
+        await clusterMaster.close();
+        await executionController.close();
         await worker.shutdown();
         await es.indices.delete({ index: `${clusterName}*` });
     });
