@@ -197,6 +197,22 @@ describe('Messenger', () => {
                 });
             });
 
+
+            describe('when sending execution:error:terminal', () => {
+                beforeEach(() => {
+                    client.sendToClusterMaster('execution:error:terminal', {
+                        error: 'exectution-error-terminal'
+                    });
+                });
+
+                it('should recieve the message on the cluster master', async () => {
+                    const msg = await clusterMaster.onMessage(`execution:error:terminal:${workerId}`);
+                    expect(msg).toEqual({
+                        error: 'exectution-error-terminal'
+                    });
+                });
+            });
+
             describe('when receiving slicer:slice:new', () => {
                 beforeEach(() => {
                     server.sendToWorker(workerId, 'slicer:slice:new', { example: 'slice-new-message' });
