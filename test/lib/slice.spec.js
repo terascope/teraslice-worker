@@ -74,11 +74,11 @@ describe('Slice', () => {
         }
     }
 
-    beforeEach(async () => {
+    beforeAll(async () => {
         await cleanup();
     });
 
-    afterEach(async () => {
+    afterAll(async () => {
         await cleanup();
     });
 
@@ -88,7 +88,7 @@ describe('Slice', () => {
             let slice;
             let mocks;
 
-            beforeEach(async () => {
+            beforeAll(async () => {
                 mocks = makeMocks();
                 mocks.reader.mockResolvedValue(times(10, () => 'hello'));
                 mocks.op.mockResolvedValue(times(10, () => 'hi'));
@@ -141,7 +141,7 @@ describe('Slice', () => {
             let results;
             let mocks;
 
-            beforeEach(async () => {
+            beforeAll(async () => {
                 mocks = makeMocks();
                 mocks.reader.mockResolvedValue(times(10, () => 'hello'));
                 mocks.op.mockResolvedValue(times(10, () => 'hi'));
@@ -189,7 +189,7 @@ describe('Slice', () => {
             let results;
             let mocks;
 
-            beforeEach(async () => {
+            beforeAll(async () => {
                 mocks = makeMocks();
                 mocks.reader.mockRejectedValueOnce(new Error('Bad news bears'));
                 mocks.reader.mockResolvedValue(times(10, () => 'hello'));
@@ -240,7 +240,7 @@ describe('Slice', () => {
             let err;
             let mocks;
 
-            beforeEach(async () => {
+            beforeAll(async () => {
                 mocks = makeMocks();
                 mocks.reader.mockResolvedValue(times(10, () => 'hello'));
                 mocks.op.mockRejectedValue(new Error('Bad news bears'));
@@ -292,24 +292,38 @@ describe('Slice', () => {
     });
 
     describe('when logging the analytics state', () => {
-        let mocks;
-        let slice;
+        describe('when given invalid state', () => {
+            let mocks;
+            let slice;
 
-        beforeEach(async () => {
-            mocks = makeMocks();
-            mocks.reader.mockResolvedValue(times(10, () => 'hello'));
-            mocks.op.mockResolvedValue(times(10, () => 'hi'));
-            slice = await setupSlice({ analytics: true });
+            beforeAll(async () => {
+                mocks = makeMocks();
+                mocks.reader.mockResolvedValue(times(10, () => 'hello'));
+                mocks.op.mockResolvedValue(times(10, () => 'hi'));
+                slice = await setupSlice({ analytics: true });
+            });
+
+            it('should throw an error if given invalid state', async () => {
+                slice.analyticsData = { should: 'break' };
+                return expect(slice._logAnalytics()).rejects.toThrowError(/Failure to update analytics/);
+            });
         });
 
-        it('should throw an error if given invalid state', async () => {
-            slice.analyticsData = { should: 'break' };
-            return expect(slice._logAnalytics()).rejects.toThrowError(/Failure to update analytics/);
-        });
+        describe('when the slice is a string', () => {
+            let mocks;
+            let slice;
 
-        it('should handle the case when the slice is a string', async () => {
-            slice.slice = 'hello-there';
-            await slice._logAnalytics();
+            beforeAll(async () => {
+                mocks = makeMocks();
+                mocks.reader.mockResolvedValue(times(10, () => 'hello'));
+                mocks.op.mockResolvedValue(times(10, () => 'hi'));
+                slice = await setupSlice({ analytics: true });
+            });
+
+            it('should handle the case when the slice is a string', async () => {
+                slice.slice = 'hello-there';
+                await slice._logAnalytics();
+            });
         });
     });
 
@@ -328,7 +342,7 @@ describe('Slice', () => {
             return expect(slice._markFailed(new Error('some error'))).rejects.toThrowError(/Failure to update failed state/);
         });
 
-        it('should throw an error if given invalid state', async () => {
+        it('should throw an error if given invalid state and no error', async () => {
             const slice = await setupSlice();
             slice.slice = { should: 'break' };
             return expect(slice._markFailed()).rejects.toThrowError(/Failure to update failed state/);

@@ -136,8 +136,7 @@ describe('Worker', () => {
                 });
             });
 
-
-            describe('when the slice completes', () => {
+            describe('when the slice completes and shutdown is called', () => {
                 let sliceConfig;
 
                 beforeEach(async () => {
@@ -148,7 +147,7 @@ describe('Worker', () => {
                     await executionController.onMessage(`worker:slice:complete:${worker.workerId}`);
                 });
 
-                it('should not process another slice after shutdown', async () => {
+                it('should handle the timeout correctly', async () => {
                     expect.hasAssertions();
                     executionController.sendToWorker(worker.workerId, 'slicer:slice:new', sliceConfig);
                     await worker.shutdown();
@@ -158,6 +157,12 @@ describe('Worker', () => {
                         expect(err).not.toBeNil();
                         expect(err.code).toEqual(408);
                     }
+                });
+
+                it('should return early if processSlice is called', async () => {
+                    expect.hasAssertions();
+                    await worker.shutdown();
+                    return expect(worker._processSlice(newSliceConfig())).resolves.toBeNil();
                 });
             });
         });
