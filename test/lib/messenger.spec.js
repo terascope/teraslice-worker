@@ -163,9 +163,16 @@ describe('Messenger', () => {
             let clusterMasterReadyMsg;
 
             beforeEach(async () => {
-                client.ready();
-                slicerReadyMsg = await server.onWorkerReady(workerId);
-                clusterMasterReadyMsg = await clusterMaster.onWorkerReady(workerId);
+                const clientReady = client.ready();
+                const slicerReady = server.onWorkerReady(workerId);
+                const clusterMasterReady = clusterMaster.onWorkerReady(workerId);
+                await clientReady;
+                slicerReadyMsg = await slicerReady;
+                clusterMasterReadyMsg = await clusterMasterReady;
+            });
+
+            it('should be marked as available', () => {
+                expect(client.available).toBeTrue();
             });
 
             it('should call worker ready on the server', () => {
@@ -223,13 +230,45 @@ describe('Messenger', () => {
             });
 
             describe('when receiving slicer:slice:new', () => {
-                beforeEach(() => {
-                    server.sendToWorker(workerId, 'slicer:slice:new', { example: 'slice-new-message' });
+                describe('when the worker is set as available', () => {
+                    let responseMsg;
+                    let sliceMsg;
+
+                    beforeEach(async () => {
+                        const response = server.sendToWorker(workerId, 'slicer:slice:new', { example: 'slice-new-message' });
+                        const slice = client.onMessage('slicer:slice:new');
+                        responseMsg = await response;
+                        sliceMsg = await slice;
+                    });
+
+                    it('should emit slicer:slice:new on the client', () => {
+                        expect(sliceMsg).toEqual({ example: 'slice-new-message' });
+                    });
+
+                    it('server should get a will process message back', () => {
+                        expect(responseMsg).toEqual({ willProcess: true });
+                    });
                 });
 
-                it('should emit slicer:slice:new on the client', async () => {
-                    const msg = await client.onMessage('slicer:slice:new');
-                    expect(msg).toEqual({ example: 'slice-new-message' });
+                describe('when the worker is set as unavailable', () => {
+                    let responseMsg;
+                    let sliceMsg;
+
+                    beforeEach(async () => {
+                        const response = server.sendToWorker(workerId, 'slicer:slice:new', { example: 'slice-new-message' });
+                        client.available = false;
+                        const slice = client.onMessage('slicer:slice:new');
+                        responseMsg = await response;
+                        sliceMsg = await slice;
+                    });
+
+                    it('client should emit slicer:slice:new', () => {
+                        expect(sliceMsg).toEqual({ example: 'slice-new-message' });
+                    });
+
+                    it('server should get a will not process message back', () => {
+                        expect(responseMsg).toEqual({ willProcess: false });
+                    });
                 });
             });
 
