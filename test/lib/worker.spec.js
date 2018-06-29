@@ -27,14 +27,23 @@ describe('Worker', () => {
             clusterName = `tmp_${shortid.generate()}`.toLowerCase();
 
             const clusterMasterPort = await porty.find();
-            const config = terasliceConfig({ clusterName, clusterMasterPort });
-            const slicerPort = await porty.find({ avoids: [clusterMasterPort] });
 
-            clusterMaster = new ClusterMasterMessenger({ port: clusterMasterPort, timeoutMs: 1000 });
+            clusterMaster = new ClusterMasterMessenger({
+                port: clusterMasterPort,
+                timeoutMs: 1000
+            });
+
             await clusterMaster.start();
 
-            executionController = new ExecutionControllerMessenger({ port: slicerPort, timeoutMs: 1000 });
+            const slicerPort = await porty.find({ avoids: [clusterMasterPort] });
+            executionController = new ExecutionControllerMessenger({
+                port: slicerPort,
+                timeoutMs: 1000
+            });
+
             await executionController.start();
+
+            const config = terasliceConfig({ clusterName, clusterMasterPort });
 
             jobConfig = newJobConfig({ slicerPort });
 
@@ -140,8 +149,9 @@ describe('Worker', () => {
                 });
 
                 it('should not process another slice after shutdown', async () => {
+                    expect.hasAssertions();
+                    executionController.sendToWorker(worker.workerId, 'slicer:slice:new', sliceConfig);
                     await worker.shutdown();
-                    await executionController.sendToWorker(worker.workerId, 'slicer:slice:new', sliceConfig);
                     try {
                         await executionController.onMessage(`worker:slice:complete:${worker.workerId}`);
                     } catch (err) {
