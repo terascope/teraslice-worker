@@ -174,6 +174,11 @@ describe('Messenger', () => {
                 expect(server.workers).toHaveProperty(workerId);
             });
 
+            it('should return immediately when calling onWorkerReady', () => {
+                const msg = { worker_id: workerId };
+                return expect(server.onWorkerReady(workerId)).resolves.toEqual(msg);
+            });
+
             describe('when sending worker:slice:complete', () => {
                 beforeEach(() => {
                     client.sendToSlicer('worker:slice:complete', { example: 'worker-slice-complete' });
@@ -193,7 +198,7 @@ describe('Messenger', () => {
                     });
                 });
 
-                it('should recieve the message on the client', async () => {
+                it('should receive the message on the client', async () => {
                     const msg = await client.onMessage('cluster:error:terminal');
                     expect(msg).toEqual({
                         ex_id: 'some-ex-id',
@@ -205,14 +210,14 @@ describe('Messenger', () => {
             describe('when sending execution:error:terminal', () => {
                 beforeEach(() => {
                     client.sendToClusterMaster('execution:error:terminal', {
-                        error: 'exectution-error-terminal'
+                        error: 'execution-error-terminal'
                     });
                 });
 
-                it('should recieve the message on the cluster master', async () => {
+                it('should receive the message on the cluster master', async () => {
                     const msg = await clusterMaster.onMessage(`execution:error:terminal:${workerId}`);
                     expect(msg).toEqual({
-                        error: 'exectution-error-terminal'
+                        error: 'execution-error-terminal'
                     });
                 });
             });
@@ -229,9 +234,15 @@ describe('Messenger', () => {
             });
 
             describe('when waiting for message that will never come', () => {
-                it('should throw a timeout error', () => {
-                    const errMsg = 'Timeout waiting for event "mystery:message"';
-                    return expect(client.onMessage('mystery:message')).rejects.toThrowError(errMsg);
+                it('should throw a timeout error', async () => {
+                    expect.hasAssertions();
+                    try {
+                        await client.onMessage('mystery:message');
+                    } catch (err) {
+                        expect(err).not.toBeNil();
+                        expect(err.message).toEqual('Timeout waiting for event "mystery:message"');
+                        expect(err.code).toEqual(408);
+                    }
                 });
             });
         });

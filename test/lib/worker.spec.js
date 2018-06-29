@@ -60,7 +60,7 @@ describe('Worker', () => {
         expect(worker instanceof BaseWorker).toBe(true);
     });
 
-    describe('when setting up', () => {
+    describe('when the worker is started', () => {
         beforeEach(() => worker.start());
 
         it('should create the correct stores', () => {

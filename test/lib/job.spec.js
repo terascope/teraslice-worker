@@ -118,12 +118,11 @@ describe('Worker Job', () => {
         });
 
         describe('when analytics is not enabled', () => {
-            let executionApi;
             let job;
             let jobConfig;
             let _testContext;
 
-            beforeEach(() => {
+            beforeEach(async () => {
                 _testContext = new TestContext('worker-job:no-analytics');
                 jobConfig = {
                     type: 'worker',
@@ -148,33 +147,19 @@ describe('Worker Job', () => {
                 exampleReaderMock.mockResolvedValue(jest.fn());
                 exampleOpMock.mockResolvedValue(jest.fn());
 
-                return job.initialize().then((_executionApi) => {
-                    executionApi = _executionApi;
-                    expect(_executionApi).not.toBeNil();
-                }).catch((err) => {
-                    console.error(err.stack); // eslint-disable-line no-console
-                    expect(err).toBeNil();
-                });
+                await job.initialize();
             });
 
             afterEach(() => _testContext.cleanup());
 
             it('should resolve an execution api', () => {
-                expect(executionApi).not.toBeNil();
-                const {
-                    queue,
-                    config,
-                    reader,
-                    reporter,
-                    slicer
-                } = executionApi;
-                expect(queue).toBeArrayOfSize(2);
-                expect(queue[0]).toBeFunction();
-                expect(queue[1]).toBeFunction();
-                expect(reader).toEqual(queue[0]);
-                expect(config).toEqual(jobConfig.job);
-                expect(reporter).toBeNil();
-                expect(slicer).toBeNil();
+                expect(job.queue).toBeArrayOfSize(2);
+                expect(job.queue[0]).toBeFunction();
+                expect(job.queue[1]).toBeFunction();
+                expect(job.reader).toEqual(job.queue[0]);
+                expect(job.config).toEqual(jobConfig.job);
+                expect(job.reporter).toBeNil();
+                expect(job.slicer).toBeNil();
             });
 
             it('should load the ops', () => {
@@ -192,12 +177,11 @@ describe('Worker Job', () => {
         });
 
         describe('when analytics is enabled', () => {
-            let executionApi;
             let job;
             let jobConfig;
             let _testContext;
 
-            beforeEach(() => {
+            beforeEach(async () => {
                 _testContext = new TestContext('worker-job:analytics');
                 jobConfig = {
                     type: 'worker',
@@ -223,33 +207,19 @@ describe('Worker Job', () => {
                 exampleReaderMock.mockResolvedValue(jest.fn());
                 exampleOpMock.mockResolvedValue(jest.fn());
 
-                return job.initialize().then((_executionApi) => {
-                    executionApi = _executionApi;
-                    expect(_executionApi).not.toBeNil();
-                }).catch((err) => {
-                    console.error(err.stack); // eslint-disable-line no-console
-                    expect(err).toBeNil();
-                });
+                await job.initialize();
             });
 
             afterEach(() => _testContext.cleanup());
 
             it('should resolve an execution api', () => {
-                expect(executionApi).not.toBeNil();
-                const {
-                    queue,
-                    config,
-                    reader,
-                    reporter,
-                    slicer
-                } = executionApi;
-                expect(queue).toBeArrayOfSize(2);
-                expect(queue[0]).toBeFunction();
-                expect(queue[1]).toBeFunction();
-                expect(reader).toEqual(queue[0]);
-                expect(config).toEqual(jobConfig.job);
-                expect(reporter).toBeNil();
-                expect(slicer).toBeNil();
+                expect(job.queue).toBeArrayOfSize(2);
+                expect(job.queue[0]).toBeFunction();
+                expect(job.queue[1]).toBeFunction();
+                expect(job.reader).toEqual(job.queue[0]);
+                expect(job.config).toEqual(jobConfig.job);
+                expect(job.reporter).toBeNil();
+                expect(job.slicer).toBeNil();
             });
 
             it('should load the ops', () => {
@@ -267,7 +237,6 @@ describe('Worker Job', () => {
         });
 
         describe('when using assets', () => {
-            let executionApi;
             let job;
             let jobConfig;
             let _testContext;
@@ -293,44 +262,30 @@ describe('Worker Job', () => {
                     slicer_port: 0,
                 };
                 job = new Job(_testContext.context, jobConfig);
-                return job.initialize().then((_executionApi) => {
-                    executionApi = _executionApi;
-                    expect(_executionApi).not.toBeNil();
-                }).catch((err) => {
-                    console.error(err.stack); // eslint-disable-line no-console
-                    expect(err).toBeNil();
-                });
+
+                await job.initialize();
             });
 
             afterAll(() => _testContext.cleanup());
 
             it('should resolve an execution api', () => {
-                expect(executionApi).not.toBeNil();
-                const {
-                    queue,
-                    config,
-                    reader,
-                    reporter,
-                    slicer
-                } = executionApi;
-                expect(queue).toBeArrayOfSize(2);
-                expect(reader).toBeFunction();
-                expect(queue[1]).toBeFunction();
-                expect(config).toEqual(jobConfig.job);
-                expect(reporter).toBeNil();
-                expect(slicer).toBeNil();
+                expect(job.queue).toBeArrayOfSize(2);
+                expect(job.reader).toBeFunction();
+                expect(job.queue[1]).toBeFunction();
+                expect(job.config).toEqual(jobConfig.job);
+                expect(job.reporter).toBeNil();
+                expect(job.slicer).toBeNil();
             });
 
             it('should load the ops', async () => {
-                const readerResults = await executionApi.reader();
+                const readerResults = await job.reader();
                 expect(readerResults).toBeArrayOfSize(100);
-                const opResults = await executionApi.queue[1](readerResults);
+                const opResults = await job.queue[1](readerResults);
                 expect(opResults).toBeArrayOfSize(100);
             });
         });
 
         describe('when using assets that have not been downloaded', () => {
-            let executionApi;
             let job;
             let jobConfig;
             let _testContext;
@@ -359,38 +314,24 @@ describe('Worker Job', () => {
                     slicer_port: 0,
                 };
                 job = new Job(_testContext.context, jobConfig);
-                return job.initialize().then((_executionApi) => {
-                    executionApi = _executionApi;
-                    expect(_executionApi).not.toBeNil();
-                }).catch((err) => {
-                    console.error(err.stack); // eslint-disable-line no-console
-                    expect(err).toBeNil();
-                });
+                await job.initialize();
             });
 
             afterAll(() => _testContext.cleanup());
 
             it('should resolve an execution api', () => {
-                expect(executionApi).not.toBeNil();
-                const {
-                    queue,
-                    config,
-                    reader,
-                    reporter,
-                    slicer
-                } = executionApi;
-                expect(queue).toBeArrayOfSize(2);
-                expect(reader).toBeFunction();
-                expect(queue[1]).toBeFunction();
-                expect(config).toEqual(jobConfig.job);
-                expect(reporter).toBeNil();
-                expect(slicer).toBeNil();
+                expect(job.queue).toBeArrayOfSize(2);
+                expect(job.reader).toBeFunction();
+                expect(job.queue[1]).toBeFunction();
+                expect(job.config).toEqual(jobConfig.job);
+                expect(job.reporter).toBeNil();
+                expect(job.slicer).toBeNil();
             });
 
             it('should load the ops', async () => {
-                const readerResults = await executionApi.reader();
+                const readerResults = await job.reader();
                 expect(readerResults).toBeArrayOfSize(100);
-                const opResults = await executionApi.queue[1](readerResults);
+                const opResults = await job.queue[1](readerResults);
                 expect(opResults).toBeArrayOfSize(100);
             });
         });

@@ -45,7 +45,6 @@ describe('Slice', () => {
         });
     }
 
-
     async function setupSlice({ analytics = false, maxRetries = 1 } = {}) {
         const jobConfig = {
             type: 'worker',
@@ -70,7 +69,7 @@ describe('Slice', () => {
         };
         const testContext = new TestContext('slice:analytics');
         const job = new Job(testContext.context, jobConfig);
-        const executionApi = await job.initialize();
+        await job.initialize();
 
         const slice = new Slice(testContext.config, jobConfig, testContext.stores);
         overrideLoggerOnWorker(slice, 'slice');
@@ -90,7 +89,7 @@ describe('Slice', () => {
         const { stores } = testContext;
         await stores.stateStore.createState(jobConfig.exId, sliceConfig, 'start');
 
-        await slice.initialize(executionApi, sliceConfig, stores);
+        await slice.initialize(job, sliceConfig, stores);
 
         cleanupTasks.push(() => testContext.cleanup());
 
@@ -294,6 +293,50 @@ describe('Slice', () => {
                 expect(mocks.events['slice:finalize']).toHaveBeenCalledTimes(1);
                 expect(mocks.events['slice:finalize']).toHaveBeenCalledWith(slice.slice);
             });
+        });
+    });
+
+    describe('when logging the analytics state', () => {
+        let mocks;
+        let slice;
+
+        beforeEach(async () => {
+            mocks = makeMocks();
+            mocks.reader.mockResolvedValue(times(10, () => 'hello'));
+            mocks.op.mockResolvedValue(times(10, () => 'hi'));
+            slice = await setupSlice({ analytics: true });
+        });
+
+        it('should throw an error if given invalid state', async () => {
+            slice.analyticsData = { should: 'break' };
+            return expect(slice._logAnalytics()).rejects.toThrowError(/Failure to update analytics/);
+        });
+
+        it('should handle the case when the slice is a string', async () => {
+            slice.slice = 'hello-there';
+            await slice._logAnalytics();
+        });
+    });
+
+    describe('when marking the slice as complete', () => {
+        it('should throw an error if given invalid state', async () => {
+            const slice = await setupSlice();
+            slice.slice = { should: 'break' };
+            return expect(slice._markCompleted()).rejects.toThrowError(/Failure to update success state/);
+        });
+    });
+
+    describe('when marking the slice as failed', () => {
+        it('should throw an error if given invalid state', async () => {
+            const slice = await setupSlice();
+            slice.slice = { should: 'break' };
+            return expect(slice._markFailed(new Error('some error'))).rejects.toThrowError(/Failure to update failed state/);
+        });
+
+        it('should throw an error if given invalid state', async () => {
+            const slice = await setupSlice();
+            slice.slice = { should: 'break' };
+            return expect(slice._markFailed()).rejects.toThrowError(/Failure to update failed state/);
         });
     });
 });
