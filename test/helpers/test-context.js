@@ -10,7 +10,7 @@ const {
     stateStore: makeStateStore,
     analyticsStore: makeAnalyticsStore
 } = require('../../lib/teraslice');
-const { overrideLoggerOnContext } = require('./override-logger');
+const overrideLogger = require('./override-logger');
 const { generateContext } = require('../../lib/utils');
 
 class TestContext {
@@ -22,7 +22,7 @@ class TestContext {
             assetDir: this.assetDir,
         });
         this.context = generateContext(this.config);
-        overrideLoggerOnContext(this.context, testName);
+        overrideLogger(this.context, testName);
 
         this.es = new ElasticsearchClient({
             host: 'http://localhost:9200',

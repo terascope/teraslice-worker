@@ -4,11 +4,14 @@ const porty = require('porty');
 const shortid = require('shortid');
 const ElasticsearchClient = require('elasticsearch').Client;
 const { Worker } = require('../..');
-const BaseWorker = require('../../lib/base-worker');
-const { overrideLoggerOnWorker } = require('../helpers/override-logger');
-const terasliceConfig = require('../helpers/teraslice-config');
 const ExecutionControllerMessenger = require('../../lib/messenger/execution-controller');
-const ClusterMasterMessenger = require('../helpers/cluster-master-messenger');
+const {
+    newId,
+    overrideLogger,
+    terasliceConfig,
+    ClusterMasterMessenger,
+    newSliceConfig,
+} = require('../helpers');
 
 describe('Worker', () => {
     let worker;
@@ -16,6 +19,7 @@ describe('Worker', () => {
     let executionController;
     let clusterMaster;
     let es;
+    let jobConfig;
 
     beforeEach(async () => {
         clusterName = `tmp_${shortid.generate()}`.toLowerCase();
@@ -29,19 +33,19 @@ describe('Worker', () => {
         await clusterMaster.start();
         await executionController.start();
 
-        const jobConfig = {
+        jobConfig = {
             type: 'worker',
             job: {
                 example: true
             },
-            ex_id: 'example-ex-id',
-            job_id: 'example-job-id',
+            ex_id: newId('ex-id'),
+            job_id: newId('job-id'),
             slicer_port: slicerPort,
             slicer_hostname: 'localhost'
         };
 
         worker = new Worker(config, jobConfig);
-        overrideLoggerOnWorker(worker, 'worker');
+        overrideLogger(worker, 'worker');
 
         es = new ElasticsearchClient({
             host: 'http://localhost:9200',
@@ -56,10 +60,6 @@ describe('Worker', () => {
         await es.indices.delete({ index: `${clusterName}*` });
     });
 
-    it('should be an instance of BaseWorker', () => {
-        expect(worker instanceof BaseWorker).toBe(true);
-    });
-
     describe('when the worker is started', () => {
         beforeEach(() => worker.start());
 
@@ -68,6 +68,26 @@ describe('Worker', () => {
             expect(worker.stores.stateStore).toHaveProperty('shutdown');
             expect(worker.stores.analyticsStore).toBeDefined();
             expect(worker.stores.analyticsStore).toHaveProperty('shutdown');
+        });
+
+        describe('when a slice is sent from the execution controller', () => {
+            let sliceConfig;
+
+            beforeEach(async () => {
+                sliceConfig = newSliceConfig();
+                await worker.stores.stateStore.createState(jobConfig.ex_id, sliceConfig, 'start');
+                await executionController.onWorkerReady(worker.workerId);
+                await executionController.sendToWorker(worker.workerId, 'slicer:slice:new', sliceConfig);
+            });
+
+            it('should return send a slice completed message to the execution controller', async () => {
+                const msg = await executionController.onMessage(`worker:slice:complete:${worker.workerId}`, 2000);
+                expect(msg).toMatchObject({
+                    worker_id: worker.workerId,
+                    slice: sliceConfig,
+                });
+                expect(msg).not.toHaveProperty('error');
+            });
         });
     });
 });

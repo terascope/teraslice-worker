@@ -28,11 +28,16 @@ function overrideLoggerOnContext(context, name = 'idk') {
     return context;
 }
 
-function overrideLoggerOnWorker(worker, name = 'idk') {
+function overrideLoggerOnClass(worker, name = 'idk') {
     worker.logger = newLogger(`${name}`);
     worker.context.logger = newLogger(`${name}:terafoundation`);
     worker.context.apis.foundation.makeLogger = ({ module }) => newLogger(`${name}:${module}`);
     return worker;
 }
 
-module.exports = { overrideLoggerOnWorker, overrideLoggerOnContext };
+module.exports = (input, name) => {
+    if (input.context) {
+        return overrideLoggerOnClass(input, name);
+    }
+    return overrideLoggerOnContext(input, name);
+};

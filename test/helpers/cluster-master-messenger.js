@@ -82,8 +82,8 @@ class ClusterMasterMessenger extends EventEmitter {
         await close();
     }
 
-    onMessage(eventName) {
-        return onMessage(this, eventName, this.timeoutMs);
+    onMessage(eventName, timeoutMs = this.timeoutMs) {
+        return onMessage(this, eventName, timeoutMs);
     }
 
     onWorkerReady(workerId) {

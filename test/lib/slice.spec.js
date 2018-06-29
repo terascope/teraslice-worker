@@ -1,20 +1,20 @@
 'use strict';
 
-
-const shortid = require('shortid');
 const times = require('lodash/times');
-const random = require('lodash/random');
 const path = require('path');
 const Slice = require('../../lib/slice');
 const Job = require('../../lib/job');
-const TestContext = require('../helpers/test-context');
-const { overrideLoggerOnWorker } = require('../helpers/override-logger');
+const {
+    newId,
+    newSliceConfig,
+    overrideLogger,
+    TestContext,
+    opsPath
+} = require('../helpers');
 
-const opsPath = path.join(__dirname, '..', 'fixtures', 'ops');
 const exampleReader = require('../fixtures/ops/example-reader');
 const exampleOp = require('../fixtures/ops/example-op');
 
-const newId = prefix => `${prefix}-${shortid.generate()}`.toLowerCase();
 
 function makeMocks() {
     const events = {
@@ -72,17 +72,9 @@ describe('Slice', () => {
         await job.initialize();
 
         const slice = new Slice(testContext.config, jobConfig, testContext.stores);
-        overrideLoggerOnWorker(slice, 'slice');
+        overrideLogger(slice, 'slice');
 
-        const sliceConfig = {
-            slice_id: newId('slice-id'),
-            slicer_id: newId('slicer-id'),
-            order: random(0, 1000),
-            request: {
-                example: 'slice-data'
-            },
-            _created: new Date().toISOString()
-        };
+        const sliceConfig = newSliceConfig();
 
         await testContext.addStateStore(slice.context);
         await testContext.addAnalyticsStore(slice.context);
@@ -125,7 +117,7 @@ describe('Slice', () => {
                 slice = await setupSlice({ analytics: true });
                 mockEvents(slice.events, mocks.events);
 
-                results = await slice.start();
+                results = await slice.run();
             });
 
             it('should call all of the operations', () => {
@@ -172,7 +164,7 @@ describe('Slice', () => {
                 slice = await setupSlice();
                 mockEvents(slice.events, mocks.events);
 
-                results = await slice.start();
+                results = await slice.run();
             });
 
             it('should call all of the operations', () => {
@@ -215,7 +207,7 @@ describe('Slice', () => {
                 slice = await setupSlice({ maxRetries: 3 });
                 mockEvents(slice.events, mocks.events);
 
-                results = await slice.start();
+                results = await slice.run();
             });
 
             it('should call all of the operations', () => {
@@ -260,7 +252,7 @@ describe('Slice', () => {
                 mockEvents(slice.events, mocks.events);
 
                 try {
-                    results = await slice.start();
+                    results = await slice.run();
                 } catch (_err) {
                     err = _err;
                 }
@@ -271,7 +263,7 @@ describe('Slice', () => {
             });
 
             it('should have reject with the error', () => {
-                expect(err.toString()).toContain('Slice failed processing: Error: Bad news bears');
+                expect(err.toString()).toStartWith('Error: Slice failed processing, caused by Error: Bad news bears');
             });
 
             it('should call all of the operations', () => {

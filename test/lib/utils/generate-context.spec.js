@@ -1,7 +1,7 @@
 'use strict';
 
 const { generateContext } = require('../../../lib/utils');
-const terasliceConfig = require('../../helpers/teraslice-config');
+const { terasliceConfig } = require('../../helpers');
 
 describe('Terafoundation Context', () => {
     let context;

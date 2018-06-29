@@ -7,14 +7,14 @@ const shortid = require('shortid');
 const { formatURL } = require('../../lib/utils');
 const WorkerMessenger = require('../../lib/messenger/worker');
 const ExecutionControllerMessenger = require('../../lib/messenger/execution-controller');
-const ClusterMasterMessenger = require('../helpers/cluster-master-messenger');
+const { ClusterMasterMessenger } = require('../helpers');
 
 describe('Messenger', () => {
-    describe('when worker is constructed without a slicerUrl', () => {
+    describe('when worker is constructed without a executionControllerUrl', () => {
         it('should throw an error', () => {
             expect(() => {
                 new WorkerMessenger(); // eslint-disable-line
-            }).toThrowError('WorkerMessenger requires a valid slicerUrl');
+            }).toThrowError('WorkerMessenger requires a valid executionControllerUrl');
         });
     });
 
@@ -22,7 +22,7 @@ describe('Messenger', () => {
         it('should throw an error', () => {
             expect(() => {
                 new WorkerMessenger({
-                    slicerUrl: 'example.com'
+                    executionControllerUrl: 'example.com'
                 });
             }).toThrowError('WorkerMessenger requires a valid clusterMasterUrl');
         });
@@ -32,7 +32,7 @@ describe('Messenger', () => {
         it('should throw an error', () => {
             expect(() => {
                 new WorkerMessenger({
-                    slicerUrl: 'example.com',
+                    executionControllerUrl: 'example.com',
                     clusterMasterUrl: 'example.com'
                 });
             }).toThrowError('WorkerMessenger requires a valid workerId');
@@ -57,11 +57,11 @@ describe('Messenger', () => {
         });
     });
 
-    describe('when constructed with an invalid slicerUrl', () => {
+    describe('when constructed with an invalid executionControllerUrl', () => {
         let client;
         beforeEach(() => {
             client = new WorkerMessenger({
-                slicerUrl: 'http://idk.example.com',
+                executionControllerUrl: 'http://idk.example.com',
                 clusterMasterUrl: 'http:idk.example.com',
                 workerId: 'hello',
                 socketOptions: {
@@ -87,7 +87,7 @@ describe('Messenger', () => {
             await server.start();
 
             client = new WorkerMessenger({
-                slicerUrl: formatURL('localhost', port),
+                executionControllerUrl: formatURL('localhost', port),
                 clusterMasterUrl: 'http://idk.example.com',
                 workerId: 'hello',
                 socketOptions: {
@@ -116,7 +116,7 @@ describe('Messenger', () => {
 
         beforeEach(async () => {
             const slicerPort = await porty.find();
-            const slicerUrl = formatURL('localhost', slicerPort);
+            const executionControllerUrl = formatURL('localhost', slicerPort);
             server = new ExecutionControllerMessenger({
                 port: slicerPort,
                 timeoutMs: 1000
@@ -136,7 +136,7 @@ describe('Messenger', () => {
             workerId = shortid.generate();
             client = new WorkerMessenger({
                 workerId,
-                slicerUrl,
+                executionControllerUrl,
                 clusterMasterUrl,
                 timeoutMs: 1000,
                 socketOptions: {
@@ -181,7 +181,7 @@ describe('Messenger', () => {
 
             describe('when sending worker:slice:complete', () => {
                 beforeEach(() => {
-                    client.sendToSlicer('worker:slice:complete', { example: 'worker-slice-complete' });
+                    client.sendToExecutionController('worker:slice:complete', { example: 'worker-slice-complete' });
                 });
 
                 it('should emit worker:slice:complete on the server', async () => {

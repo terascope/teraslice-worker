@@ -4,10 +4,8 @@ const fs = require('fs-extra');
 const path = require('path');
 const get = require('lodash/get');
 const Job = require('../../lib/job');
-const TestContext = require('../helpers/test-context');
-const saveAsset = require('../helpers/save-asset');
+const { TestContext, saveAsset, opsPath } = require('../helpers');
 
-const opsPath = path.join(__dirname, '..', 'fixtures', 'ops');
 const exampleReaderMock = require(path.join(opsPath, 'example-reader')).newReader;
 const exampleOpMock = require(path.join(opsPath, 'example-op')).newProcessor;
 const exampleAssetDir = path.join(opsPath, 'example-asset');
