@@ -7,7 +7,7 @@ const ClusterMasterMessenger = require('./cluster-master-messenger');
 const overrideLogger = require('./override-logger');
 const saveAsset = require('./save-asset');
 const TestContext = require('./test-context');
-const terasliceConfig = require('./teraslice-config');
+const newSysConfig = require('./sysconfig');
 
 const newId = prefix => `${prefix}-${shortid.generate()}`.toLowerCase();
 const opsPath = path.join(__dirname, '..', 'fixtures', 'ops');
@@ -60,6 +60,6 @@ module.exports = {
     overrideLogger,
     ClusterMasterMessenger,
     saveAsset,
-    terasliceConfig,
+    newSysConfig,
     TestContext,
 };

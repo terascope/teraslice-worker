@@ -8,7 +8,7 @@ const { Worker } = require('../..');
 const ExecutionControllerMessenger = require('../../lib/messenger/execution-controller');
 const {
     overrideLogger,
-    terasliceConfig,
+    newSysConfig,
     ClusterMasterMessenger,
     newJobConfig,
     newSliceConfig,
@@ -43,11 +43,11 @@ describe('Worker', () => {
 
             await executionController.start();
 
-            const config = terasliceConfig({ clusterName, clusterMasterPort });
+            const config = newSysConfig({ clusterName, clusterMasterPort });
 
             jobConfig = newJobConfig({ slicerPort });
 
-            worker = new Worker(config, jobConfig, { timeoutMs: 1000 });
+            worker = new Worker(jobConfig, config, { timeoutMs: 1000 });
             overrideLogger(worker, 'worker');
             overrideLogger(worker.slice, 'worker:slice');
 

@@ -1,6 +1,5 @@
 'use strict';
 
-
 module.exports = (options = {}) => {
     const {
         clusterName = 'test-teraslice-cluster',

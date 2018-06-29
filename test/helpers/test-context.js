@@ -4,7 +4,7 @@ const Promise = require('bluebird');
 const { createTempDirSync, cleanupTempDirs } = require('jest-fixtures');
 const shortid = require('shortid');
 const ElasticsearchClient = require('elasticsearch').Client;
-const terasliceConfig = require('./teraslice-config');
+const newSysConfig = require('./sysconfig');
 const {
     assetStore: makeAssetStore,
     stateStore: makeStateStore,
@@ -17,11 +17,11 @@ class TestContext {
     constructor(testName) {
         this.clusterName = `tmp_${shortid.generate()}`.toLowerCase();
         this.assetDir = createTempDirSync();
-        this.config = terasliceConfig({
+        this.sysconfig = newSysConfig({
             clusterName: this.clusterName,
             assetDir: this.assetDir,
         });
-        this.context = generateContext(this.config);
+        this.context = generateContext(this.sysconfig);
         overrideLogger(this.context, testName);
 
         this.es = new ElasticsearchClient({

@@ -1,10 +1,10 @@
 'use strict';
 
 const { EventEmitter } = require('events');
-const BaseWorker = require('../../lib/base-worker');
-const { newJobConfig } = require('../helpers');
+const { handleWorkerInput } = require('../../../lib/utils');
+const { newJobConfig } = require('../../helpers');
 
-describe('BaseWorker', () => {
+describe('HandleWorkerInput', () => {
     let worker;
     beforeEach(() => {
         const config = {
@@ -24,18 +24,17 @@ describe('BaseWorker', () => {
             }
         };
         const jobConfig = newJobConfig();
-        worker = new BaseWorker(config, jobConfig);
-        worker.makeLogger();
+        worker = handleWorkerInput(jobConfig, config);
     });
 
     it('should create a logger', () => {
-        expect(worker).toHaveProperty('logger');
-        expect(worker.logger).toHaveProperty('flush');
-        expect(worker.logger).toHaveProperty('debug');
-        expect(worker.logger).toHaveProperty('info');
-        expect(worker.logger).toHaveProperty('trace');
-        expect(worker.logger).toHaveProperty('error');
-        expect(worker.logger).toHaveProperty('warn');
+        const logger = worker.makeLogger();
+        expect(logger).toHaveProperty('flush');
+        expect(logger).toHaveProperty('debug');
+        expect(logger).toHaveProperty('info');
+        expect(logger).toHaveProperty('trace');
+        expect(logger).toHaveProperty('error');
+        expect(logger).toHaveProperty('warn');
     });
 
     it('should have have workerId', () => {

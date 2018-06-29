@@ -13,7 +13,6 @@ const {
 const exampleReader = require('../fixtures/ops/example-reader');
 const exampleOp = require('../fixtures/ops/example-op');
 
-
 function makeMocks() {
     const events = {
         'slice:success': jest.fn(),
@@ -52,7 +51,7 @@ describe('Slice', () => {
         const job = new Job(testContext.context, jobConfig);
         await job.initialize();
 
-        const slice = new Slice(testContext.config, jobConfig, testContext.stores);
+        const slice = new Slice(testContext.context, jobConfig);
         overrideLogger(slice, 'slice');
 
         await testContext.addStateStore(slice.context);

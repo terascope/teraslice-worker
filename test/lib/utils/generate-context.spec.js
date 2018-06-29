@@ -1,13 +1,13 @@
 'use strict';
 
 const { generateContext } = require('../../../lib/utils');
-const { terasliceConfig } = require('../../helpers');
+const { newSysConfig } = require('../../helpers');
 
 describe('Terafoundation Context', () => {
     let context;
 
     beforeEach(() => {
-        context = generateContext(terasliceConfig());
+        context = generateContext(newSysConfig());
     });
 
     it('should throw an error when given no config', () => {
@@ -31,7 +31,7 @@ describe('Terafoundation Context', () => {
     });
 
     it('should have the correct metadata', () => {
-        const config = terasliceConfig();
+        const config = newSysConfig();
         expect(context).toHaveProperty('name', 'teraslice-worker');
         expect(context.sysconfig).toHaveProperty('teraslice');
         expect(context.sysconfig).toHaveProperty('terafoundation');

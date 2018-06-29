@@ -14,7 +14,7 @@
     "report-coverage": "codecov"
   },
   "repository": "git@github.com:terascope/teraslice-worker.git",
-  "author": "Terasope, LLC <info@terascope.io>",
+  "author": "Terascope, LLC <info@terascope.io>",
   "license": "Apache-2.0",
   "private": false,
   "devDependencies": {
