@@ -58,7 +58,7 @@ describe('Slice', () => {
         await testContext.addStateStore(slice.context);
         await testContext.addAnalyticsStore(slice.context);
         const { stores } = testContext;
-        await stores.stateStore.createState(jobConfig.exId, sliceConfig, 'start');
+        await stores.stateStore.createState(jobConfig.ex_id, sliceConfig, 'start');
 
         await slice.initialize(job, sliceConfig, stores);
 
@@ -126,6 +126,12 @@ describe('Slice', () => {
                 expect(mocks.events['slice:failure']).not.toHaveBeenCalled();
                 expect(mocks.events['slice:retry']).not.toHaveBeenCalled();
             });
+
+            it('should have the correct state storage', () => {
+                const { ex_id: exId } = slice.jobConfig;
+                const query = `ex_id:${exId} AND state:completed`;
+                return expect(slice.stateStore.count(query)).resolves.toEqual(1);
+            });
         });
     });
 
@@ -170,6 +176,12 @@ describe('Slice', () => {
                 expect(mocks.events['slice:retry']).not.toHaveBeenCalled();
                 expect(mocks.events['slice:failure']).not.toHaveBeenCalled();
             });
+
+            it('should have the correct state storage', () => {
+                const { ex_id: exId } = slice.jobConfig;
+                const query = `ex_id:${exId} AND state:completed`;
+                return expect(slice.stateStore.count(query, 0)).resolves.toEqual(1);
+            });
         });
 
         describe('when the slice retries', () => {
@@ -213,6 +225,12 @@ describe('Slice', () => {
                 expect(mocks.events['slice:finalize']).toHaveBeenCalledTimes(1);
                 expect(mocks.events['slice:finalize']).toHaveBeenCalledWith(slice.slice);
                 expect(mocks.events['slice:failure']).not.toHaveBeenCalled();
+            });
+
+            it('should have the correct state storage', () => {
+                const { ex_id: exId } = slice.jobConfig;
+                const query = `ex_id:${exId} AND state:completed`;
+                return expect(slice.stateStore.count(query, 0)).resolves.toEqual(1);
             });
         });
 
@@ -263,6 +281,12 @@ describe('Slice', () => {
                 expect(mocks.events['slice:success']).not.toHaveBeenCalled();
                 expect(mocks.events['slice:finalize']).toHaveBeenCalledTimes(1);
                 expect(mocks.events['slice:finalize']).toHaveBeenCalledWith(slice.slice);
+            });
+
+            it('should have the correct state storage', () => {
+                const { ex_id: exId } = slice.jobConfig;
+                const query = `ex_id:${exId} AND state:error`;
+                return expect(slice.stateStore.count(query, 0)).resolves.toEqual(1);
             });
         });
     });
