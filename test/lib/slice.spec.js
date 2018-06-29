@@ -291,6 +291,26 @@ describe('Slice', () => {
         });
     });
 
+    describe('when given a completed slice', () => {
+        let slice;
+        let mocks;
+
+        beforeAll(async () => {
+            mocks = makeMocks();
+            mocks.reader.mockResolvedValue(times(10, () => 'hello'));
+            mocks.op.mockResolvedValue(times(10, () => 'hi'));
+
+            slice = await setupSlice();
+            await slice._markCompleted();
+            mockEvents(slice.events, mocks.events);
+        });
+
+        it('should throw an error when calling run', () => {
+            const errMsg = `Slice ${slice.slice.slice_id} has already been processed`;
+            return expect(slice.run()).rejects.toThrowError(errMsg);
+        });
+    });
+
     describe('when logging the analytics state', () => {
         describe('when given invalid state', () => {
             let mocks;
@@ -339,13 +359,8 @@ describe('Slice', () => {
         it('should throw an error if given invalid state', async () => {
             const slice = await setupSlice();
             slice.slice = { should: 'break' };
-            return expect(slice._markFailed(new Error('some error'))).rejects.toThrowError(/Failure to update failed state/);
-        });
-
-        it('should throw an error if given invalid state and no error', async () => {
-            const slice = await setupSlice();
-            slice.slice = { should: 'break' };
-            return expect(slice._markFailed()).rejects.toThrowError(/Failure to update failed state/);
+            await expect(slice._markFailed(new Error('some error'))).rejects.toThrowError(/Failure to update failed state/);
+            await expect(slice._markFailed()).rejects.toThrowError(/Failure to update failed state/);
         });
     });
 });
