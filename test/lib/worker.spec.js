@@ -1,15 +1,16 @@
 'use strict';
 
+const Promise = require('bluebird');
 const porty = require('porty');
 const shortid = require('shortid');
 const ElasticsearchClient = require('elasticsearch').Client;
 const { Worker } = require('../..');
 const ExecutionControllerMessenger = require('../../lib/messenger/execution-controller');
 const {
-    newId,
     overrideLogger,
     terasliceConfig,
     ClusterMasterMessenger,
+    newJobConfig,
     newSliceConfig,
 } = require('../helpers');
 
@@ -33,19 +34,11 @@ describe('Worker', () => {
         await clusterMaster.start();
         await executionController.start();
 
-        jobConfig = {
-            type: 'worker',
-            job: {
-                example: true
-            },
-            ex_id: newId('ex-id'),
-            job_id: newId('job-id'),
-            slicer_port: slicerPort,
-            slicer_hostname: 'localhost'
-        };
+        jobConfig = newJobConfig({ slicerPort });
 
-        worker = new Worker(config, jobConfig);
+        worker = new Worker(config, jobConfig, { timeoutMs: 1000 });
         overrideLogger(worker, 'worker');
+        overrideLogger(worker.slice, 'worker:slice');
 
         es = new ElasticsearchClient({
             host: 'http://localhost:9200',
@@ -87,6 +80,48 @@ describe('Worker', () => {
                     slice: sliceConfig,
                 });
                 expect(msg).not.toHaveProperty('error');
+            });
+        });
+
+        describe('when a new slice is not sent right away', () => {
+            let sliceConfig;
+
+            beforeEach(async () => {
+                sliceConfig = newSliceConfig();
+                await worker.stores.stateStore.createState(jobConfig.ex_id, sliceConfig, 'start');
+                await executionController.onWorkerReady(worker.workerId);
+                await Promise.delay(1000);
+                await executionController.sendToWorker(worker.workerId, 'slicer:slice:new', sliceConfig);
+            });
+
+            it('should return send a slice completed message to the execution controller', async () => {
+                const msg = await executionController.onMessage(`worker:slice:complete:${worker.workerId}`, 2000);
+                expect(msg).toMatchObject({
+                    worker_id: worker.workerId,
+                    slice: sliceConfig,
+                });
+                expect(msg).not.toHaveProperty('error');
+            });
+        });
+
+        describe('when a slice errors', () => {
+            let sliceConfig;
+
+            beforeEach(async () => {
+                sliceConfig = newSliceConfig();
+                worker.job.queue[1] = jest.fn().mockRejectedValue(new Error('Bad news bears'));
+                await worker.stores.stateStore.createState(jobConfig.ex_id, sliceConfig, 'start');
+                await executionController.onWorkerReady(worker.workerId);
+                await executionController.sendToWorker(worker.workerId, 'slicer:slice:new', sliceConfig);
+            });
+
+            it('should return send a slice completed message with an error', async () => {
+                const msg = await executionController.onMessage(`worker:slice:complete:${worker.workerId}`, 2000);
+                expect(msg).toMatchObject({
+                    worker_id: worker.workerId,
+                    slice: sliceConfig,
+                });
+                expect(msg.error).toStartWith('Error: Slice failed processing, caused by Error: Bad news bears');
             });
         });
     });

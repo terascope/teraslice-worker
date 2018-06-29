@@ -2,6 +2,7 @@
 
 const { EventEmitter } = require('events');
 const BaseWorker = require('../../lib/base-worker');
+const { newJobConfig } = require('../helpers');
 
 describe('BaseWorker', () => {
     let worker;
@@ -22,15 +23,7 @@ describe('BaseWorker', () => {
                 master_hostname: 'localhost'
             }
         };
-        const jobConfig = {
-            type: 'example',
-            job: {
-                example: true
-            },
-            ex_id: 'example-ex-id',
-            job_id: 'example-job-id',
-            slicer_port: 0
-        };
+        const jobConfig = newJobConfig();
         worker = new BaseWorker(config, jobConfig);
         worker.makeLogger();
     });

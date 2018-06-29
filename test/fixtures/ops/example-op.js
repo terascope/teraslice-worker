@@ -1,6 +1,7 @@
 'use strict';
 
-const mock = jest.fn();
+const op = jest.fn(() => Promise.resolve(Array(100).fill('default-op-data')));
+const newProcessor = jest.fn(() => Promise.resolve(op));
 
 function schema() {
     return {
@@ -19,6 +20,7 @@ function schema() {
 }
 
 module.exports = {
-    newProcessor: mock,
+    op,
+    newProcessor,
     schema,
 };

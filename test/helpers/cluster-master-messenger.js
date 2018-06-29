@@ -80,6 +80,7 @@ class ClusterMasterMessenger extends EventEmitter {
             context: this.server
         });
         await close();
+        this.removeAllListeners();
     }
 
     onMessage(eventName, timeoutMs = this.timeoutMs) {

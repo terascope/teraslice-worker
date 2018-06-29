@@ -50,8 +50,11 @@ class TestContext {
         const stores = Object.values(this.stores);
         await Promise.map(stores, store => store.shutdown());
         const events = this.context.apis.foundation.getSystemEvents();
+
         events.removeAllListeners();
+
         cleanupTempDirs();
+
         await this.es.indices.delete({ index: `${this.clusterName}*` });
         this.clean = true;
     }

@@ -10,7 +10,7 @@ const exampleReaderMock = require(path.join(opsPath, 'example-reader')).newReade
 const exampleOpMock = require(path.join(opsPath, 'example-op')).newProcessor;
 const exampleAssetDir = path.join(opsPath, 'example-asset');
 
-describe('Worker Job', () => {
+describe('Job (type "worker")', () => {
     describe('when constructing', () => {
         let job;
         let jobConfig;
@@ -141,9 +141,11 @@ describe('Worker Job', () => {
                     job_id: 'example-job-id',
                     slicer_port: 0,
                 };
+
                 job = new Job(_testContext.context, jobConfig);
-                exampleReaderMock.mockResolvedValue(jest.fn());
-                exampleOpMock.mockResolvedValue(jest.fn());
+
+                exampleReaderMock.mockClear();
+                exampleOpMock.mockClear();
 
                 await job.initialize();
             });
@@ -202,8 +204,9 @@ describe('Worker Job', () => {
                     slicer_port: 0,
                 };
                 job = new Job(_testContext.context, jobConfig);
-                exampleReaderMock.mockResolvedValue(jest.fn());
-                exampleOpMock.mockResolvedValue(jest.fn());
+
+                exampleReaderMock.mockClear();
+                exampleOpMock.mockClear();
 
                 await job.initialize();
             });

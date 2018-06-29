@@ -20,7 +20,40 @@ const newSliceConfig = (request = { example: 'slice-data' }) => ({
     _created: new Date().toISOString()
 });
 
+const newJobConfig = (options = {}) => {
+    const {
+        analytics = false,
+        maxRetries = 1,
+        slicerPort = 0,
+        operations = [
+            {
+                _op: path.join(opsPath, 'example-reader'),
+                exampleProp: 321
+            },
+            {
+                _op: path.join(opsPath, 'example-op'),
+                exampleProp: 123
+            }
+        ],
+        assets = []
+    } = options;
+    return {
+        type: 'worker',
+        job: {
+            assets,
+            analytics,
+            max_retries: maxRetries,
+            operations,
+        },
+        ex_id: newId('ex-id'),
+        job_id: newId('job-id'),
+        slicer_port: slicerPort,
+        slicer_hostname: 'localhost'
+    };
+};
+
 module.exports = {
+    newJobConfig,
     newSliceConfig,
     opsPath,
     newId,

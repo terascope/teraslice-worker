@@ -1,6 +1,7 @@
 'use strict';
 
-const mock = jest.fn();
+const reader = jest.fn(() => Promise.resolve(Array(100).fill('default-reader-data')));
+const newReader = jest.fn(() => Promise.resolve(reader));
 
 function schema() {
     return {
@@ -19,6 +20,7 @@ function schema() {
 }
 
 module.exports = {
-    newReader: mock,
+    reader,
+    newReader,
     schema,
 };

@@ -1,15 +1,13 @@
 'use strict';
 
 const times = require('lodash/times');
-const path = require('path');
 const Slice = require('../../lib/slice');
 const Job = require('../../lib/job');
 const {
-    newId,
     newSliceConfig,
     overrideLogger,
     TestContext,
-    opsPath
+    newJobConfig
 } = require('../helpers');
 
 const exampleReader = require('../fixtures/ops/example-reader');
@@ -45,36 +43,17 @@ describe('Slice', () => {
         });
     }
 
-    async function setupSlice({ analytics = false, maxRetries = 1 } = {}) {
-        const jobConfig = {
-            type: 'worker',
-            job: {
-                assets: [],
-                analytics,
-                max_retries: maxRetries,
-                operations: [
-                    {
-                        _op: path.join(opsPath, 'example-reader'),
-                        exampleProp: 321
-                    },
-                    {
-                        _op: path.join(opsPath, 'example-op'),
-                        exampleProp: 123
-                    }
-                ]
-            },
-            ex_id: newId('ex-id'),
-            job_id: newId('job-id'),
-            slicer_port: 0,
-        };
+    async function setupSlice(options) {
         const testContext = new TestContext('slice:analytics');
+
+        const jobConfig = newJobConfig(options);
+        const sliceConfig = newSliceConfig();
+
         const job = new Job(testContext.context, jobConfig);
         await job.initialize();
 
         const slice = new Slice(testContext.config, jobConfig, testContext.stores);
         overrideLogger(slice, 'slice');
-
-        const sliceConfig = newSliceConfig();
 
         await testContext.addStateStore(slice.context);
         await testContext.addAnalyticsStore(slice.context);
