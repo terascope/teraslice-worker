@@ -62,6 +62,7 @@ describe('Slice', () => {
         await slice.initialize(job, sliceConfig, stores);
 
         cleanupTasks.push(() => testContext.cleanup());
+        cleanupTasks.push(() => slice.shutdown());
 
         return slice;
     }

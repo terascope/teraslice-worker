@@ -1,5 +1,6 @@
 'use strict';
 
+const Promise = require('bluebird');
 const path = require('path');
 const shortid = require('shortid');
 const random = require('lodash/random');
@@ -52,7 +53,23 @@ const newJobConfig = (options = {}) => {
     };
 };
 
+function defer() {
+    let resolve;
+    let reject;
+
+    const promise = new Promise(() => {
+        [resolve, reject] = arguments; // eslint-disable-line
+    });
+
+    return {
+        resolve,
+        reject,
+        promise
+    };
+}
+
 module.exports = {
+    defer,
     newJobConfig,
     newSliceConfig,
     opsPath,

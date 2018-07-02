@@ -10,7 +10,7 @@
     "test": "jest --forceExit",
     "test:dev": "jest --forceExit --onlyChanged --coverage=false",
     "test:dev:watch": "jest --forceExit --onlyChanged --watch --notify",
-    "test:debug": "env DEBUG='*teraslice*' jest --detectOpenHandles --coverage=false",
+    "test:debug": "env DEBUG='*teraslice*' jest --detectOpenHandles --coverage=false --verbose=false --runInBand",
     "report-coverage": "codecov"
   },
   "repository": "git@github.com:terascope/teraslice-worker.git",

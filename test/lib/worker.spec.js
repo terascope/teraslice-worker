@@ -12,6 +12,7 @@ const {
     ClusterMasterMessenger,
     newJobConfig,
     newSliceConfig,
+    defer,
 } = require('../helpers');
 
 describe('Worker', () => {
@@ -177,7 +178,7 @@ describe('Worker', () => {
                     workerShutdownEvent = jest.fn();
                     worker.events.on('worker:shutdown', workerShutdownEvent);
 
-                    worker.job.queue[0] = jest.fn().mockImplementation(() => Promise.delay(1500));
+                    worker.job.queue[0] = jest.fn(() => Promise.delay(1500));
 
                     sliceConfig = newSliceConfig();
 
@@ -193,7 +194,9 @@ describe('Worker', () => {
                 it('should handle the shutdown properly', async () => {
                     const startTime = Date.now();
 
-                    const sliceMsg = await executionController.sendNewSlice(worker.workerId, sliceConfig);
+                    const sliceMsg = await executionController
+                        .sendNewSlice(worker.workerId, sliceConfig);
+
                     expect(sliceMsg).toEqual({ willProcess: true });
 
                     const shutdown = worker.shutdown();
@@ -213,14 +216,16 @@ describe('Worker', () => {
             describe('when a slice is in-progress and has to be forced to shutdown', () => {
                 let sliceConfig;
                 let workerShutdownEvent;
+                let deferred;
 
                 beforeEach(async () => {
                     worker.shutdownTimeout = 1000;
 
                     workerShutdownEvent = jest.fn();
                     worker.events.on('worker:shutdown', workerShutdownEvent);
+                    deferred = defer();
 
-                    worker.job.queue[0] = jest.fn().mockImplementation(() => Promise.delay(3000));
+                    worker.job.queue[0] = jest.fn(() => deferred.promise);
 
                     sliceConfig = newSliceConfig();
 
@@ -231,15 +236,16 @@ describe('Worker', () => {
 
                 afterEach(() => {
                     worker.events.removeListener('worker:shutdown', workerShutdownEvent);
+                    deferred.resolve();
                 });
 
                 it('should handle the shutdown properly', async () => {
-                    expect.assertions(4);
+                    expect.assertions(3);
 
-                    const sliceMsg = await executionController.sendNewSlice(worker.workerId, sliceConfig);
+                    const sliceMsg = await executionController
+                        .sendNewSlice(worker.workerId, sliceConfig);
+
                     expect(sliceMsg).toEqual({ willProcess: true });
-
-                    const startTime = Date.now();
 
                     try {
                         await worker.shutdown();
@@ -248,9 +254,6 @@ describe('Worker', () => {
                     }
 
                     expect(workerShutdownEvent).toHaveBeenCalled();
-
-                    const elasped = Date.now() - startTime;
-                    expect(elasped).toBeWithin(1000, 1500);
                 });
             });
         });
