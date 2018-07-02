@@ -184,7 +184,6 @@ describe('Worker', () => {
                     await worker.stores.stateStore.createState(jobConfig.ex_id, sliceConfig, 'start');
 
                     await executionController.onWorkerReady(worker.workerId);
-                    await executionController.sendNewSlice(worker.workerId, sliceConfig);
                 });
 
                 afterEach(async () => {
@@ -193,6 +192,9 @@ describe('Worker', () => {
 
                 it('should handle the shutdown properly', async () => {
                     const startTime = Date.now();
+
+                    const sliceMsg = await executionController.sendNewSlice(worker.workerId, sliceConfig);
+                    expect(sliceMsg).toEqual({ willProcess: true });
 
                     const shutdown = worker.shutdown();
 
@@ -225,7 +227,6 @@ describe('Worker', () => {
                     await worker.stores.stateStore.createState(jobConfig.ex_id, sliceConfig, 'start');
 
                     await executionController.onWorkerReady(worker.workerId);
-                    await executionController.sendNewSlice(worker.workerId, sliceConfig);
                 });
 
                 afterEach(() => {
@@ -233,7 +234,10 @@ describe('Worker', () => {
                 });
 
                 it('should handle the shutdown properly', async () => {
-                    expect.assertions(3);
+                    expect.assertions(4);
+
+                    const sliceMsg = await executionController.sendNewSlice(worker.workerId, sliceConfig);
+                    expect(sliceMsg).toEqual({ willProcess: true });
 
                     const startTime = Date.now();
 
