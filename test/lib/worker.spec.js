@@ -85,7 +85,7 @@ describe('Worker', () => {
                     sliceConfig = newSliceConfig();
                     await worker.stores.stateStore.createState(jobConfig.ex_id, sliceConfig, 'start');
                     await executionController.onWorkerReady(worker.workerId);
-                    await executionController.sendToWorker(worker.workerId, 'slicer:slice:new', sliceConfig);
+                    await executionController.sendNewSlice(worker.workerId, sliceConfig);
                 });
 
                 it('should return send a slice completed message to the execution controller', async () => {
@@ -106,7 +106,7 @@ describe('Worker', () => {
                     await worker.stores.stateStore.createState(jobConfig.ex_id, sliceConfig, 'start');
                     await executionController.onWorkerReady(worker.workerId);
                     await Promise.delay(1000);
-                    await executionController.sendToWorker(worker.workerId, 'slicer:slice:new', sliceConfig);
+                    await executionController.sendNewSlice(worker.workerId, sliceConfig);
                 });
 
                 it('should return send a slice completed message to the execution controller', async () => {
@@ -127,7 +127,7 @@ describe('Worker', () => {
                     worker.job.queue[1] = jest.fn().mockRejectedValue(new Error('Bad news bears'));
                     await worker.stores.stateStore.createState(jobConfig.ex_id, sliceConfig, 'start');
                     await executionController.onWorkerReady(worker.workerId);
-                    await executionController.sendToWorker(worker.workerId, 'slicer:slice:new', sliceConfig);
+                    await executionController.sendNewSlice(worker.workerId, sliceConfig);
                 });
 
                 it('should return send a slice completed message with an error', async () => {
@@ -147,13 +147,13 @@ describe('Worker', () => {
                     sliceConfig = newSliceConfig();
                     await worker.stores.stateStore.createState(jobConfig.ex_id, sliceConfig, 'start');
                     await executionController.onWorkerReady(worker.workerId);
-                    await executionController.sendToWorker(worker.workerId, 'slicer:slice:new', sliceConfig);
+                    await executionController.sendNewSlice(worker.workerId, sliceConfig);
                     await executionController.onMessage(`worker:slice:complete:${worker.workerId}`);
                 });
 
                 it('should handle the timeout correctly', async () => {
                     expect.hasAssertions();
-                    executionController.sendToWorker(worker.workerId, 'slicer:slice:new', sliceConfig);
+                    executionController.sendNewSlice(worker.workerId, sliceConfig);
                     const shutdown = worker.shutdown();
                     try {
                         await executionController.onMessage(`worker:slice:complete:${worker.workerId}`);
@@ -186,16 +186,17 @@ describe('Worker', () => {
                     await worker.stores.stateStore.createState(jobConfig.ex_id, sliceConfig, 'start');
 
                     await executionController.onWorkerReady(worker.workerId);
-                    await executionController.sendToWorker(worker.workerId, 'slicer:slice:new', sliceConfig);
+                    await executionController.sendNewSlice(worker.workerId, sliceConfig);
                 });
 
-                afterEach(() => {
+                afterEach(async () => {
                     worker.events.removeListener('worker:shutdown', workerShutdownEvent);
                     readerFn.mockRestore();
                 });
 
                 it('should handle the shutdown properly', async () => {
                     const startTime = Date.now();
+
                     const shutdown = worker.shutdown();
 
                     expect(workerShutdownEvent).toHaveBeenCalled();
@@ -227,7 +228,7 @@ describe('Worker', () => {
                     await worker.stores.stateStore.createState(jobConfig.ex_id, sliceConfig, 'start');
 
                     await executionController.onWorkerReady(worker.workerId);
-                    await executionController.sendToWorker(worker.workerId, 'slicer:slice:new', sliceConfig);
+                    await executionController.sendNewSlice(worker.workerId, sliceConfig);
                 });
 
                 afterEach(() => {
