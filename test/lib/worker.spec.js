@@ -12,7 +12,6 @@ const {
     ClusterMasterMessenger,
     newJobConfig,
     newSliceConfig,
-    defer,
 } = require('../helpers');
 
 describe('Worker', () => {
@@ -185,6 +184,7 @@ describe('Worker', () => {
                     await worker.stores.stateStore.createState(jobConfig.ex_id, sliceConfig, 'start');
 
                     await executionController.onWorkerReady(worker.workerId);
+                    await executionController.sendNewSlice(worker.workerId, sliceConfig);
                 });
 
                 afterEach(async () => {
@@ -193,11 +193,6 @@ describe('Worker', () => {
 
                 it('should handle the shutdown properly', async () => {
                     const startTime = Date.now();
-
-                    const sliceMsg = await executionController
-                        .sendNewSlice(worker.workerId, sliceConfig);
-
-                    expect(sliceMsg).toEqual({ willProcess: true });
 
                     const shutdown = worker.shutdown();
 
@@ -216,43 +211,48 @@ describe('Worker', () => {
             describe('when a slice is in-progress and has to be forced to shutdown', () => {
                 let sliceConfig;
                 let workerShutdownEvent;
-                let deferred;
+                let resolveReader;
+                let shutdownErr;
 
                 beforeEach(async () => {
                     worker.shutdownTimeout = 1000;
 
                     workerShutdownEvent = jest.fn();
                     worker.events.on('worker:shutdown', workerShutdownEvent);
-                    deferred = defer();
 
-                    worker.job.queue[0] = jest.fn(() => deferred.promise);
+                    const promise = new Promise((resolve) => {
+                        resolveReader = () => {
+                            resolve();
+                        };
+                    });
+
+                    worker.job.queue[0] = jest.fn(() => promise);
 
                     sliceConfig = newSliceConfig();
 
                     await worker.stores.stateStore.createState(jobConfig.ex_id, sliceConfig, 'start');
 
                     await executionController.onWorkerReady(worker.workerId);
-                });
-
-                afterEach(() => {
-                    worker.events.removeListener('worker:shutdown', workerShutdownEvent);
-                    deferred.resolve();
-                });
-
-                it('should handle the shutdown properly', async () => {
-                    expect.assertions(3);
-
-                    const sliceMsg = await executionController
-                        .sendNewSlice(worker.workerId, sliceConfig);
-
-                    expect(sliceMsg).toEqual({ willProcess: true });
+                    await executionController.sendNewSlice(worker.workerId, sliceConfig);
 
                     try {
                         await worker.shutdown();
                     } catch (err) {
-                        expect(err.message).toEqual('Error: Worker shutdown timeout after 1 seconds, forcing shutdown');
+                        shutdownErr = err;
                     }
+                });
 
+                afterEach(() => {
+                    worker.events.removeListener('worker:shutdown', workerShutdownEvent);
+                    resolveReader();
+                });
+
+                it('shutdown should throw an error', () => {
+                    expect(shutdownErr).not.toBeNil();
+                    expect(shutdownErr.message).toEqual('Error: Worker shutdown timeout after 1 seconds, forcing shutdown');
+                });
+
+                it('should emit worker:shutdown', () => {
                     expect(workerShutdownEvent).toHaveBeenCalled();
                 });
             });

@@ -62,7 +62,6 @@ describe('Slice', () => {
         await slice.initialize(job, sliceConfig, stores);
 
         cleanupTasks.push(() => testContext.cleanup());
-        cleanupTasks.push(() => slice.shutdown());
 
         return slice;
     }
@@ -146,7 +145,7 @@ describe('Slice', () => {
                 mocks.reader.mockResolvedValue(times(10, () => 'hello'));
                 mocks.op.mockResolvedValue(times(10, () => 'hi'));
 
-                slice = await setupSlice();
+                slice = await setupSlice({ analytics: false });
                 mockEvents(slice.events, mocks.events);
 
                 results = await slice.run();
@@ -195,7 +194,7 @@ describe('Slice', () => {
                 mocks.reader.mockResolvedValue(times(10, () => 'hello'));
                 mocks.op.mockResolvedValueOnce(times(10, () => 'hi'));
 
-                slice = await setupSlice({ maxRetries: 3 });
+                slice = await setupSlice({ maxRetries: 3, analytics: false });
                 mockEvents(slice.events, mocks.events);
 
                 results = await slice.run();
@@ -245,7 +244,7 @@ describe('Slice', () => {
                 mocks.reader.mockResolvedValue(times(10, () => 'hello'));
                 mocks.op.mockRejectedValue(new Error('Bad news bears'));
 
-                slice = await setupSlice({ maxRetries: 5 });
+                slice = await setupSlice({ maxRetries: 5, analytics: false });
                 mockEvents(slice.events, mocks.events);
 
                 try {
