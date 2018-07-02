@@ -32,7 +32,8 @@ describe('Worker', () => {
 
             clusterMaster = new ClusterMasterMessenger({
                 port: clusterMasterPort,
-                timeoutMs: 1000
+                networkerLatencyBuffer: 0,
+                actionTimeout: 1000
             });
 
             await clusterMaster.start();
@@ -40,7 +41,8 @@ describe('Worker', () => {
             const slicerPort = await porty.find({ avoids: [clusterMasterPort] });
             executionController = new ExecutionControllerMessenger({
                 port: slicerPort,
-                timeoutMs: 1000
+                networkerLatencyBuffer: 0,
+                actionTimeout: 1000
             });
 
             await executionController.start();
@@ -49,7 +51,7 @@ describe('Worker', () => {
 
             jobConfig = newJobConfig({ slicerPort });
 
-            worker = new Worker(jobConfig, config, { timeoutMs: 1000 });
+            worker = new Worker(jobConfig, config);
             overrideLogger(worker, 'worker');
             overrideLogger(worker.slice, 'worker:slice');
 

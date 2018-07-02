@@ -4,6 +4,7 @@ module.exports = (options = {}) => {
     const {
         clusterName = 'test-teraslice-cluster',
         timeout = 5000,
+        actionTimeout = 1000,
         assetDir,
         clusterMasterPort,
     } = options;
@@ -24,8 +25,8 @@ module.exports = (options = {}) => {
         teraslice: {
             assets_directory: assetDir,
             shutdown_timeout: timeout,
-            action_timeout: timeout,
-            network_latency_buffer: timeout,
+            action_timeout: actionTimeout,
+            network_latency_buffer: 0,
             slicer_timeout: timeout,
             slicer_allocation_attempts: 3,
             node_state_interval: timeout,

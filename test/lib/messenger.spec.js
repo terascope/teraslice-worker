@@ -119,7 +119,8 @@ describe('Messenger', () => {
             const executionControllerUrl = formatURL('localhost', slicerPort);
             executionController = new ExecutionControllerMessenger({
                 port: slicerPort,
-                timeoutMs: 1000
+                networkerLatencyBuffer: 0,
+                actionTimeout: 1000
             });
 
             await executionController.start();
@@ -128,7 +129,8 @@ describe('Messenger', () => {
             const clusterMasterUrl = formatURL('localhost', clusterMasterPort);
             clusterMaster = new ClusterMasterMessenger({
                 port: clusterMasterPort,
-                timeoutMs: 1000
+                networkerLatencyBuffer: 0,
+                actionTimeout: 1000
             });
 
             await clusterMaster.start();
@@ -138,7 +140,8 @@ describe('Messenger', () => {
                 workerId,
                 executionControllerUrl,
                 clusterMasterUrl,
-                timeoutMs: 1000,
+                networkerLatencyBuffer: 0,
+                actionTimeout: 1000,
                 socketOptions: {
                     timeout: 1000,
                     reconnection: false,
@@ -250,7 +253,9 @@ describe('Messenger', () => {
                     let sliceMsg;
 
                     beforeEach(async () => {
-                        const response = executionController.sendToWorker(workerId, 'slicer:slice:new', { example: 'slice-new-message' });
+                        const response = executionController.sendNewSlice(workerId, {
+                            example: 'slice-new-message'
+                        });
                         const slice = worker.onMessage('slicer:slice:new');
                         responseMsg = await response;
                         sliceMsg = await slice;
@@ -274,7 +279,7 @@ describe('Messenger', () => {
                     let slice;
 
                     beforeEach(async () => {
-                        const response = executionController.sendToWorker(workerId, 'slicer:slice:new', { example: 'slice-new-message' });
+                        const response = executionController.sendNewSlice(workerId, { example: 'slice-new-message' });
                         worker.available = false;
                         slice = worker.onMessage('slicer:slice:new');
                         responseMsg = await response;
@@ -305,7 +310,7 @@ describe('Messenger', () => {
         describe('when the worker is not ready', () => {
             it('should throw an error', () => {
                 expect(() => {
-                    executionController.sendToWorker(workerId, 'slicer:slice:new', { example: 'slice-new-message' });
+                    executionController.sendNewSlice(workerId, { example: 'slice-new-message' });
                 }).toThrowError(`Cannot send message to worker ${workerId}`);
             });
         });
