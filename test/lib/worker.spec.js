@@ -13,6 +13,8 @@ const {
     newJobConfig,
     newSliceConfig,
 } = require('../helpers');
+const readerFn = require('../fixtures/ops/example-reader').reader;
+const opFn = require('../fixtures/ops/example-op').op;
 
 describe('Worker', () => {
     describe('when constructed', () => {
@@ -150,19 +152,102 @@ describe('Worker', () => {
                 it('should handle the timeout correctly', async () => {
                     expect.hasAssertions();
                     executionController.sendToWorker(worker.workerId, 'slicer:slice:new', sliceConfig);
-                    await worker.shutdown();
+                    const shutdown = worker.shutdown();
                     try {
                         await executionController.onMessage(`worker:slice:complete:${worker.workerId}`);
                     } catch (err) {
                         expect(err).not.toBeNil();
                         expect(err.code).toEqual(408);
                     }
+                    await shutdown;
                 });
 
                 it('should return early if processSlice is called', async () => {
                     expect.hasAssertions();
                     await worker.shutdown();
                     return expect(worker._processSlice(newSliceConfig())).resolves.toBeNil();
+                });
+            });
+
+            describe('when a slice is in-progress and shutdown is called', () => {
+                let sliceConfig;
+                let workerShutdownEvent;
+
+                beforeEach(async () => {
+                    workerShutdownEvent = jest.fn();
+                    worker.events.on('worker:shutdown', workerShutdownEvent);
+
+                    readerFn.mockImplementation(() => Promise.delay(1500));
+
+                    sliceConfig = newSliceConfig();
+
+                    await worker.stores.stateStore.createState(jobConfig.ex_id, sliceConfig, 'start');
+
+                    await executionController.onWorkerReady(worker.workerId);
+                    await executionController.sendToWorker(worker.workerId, 'slicer:slice:new', sliceConfig);
+                });
+
+                afterEach(() => {
+                    worker.events.removeListener('worker:shutdown', workerShutdownEvent);
+                    readerFn.mockRestore();
+                });
+
+                it('should handle the shutdown properly', async () => {
+                    const startTime = Date.now();
+                    const shutdown = worker.shutdown();
+
+                    expect(workerShutdownEvent).toHaveBeenCalled();
+                    expect(opFn).toHaveBeenCalled();
+
+                    const msg = await executionController.onMessage(`worker:slice:complete:${worker.workerId}`, 2000);
+                    expect(msg).not.toBeNil();
+
+                    await shutdown;
+                    const elasped = Date.now() - startTime;
+                    expect(elasped).toBeWithin(1500, 3000);
+                });
+            });
+
+            describe('when a slice is in-progress and has to be forced to shutdown', () => {
+                let sliceConfig;
+                let workerShutdownEvent;
+
+                beforeEach(async () => {
+                    worker.shutdownTimeout = 1000;
+
+                    workerShutdownEvent = jest.fn();
+                    worker.events.on('worker:shutdown', workerShutdownEvent);
+
+                    readerFn.mockImplementation(() => Promise.delay(3000));
+
+                    sliceConfig = newSliceConfig();
+
+                    await worker.stores.stateStore.createState(jobConfig.ex_id, sliceConfig, 'start');
+
+                    await executionController.onWorkerReady(worker.workerId);
+                    await executionController.sendToWorker(worker.workerId, 'slicer:slice:new', sliceConfig);
+                });
+
+                afterEach(() => {
+                    worker.events.removeListener('worker:shutdown', workerShutdownEvent);
+                    readerFn.mockRestore();
+                });
+
+                it('should handle the shutdown properly', async () => {
+                    expect.assertions(3);
+
+                    const startTime = Date.now();
+
+                    try {
+                        await worker.shutdown();
+                    } catch (err) {
+                        expect(err.message).toEqual('Error: Worker shutdown timeout after 1 seconds, forcing shutdown');
+                    }
+
+                    expect(workerShutdownEvent).toHaveBeenCalled();
+
+                    const elasped = Date.now() - startTime;
+                    expect(elasped).toBeWithin(1000, 1500);
                 });
             });
         });
