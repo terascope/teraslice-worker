@@ -38,7 +38,7 @@ const newJobConfig = (options = {}) => {
         assets = []
     } = options;
     return {
-        type: 'worker',
+        assignment: 'worker',
         job: {
             assets,
             analytics,

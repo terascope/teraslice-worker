@@ -10,7 +10,7 @@ const exampleReaderMock = require(path.join(opsPath, 'example-reader')).newReade
 const exampleOpMock = require(path.join(opsPath, 'example-op')).newProcessor;
 const exampleAssetDir = path.join(opsPath, 'example-asset');
 
-describe('Job (type "worker")', () => {
+describe('Job (assignment "worker")', () => {
     describe('when constructing', () => {
         let job;
         let jobConfig;
@@ -19,7 +19,7 @@ describe('Job (type "worker")', () => {
         beforeEach(() => {
             _testContext = new TestContext('worker-job');
             jobConfig = {
-                type: 'example',
+                assignment: 'example',
                 job: {
                     example: true,
                     assets: [],
@@ -91,7 +91,7 @@ describe('Job (type "worker")', () => {
             beforeEach(() => {
                 _testContext = new TestContext('worker-job:fail');
                 jobConfig = {
-                    type: 'worker',
+                    assignment: 'worker',
                     job: {
                         assets: [],
                         operations: [
@@ -123,7 +123,7 @@ describe('Job (type "worker")', () => {
             beforeEach(async () => {
                 _testContext = new TestContext('worker-job:no-analytics');
                 jobConfig = {
-                    type: 'worker',
+                    assignment: 'worker',
                     job: {
                         assets: [],
                         operations: [
@@ -184,7 +184,7 @@ describe('Job (type "worker")', () => {
             beforeEach(async () => {
                 _testContext = new TestContext('worker-job:analytics');
                 jobConfig = {
-                    type: 'worker',
+                    assignment: 'worker',
                     job: {
                         assets: [],
                         analytics: true,
@@ -246,7 +246,7 @@ describe('Job (type "worker")', () => {
                 _testContext = new TestContext('worker-job:assets');
                 await saveAsset(_testContext.context, exampleAssetDir);
                 jobConfig = {
-                    type: 'worker',
+                    assignment: 'worker',
                     job: {
                         assets: ['example-asset'],
                         operations: [
@@ -298,7 +298,7 @@ describe('Job (type "worker")', () => {
                 await fs.remove(path.join(_testContext.assetDir, assetId));
 
                 jobConfig = {
-                    type: 'worker',
+                    assignment: 'worker',
                     job: {
                         assets: ['example-asset'],
                         operations: [
@@ -346,7 +346,7 @@ describe('Job (type "worker")', () => {
                 _testContext = new TestContext('worker-job:assets-fail');
 
                 jobConfig = {
-                    type: 'worker',
+                    assignment: 'worker',
                     job: {
                         assets: ['missing-assets'],
                         operations: [
@@ -383,7 +383,7 @@ describe('Job (type "worker")', () => {
                 await saveAsset(_testContext.context, path.join(opsPath, 'failing-asset'));
 
                 jobConfig = {
-                    type: 'worker',
+                    assignment: 'worker',
                     job: {
                         assets: ['failing-asset'],
                         operations: [

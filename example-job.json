@@ -1,0 +1,17 @@
+{
+    "ex_id": "06d96092-d13e-4830-aa7f-b1cf5b73ddba",
+    "job_id": "ea84c506-ddcf-4249-bf6d-d5d2affef887",
+    "slicer_port": 4321,
+    "name": "Example Job",
+    "lifecycle": "persistent",
+    "workers": 1,
+    "operations": [
+        {
+            "_op": "elasticsearch_data_generator",
+            "size": 1000
+        },
+        {
+            "_op": "noop"
+        }
+    ]
+}
