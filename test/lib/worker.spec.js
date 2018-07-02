@@ -13,8 +13,6 @@ const {
     newJobConfig,
     newSliceConfig,
 } = require('../helpers');
-const readerFn = require('../fixtures/ops/example-reader').reader;
-const opFn = require('../fixtures/ops/example-op').op;
 
 describe('Worker', () => {
     describe('when constructed', () => {
@@ -179,7 +177,7 @@ describe('Worker', () => {
                     workerShutdownEvent = jest.fn();
                     worker.events.on('worker:shutdown', workerShutdownEvent);
 
-                    readerFn.mockImplementation(() => Promise.delay(1500));
+                    worker.job.queue[0] = jest.fn().mockImplementation(() => Promise.delay(1500));
 
                     sliceConfig = newSliceConfig();
 
@@ -191,7 +189,6 @@ describe('Worker', () => {
 
                 afterEach(async () => {
                     worker.events.removeListener('worker:shutdown', workerShutdownEvent);
-                    readerFn.mockRestore();
                 });
 
                 it('should handle the shutdown properly', async () => {
@@ -200,7 +197,7 @@ describe('Worker', () => {
                     const shutdown = worker.shutdown();
 
                     expect(workerShutdownEvent).toHaveBeenCalled();
-                    expect(opFn).toHaveBeenCalled();
+                    expect(worker.job.queue[1]).toHaveBeenCalled();
 
                     const msg = await executionController.onMessage(`worker:slice:complete:${worker.workerId}`, 2000);
                     expect(msg).not.toBeNil();
@@ -221,7 +218,7 @@ describe('Worker', () => {
                     workerShutdownEvent = jest.fn();
                     worker.events.on('worker:shutdown', workerShutdownEvent);
 
-                    readerFn.mockImplementation(() => Promise.delay(3000));
+                    worker.job.queue[0] = jest.fn().mockImplementation(() => Promise.delay(3000));
 
                     sliceConfig = newSliceConfig();
 
@@ -233,7 +230,6 @@ describe('Worker', () => {
 
                 afterEach(() => {
                     worker.events.removeListener('worker:shutdown', workerShutdownEvent);
-                    readerFn.mockRestore();
                 });
 
                 it('should handle the shutdown properly', async () => {
