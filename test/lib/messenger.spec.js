@@ -5,6 +5,7 @@
 const shortid = require('shortid');
 const { formatURL } = require('../../lib/utils');
 const WorkerMessenger = require('../../lib/messenger/worker');
+const { closeServer } = require('../../lib/messenger/helpers');
 const ExecutionControllerMessenger = require('../../lib/messenger/execution-controller');
 const { ClusterMasterMessenger, findPort } = require('../helpers');
 
@@ -194,7 +195,7 @@ describe('Messenger', () => {
                 });
 
                 it('should emit worker:slice:complete on the executionController', async () => {
-                    const msg = await executionController.onMessage(`worker:slice:complete:${workerId}`);
+                    const msg = await executionController.onSliceComplete(workerId);
                     expect(msg).toEqual({
                         slice: 'worker-slice-complete',
                         analytics: 'hello',
@@ -291,7 +292,7 @@ describe('Messenger', () => {
 
                     it('should the response correctly', () => {
                         expect(responseMsg).toEqual({ willProcess: false });
-                        const errMsg = 'Timeout waiting for event "slicer:slice:new"';
+                        const errMsg = 'Timed out after 1000ms, waiting for event "slicer:slice:new"';
                         return expect(slice).rejects.toThrowError(errMsg);
                     });
                 });
@@ -304,7 +305,7 @@ describe('Messenger', () => {
                         await worker.onMessage('mystery:message');
                     } catch (err) {
                         expect(err).not.toBeNil();
-                        expect(err.message).toEqual('Timeout waiting for event "mystery:message"');
+                        expect(err.message).toEqual('Timed out after 1000ms, waiting for event "mystery:message"');
                         expect(err.code).toEqual(408);
                     }
                 });
@@ -316,6 +317,35 @@ describe('Messenger', () => {
                 expect(() => {
                     executionController.sendNewSlice(workerId, { example: 'slice-new-message' });
                 }).toThrowError(`Cannot send message to worker ${workerId}`);
+            });
+        });
+    });
+
+    describe('when testing server close', () => {
+        describe('when close errors', () => {
+            it('should reject with the error', () => {
+                const server = {
+                    close: jest.fn(done => done(new Error('oh no')))
+                };
+                return expect(closeServer(server)).rejects.toThrowError('oh no');
+            });
+        });
+
+        describe('when close errors with Not running', () => {
+            it('should resolve', () => {
+                const server = {
+                    close: jest.fn(done => done(new Error('Not running')))
+                };
+                return expect(closeServer(server)).resolves.toBeNil();
+            });
+        });
+
+        describe('when close succeeds', () => {
+            it('should resolve', () => {
+                const server = {
+                    close: jest.fn(done => done()),
+                };
+                return expect(closeServer(server)).resolves.toBeNil();
             });
         });
     });

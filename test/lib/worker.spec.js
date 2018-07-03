@@ -52,7 +52,13 @@ describe('Worker', () => {
         });
 
         describe('when the worker is started', () => {
-            beforeEach(() => worker.start());
+            let sliceConfig;
+
+            beforeEach(async () => {
+                await worker.start();
+                await testContext.newSlice();
+                ({ sliceConfig } = testContext);
+            });
 
             it('should create the correct stores', () => {
                 expect(worker.stores.stateStore).toBeDefined();
@@ -62,110 +68,74 @@ describe('Worker', () => {
             });
 
             describe('when a slice is sent from the execution controller', () => {
-                beforeEach(async () => {
-                    await testContext.newSlice();
+                let msg;
 
+                beforeEach(async () => {
                     await executionController.onWorkerReady(worker.workerId);
                     await executionController.sendNewSlice(
                         worker.workerId,
-                        testContext.sliceConfig
+                        sliceConfig
                     );
+                    msg = await executionController.onSliceComplete(worker.workerId);
                 });
 
-                it('should return send a slice completed message to the execution controller', async () => {
-                    const msg = await executionController.onMessage(`worker:slice:complete:${worker.workerId}`, 2000);
+                it('should return send a slice completed message to the execution controller', () => {
                     expect(msg).toMatchObject({
                         worker_id: worker.workerId,
-                        slice: testContext.sliceConfig,
+                        slice: sliceConfig,
                     });
                     expect(msg).not.toHaveProperty('error');
                 });
             });
 
             describe('when a new slice is not sent right away', () => {
-                beforeEach(async () => {
-                    await testContext.newSlice();
+                let msg;
 
+                beforeEach(async () => {
                     await executionController.onWorkerReady(worker.workerId);
                     await Promise.delay(1000);
 
                     await executionController.sendNewSlice(
                         worker.workerId,
-                        testContext.sliceConfig
+                        sliceConfig
                     );
+
+                    msg = await executionController.onSliceComplete(worker.workerId, 2000);
                 });
 
-                it('should return send a slice completed message to the execution controller', async () => {
-                    const msg = await executionController.onMessage(`worker:slice:complete:${worker.workerId}`, 2000);
+                it('should return send a slice completed message to the execution controller', () => {
                     expect(msg).toMatchObject({
                         worker_id: worker.workerId,
-                        slice: testContext.sliceConfig,
+                        slice: sliceConfig,
                     });
                     expect(msg).not.toHaveProperty('error');
                 });
             });
 
             describe('when a slice errors', () => {
+                let msg;
+
                 beforeEach(async () => {
                     worker.job.queue[1] = jest.fn().mockRejectedValue(new Error('Bad news bears'));
 
-                    await testContext.newSlice();
-
                     await executionController.onWorkerReady(worker.workerId);
-                    await executionController.sendNewSlice(
-                        worker.workerId,
-                        testContext.sliceConfig
-                    );
+                    await executionController.sendNewSlice(worker.workerId, sliceConfig);
+
+                    msg = await executionController.onSliceComplete(worker.workerId);
                 });
 
                 it('should return send a slice completed message with an error', async () => {
-                    const msg = await executionController.onMessage(`worker:slice:complete:${worker.workerId}`, 2000);
                     expect(msg).toMatchObject({
                         worker_id: worker.workerId,
-                        slice: testContext.sliceConfig,
+                        slice: sliceConfig,
                     });
                     expect(msg.error).toStartWith('Error: Slice failed processing, caused by Error: Bad news bears');
                 });
             });
 
-            describe('when the slice completes and shutdown is called', () => {
-                beforeEach(async () => {
-                    await testContext.newSlice();
-
-                    await executionController.onWorkerReady(worker.workerId);
-
-                    await executionController.sendNewSlice(
-                        worker.workerId,
-                        testContext.sliceConfig
-                    );
-
-                    await executionController.onMessage(`worker:slice:complete:${worker.workerId}`);
-                });
-
-                it('should handle the timeout correctly', async () => {
-                    expect.hasAssertions();
-
-                    executionController.sendNewSlice(worker.workerId, testContext.sliceConfig);
-
-                    const shutdown = worker.shutdown();
-                    try {
-                        await executionController.onMessage(`worker:slice:complete:${worker.workerId}`);
-                    } catch (err) {
-                        expect(err).not.toBeNil();
-                        expect(err.code).toEqual(408);
-                    }
-                    await shutdown;
-                });
-
-                it('should return early if processSlice is called', async () => {
-                    expect.hasAssertions();
-                    await worker.shutdown();
-                    return expect(worker._processSlice(newSliceConfig())).resolves.toBeNil();
-                });
-            });
-
             describe('when a slice is in-progress and shutdown is called', () => {
                 let workerShutdownEvent;
+                let shutdownErr;
 
                 beforeEach(async () => {
                     workerShutdownEvent = jest.fn();
@@ -173,29 +143,34 @@ describe('Worker', () => {
 
                     worker.job.queue[0] = jest.fn(async () => { await Promise.delay(1500); });
 
-                    testContext.newSlice();
-
                     await executionController.onWorkerReady(worker.workerId);
                     await executionController.sendNewSlice(
                         worker.workerId,
-                        testContext.sliceConfig
+                        sliceConfig
                     );
+
+                    try {
+                        worker.shutdown();
+                    } catch (err) {
+                        shutdownErr = err;
+                    }
                 });
 
-                it('should handle the shutdown properly', async () => {
-                    const startTime = Date.now();
+                it('should not have a shutdown err', () => {
+                    expect(shutdownErr).toBeNil();
+                });
 
-                    const shutdown = worker.shutdown();
-
+                it('should call worker:shutdown', () => {
                     expect(workerShutdownEvent).toHaveBeenCalled();
+                });
+
+                it('should call op processor', () => {
                     expect(worker.job.queue[1]).toHaveBeenCalled();
+                });
 
-                    const msg = await executionController.onMessage(`worker:slice:complete:${worker.workerId}`, 2000);
-                    expect(msg).not.toBeNil();
-
-                    await shutdown;
-                    const elasped = Date.now() - startTime;
-                    expect(elasped).toBeWithin(1500, 3000);
+                it('should call slice complete', () => {
+                    const promise = executionController.onSliceComplete(worker.workerId, 2000);
+                    return expect(promise).resolves.not.toBeNil();
                 });
             });
 
@@ -224,7 +199,7 @@ describe('Worker', () => {
 
                     await executionController.sendNewSlice(
                         worker.workerId,
-                        testContext.sliceConfig
+                        sliceConfig
                     );
 
                     await Promise.delay(100);

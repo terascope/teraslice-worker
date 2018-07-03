@@ -2,13 +2,12 @@
 
 const Promise = require('bluebird');
 const isNumber = require('lodash/isNumber');
-const toNumber = require('lodash/toNumber');
 const Server = require('socket.io');
 const porty = require('porty');
-const { EventEmitter } = require('events');
-const { onMessage, serverClose } = require('../../lib/messenger/helpers');
+const MessageEmitter = require('../../lib/messenger/message-emitter');
+const { closeServer } = require('../../lib/messenger/helpers');
 
-class ClusterMasterMessenger extends EventEmitter {
+class ClusterMasterMessenger extends MessageEmitter {
     constructor({ port, actionTimeout, networkerLatencyBuffer } = {}) {
         super();
         if (!isNumber(port)) {
@@ -38,6 +37,7 @@ class ClusterMasterMessenger extends EventEmitter {
             });
 
             socket.on('disconnect', (err) => {
+                this.flushAny(workerId);
                 if (this.workers[workerId]) {
                     delete this.workers[workerId];
                 }
@@ -81,19 +81,20 @@ class ClusterMasterMessenger extends EventEmitter {
     }
 
     async close() {
-        await serverClose(this.server);
+        await closeServer(this.server);
+        this.flushAll();
         this.removeAllListeners();
     }
 
     onMessage(eventName, timeoutMs) {
-        return onMessage(this, eventName, this._getTimeout(timeoutMs));
+        return this.onceWithTimeout(eventName, this._getTimeout(timeoutMs));
     }
 
-    onWorkerReady(workerId) {
+    onWorkerReady(workerId, timeoutMs) {
         if (this.workers[workerId]) {
             return Promise.resolve(this.workers[workerId].worker);
         }
-        return onMessage(this, `worker:ready:${workerId}`, this._getTimeout());
+        return this.onMessage(`worker:ready:${workerId}`, timeoutMs);
     }
 
     // do this to make it easier to listen for a specific worker message
@@ -102,11 +103,13 @@ class ClusterMasterMessenger extends EventEmitter {
             worker_id: workerId,
             payload,
         });
-        this.emit(`${eventName}:${workerId}`, payload);
+        if (workerId) {
+            this.emit(`${eventName}:${workerId}`, payload);
+        }
     }
 
-    _getTimeout(timeout = this.actionTimeout) {
-        return toNumber(timeout) + this.networkerLatencyBuffer;
+    _getTimeout(timeout) {
+        return (timeout || this.actionTimeout) + this.networkerLatencyBuffer;
     }
 }
 
