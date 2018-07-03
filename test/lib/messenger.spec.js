@@ -2,6 +2,7 @@
 
 /* eslint-disable no-console, no-new */
 
+const Promise = require('bluebird');
 const shortid = require('shortid');
 const { formatURL } = require('../../lib/utils');
 const WorkerMessenger = require('../../lib/messenger/worker');
@@ -205,6 +206,31 @@ describe('Messenger', () => {
                 });
             });
 
+            describe('when slice complete should work when using the cache', () => {
+                beforeEach(async () => {
+                    worker.sliceComplete({ slice: 'hello-1', analyticsData: 'hello', error: 'hello' });
+                    worker.sliceComplete({ slice: 'hello-2', analyticsData: 'hello', error: 'hello' });
+                    await Promise.delay(500);
+                });
+
+                it('should emit worker:slice:complete on the executionController', async () => {
+                    const msg = await executionController.onSliceComplete(workerId);
+                    expect(msg).toEqual({
+                        slice: 'hello-1',
+                        analytics: 'hello',
+                        error: 'hello',
+                        worker_id: workerId,
+                    });
+                    const msg2 = await executionController.onSliceComplete(workerId);
+                    expect(msg2).toEqual({
+                        slice: 'hello-2',
+                        analytics: 'hello',
+                        error: 'hello',
+                        worker_id: workerId,
+                    });
+                });
+            });
+
             describe('when receiving cluster:error:terminal', () => {
                 beforeEach(() => {
                     clusterMaster.sendToWorker(workerId, 'cluster:error:terminal', {
@@ -279,6 +305,7 @@ describe('Messenger', () => {
                     });
                 });
 
+
                 describe('when the worker is set as unavailable', () => {
                     let responseMsg;
                     let slice;
@@ -310,7 +337,39 @@ describe('Messenger', () => {
                     }
                 });
             });
+
+            describe('when the worker responds with an error', () => {
+                let responseMsg;
+                let responseErr;
+
+                beforeEach(async () => {
+                    worker.slicerSocket.on('some:message', (msg) => {
+                        worker.slicerSocket.emit('message:response', {
+                            __msgId: msg.__msgId,
+                            __source: 'execution_controller',
+                            payload: {
+                                error: 'this should fail'
+                            }
+                        });
+                    });
+                    try {
+                        responseMsg = await executionController.sendWithResponse(workerId, 'some:message', { hello: true }, {
+                            timeoutMs: 1000,
+                            source: 'execution_controller',
+                            to: workerId,
+                        });
+                    } catch (err) {
+                        responseErr = err;
+                    }
+                });
+
+                it('executionController should get an error back', () => {
+                    expect(responseMsg).toBeNil();
+                    expect(responseErr.toString()).toEqual('Error: this should fail');
+                });
+            });
         });
+
 
         describe('when the worker is not ready', () => {
             it('should throw an error', () => {

@@ -7,7 +7,6 @@ const { Worker } = require('../..');
 const ExecutionControllerMessenger = require('../../lib/messenger/execution-controller');
 const {
     TestContext,
-    newSliceConfig,
     ClusterMasterMessenger,
     findPort,
 } = require('../helpers');
@@ -193,16 +192,12 @@ describe('Worker', () => {
 
                     worker.job.queue[0] = jest.fn(() => promise);
 
-                    await testContext.newSlice();
-
                     await executionController.onWorkerReady(worker.workerId);
 
                     await executionController.sendNewSlice(
                         worker.workerId,
                         sliceConfig
                     );
-
-                    await Promise.delay(100);
 
                     try {
                         await worker.shutdown();
