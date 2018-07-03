@@ -6,8 +6,6 @@ const get = require('lodash/get');
 const Job = require('../../lib/job');
 const { TestContext, saveAsset, opsPath } = require('../helpers');
 
-const exampleReaderMock = require(path.join(opsPath, 'example-reader')).newReader;
-const exampleOpMock = require(path.join(opsPath, 'example-op')).newProcessor;
 const exampleAssetDir = path.join(opsPath, 'example-asset');
 
 describe('Job (assignment "worker")', () => {
@@ -36,6 +34,7 @@ describe('Job (assignment "worker")', () => {
                 job_id: 'example-job-id',
                 slicer_port: 0
             };
+
             job = new Job(_testContext.context, jobConfig);
         });
 
@@ -144,9 +143,6 @@ describe('Job (assignment "worker")', () => {
 
                 job = new Job(_testContext.context, jobConfig);
 
-                exampleReaderMock.mockClear();
-                exampleOpMock.mockClear();
-
                 await job.initialize();
             });
 
@@ -163,13 +159,13 @@ describe('Job (assignment "worker")', () => {
             });
 
             it('should load the ops', () => {
-                expect(exampleReaderMock).toHaveBeenCalledTimes(1);
-                expect(exampleReaderMock).toHaveBeenCalledWith(_testContext.context, {
+                expect(_testContext.newReader).toHaveBeenCalledTimes(1);
+                expect(_testContext.newReader).toHaveBeenCalledWith(_testContext.context, {
                     _op: path.join(opsPath, 'example-reader'),
                     exampleProp: 321
                 }, jobConfig.job);
-                expect(exampleOpMock).toHaveBeenCalledTimes(1);
-                expect(exampleOpMock).toHaveBeenCalledWith(_testContext.context, {
+                expect(_testContext.newProcessor).toHaveBeenCalledTimes(1);
+                expect(_testContext.newProcessor).toHaveBeenCalledWith(_testContext.context, {
                     _op: path.join(opsPath, 'example-op'),
                     exampleProp: 123
                 }, jobConfig.job);
@@ -205,9 +201,6 @@ describe('Job (assignment "worker")', () => {
                 };
                 job = new Job(_testContext.context, jobConfig);
 
-                exampleReaderMock.mockClear();
-                exampleOpMock.mockClear();
-
                 await job.initialize();
             });
 
@@ -224,13 +217,13 @@ describe('Job (assignment "worker")', () => {
             });
 
             it('should load the ops', () => {
-                expect(exampleReaderMock).toHaveBeenCalledTimes(1);
-                expect(exampleReaderMock).toHaveBeenCalledWith(_testContext.context, {
+                expect(_testContext.newReader).toHaveBeenCalledTimes(1);
+                expect(_testContext.newReader).toHaveBeenCalledWith(_testContext.context, {
                     _op: path.join(opsPath, 'example-reader'),
                     exampleProp: 321
                 }, jobConfig.job);
-                expect(exampleOpMock).toHaveBeenCalledTimes(1);
-                expect(exampleOpMock).toHaveBeenCalledWith(_testContext.context, {
+                expect(_testContext.newProcessor).toHaveBeenCalledTimes(1);
+                expect(_testContext.newProcessor).toHaveBeenCalledWith(_testContext.context, {
                     _op: path.join(opsPath, 'example-op'),
                     exampleProp: 123
                 }, jobConfig.job);

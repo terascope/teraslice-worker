@@ -9,6 +9,10 @@ const {
     stateStore: makeStateStore,
     analyticsStore: makeAnalyticsStore
 } = require('../../lib/teraslice');
+
+const exampleReader = require('../fixtures/ops/example-reader');
+const exampleOp = require('../fixtures/ops/example-op');
+
 const overrideLogger = require('./override-logger');
 const { generateContext } = require('../../lib/utils');
 const { newJobConfig, newSysConfig, newSliceConfig } = require('./configs');
@@ -21,6 +25,18 @@ class TestContext {
             analytics,
             maxRetries
         } = options;
+
+        exampleReader.reader.mockClear();
+        exampleReader.newReader.mockClear();
+
+        exampleOp.op.mockClear();
+        exampleOp.newProcessor.mockClear();
+
+        this.reader = exampleReader.reader;
+        this.newReader = exampleReader.newReader;
+
+        this.op = exampleOp.op;
+        this.newProcessor = exampleOp.newProcessor;
 
         this.clusterName = `tmp_${shortid.generate()}`.toLowerCase();
         this.assetDir = createTempDirSync();

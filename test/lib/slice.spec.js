@@ -8,45 +8,18 @@ const {
     TestContext,
 } = require('../helpers');
 
-const exampleReader = require('../fixtures/ops/example-reader');
-const exampleOp = require('../fixtures/ops/example-op');
-
-function makeMocks() {
-    const events = {
-        'slice:success': jest.fn(),
-        'slice:finalize': jest.fn(),
-        'slice:failure': jest.fn(),
-        'slice:retry': jest.fn(),
-    };
-
-    const reader = jest.fn();
-    const op = jest.fn();
-    exampleReader.newReader = jest.fn().mockResolvedValue(reader);
-    exampleOp.newProcessor = jest.fn().mockResolvedValue(op);
-    return {
-        events,
-        reader,
-        op,
-    };
-}
-
 describe('Slice', () => {
-    const cleanupTasks = [];
-
-    function mockEvents(events, eventMocks) {
-        Object.keys(eventMocks).forEach((name) => {
-            const mock = eventMocks[name];
-            events.on(name, mock);
-        });
-    }
+    let slice;
+    let testContext;
+    let eventMocks;
 
     async function setupSlice(options) {
-        const testContext = new TestContext('slice:analytics', options);
+        testContext = new TestContext('slice:analytics', options);
 
         const job = new Job(testContext.context, testContext.jobConfig);
         await job.initialize();
 
-        const slice = new Slice(testContext.context, testContext.jobConfig);
+        slice = new Slice(testContext.context, testContext.jobConfig);
         overrideLogger(slice, 'slice');
 
         await testContext.addStateStore();
@@ -56,51 +29,44 @@ describe('Slice', () => {
 
         await slice.initialize(job, testContext.sliceConfig, testContext.stores);
 
-        cleanupTasks.push(() => testContext.cleanup());
+        eventMocks = {
+            'slice:success': jest.fn(),
+            'slice:finalize': jest.fn(),
+            'slice:failure': jest.fn(),
+            'slice:retry': jest.fn(),
+        };
 
-        return slice;
+        Object.keys(eventMocks).forEach((name) => {
+            const mock = eventMocks[name];
+            slice.events.on(name, mock);
+        });
     }
 
-    async function cleanup() {
-        while (cleanupTasks.length > 0) {
-            const task = cleanupTasks.shift();
-            await task(); // eslint-disable-line no-await-in-loop
-        }
-    }
-
-    beforeAll(async () => {
-        await cleanup();
-    });
-
-    afterAll(async () => {
-        await cleanup();
-    });
+    afterAll(() => testContext.cleanup());
 
     describe('with analytics', () => {
         describe('when the slice succeeds', () => {
             let results;
-            let slice;
-            let mocks;
 
             beforeAll(async () => {
-                mocks = makeMocks();
-                mocks.reader.mockResolvedValue(times(10, () => 'hello'));
-                mocks.op.mockResolvedValue(times(10, () => 'hi'));
+                await setupSlice({ analytics: true });
 
-                slice = await setupSlice({ analytics: true });
-                mockEvents(slice.events, mocks.events);
+                testContext.reader.mockResolvedValue(times(10, () => 'hello'));
+                testContext.op.mockResolvedValue(times(10, () => 'hi'));
 
                 results = await slice.run();
             });
 
             it('should call all of the operations', () => {
+                const { reader, op } = testContext;
                 const sliceRequest = { example: 'slice-data' };
-                expect(mocks.reader).toHaveBeenCalledTimes(1);
-                expect(mocks.reader).toHaveBeenCalledWith(sliceRequest, slice.logger, sliceRequest);
+
+                expect(reader).toHaveBeenCalledTimes(1);
+                expect(reader).toHaveBeenCalledWith(sliceRequest, slice.logger, sliceRequest);
 
                 const readerResults = times(10, () => 'hello');
-                expect(mocks.op).toHaveBeenCalledTimes(1);
-                expect(mocks.op).toHaveBeenCalledWith(readerResults, slice.logger, sliceRequest);
+                expect(op).toHaveBeenCalledTimes(1);
+                expect(op).toHaveBeenCalledWith(readerResults, slice.logger, sliceRequest);
 
                 expect(results).toEqual(times(10, () => 'hi'));
             });
@@ -113,12 +79,12 @@ describe('Slice', () => {
             });
 
             it('should call the correct events', () => {
-                expect(mocks.events['slice:success']).toHaveBeenCalledTimes(1);
-                expect(mocks.events['slice:success']).toHaveBeenCalled();
-                expect(mocks.events['slice:finalize']).toHaveBeenCalledTimes(1);
-                expect(mocks.events['slice:finalize']).toHaveBeenCalled();
-                expect(mocks.events['slice:failure']).not.toHaveBeenCalled();
-                expect(mocks.events['slice:retry']).not.toHaveBeenCalled();
+                expect(eventMocks['slice:success']).toHaveBeenCalledTimes(1);
+                expect(eventMocks['slice:success']).toHaveBeenCalled();
+                expect(eventMocks['slice:finalize']).toHaveBeenCalledTimes(1);
+                expect(eventMocks['slice:finalize']).toHaveBeenCalled();
+                expect(eventMocks['slice:failure']).not.toHaveBeenCalled();
+                expect(eventMocks['slice:retry']).not.toHaveBeenCalled();
             });
 
             it('should have the correct state storage', () => {
@@ -131,29 +97,27 @@ describe('Slice', () => {
 
     describe('without analytics', () => {
         describe('when the slice succeeds', () => {
-            let slice;
             let results;
-            let mocks;
 
             beforeAll(async () => {
-                mocks = makeMocks();
-                mocks.reader.mockResolvedValue(times(10, () => 'hello'));
-                mocks.op.mockResolvedValue(times(10, () => 'hi'));
+                await setupSlice({ analytics: false });
 
-                slice = await setupSlice({ analytics: false });
-                mockEvents(slice.events, mocks.events);
+                testContext.reader.mockResolvedValue(times(10, () => 'hello'));
+                testContext.op.mockResolvedValue(times(10, () => 'hi'));
 
                 results = await slice.run();
             });
 
             it('should call all of the operations', () => {
+                const { reader, op } = testContext;
+
                 const sliceRequest = { example: 'slice-data' };
-                expect(mocks.reader).toHaveBeenCalledTimes(1);
-                expect(mocks.reader).toHaveBeenCalledWith(sliceRequest, slice.logger, sliceRequest);
+                expect(reader).toHaveBeenCalledTimes(1);
+                expect(reader).toHaveBeenCalledWith(sliceRequest, slice.logger, sliceRequest);
 
                 const readerResults = times(10, () => 'hello');
-                expect(mocks.op).toHaveBeenCalledTimes(1);
-                expect(mocks.op).toHaveBeenCalledWith(readerResults, slice.logger, sliceRequest);
+                expect(op).toHaveBeenCalledTimes(1);
+                expect(op).toHaveBeenCalledWith(readerResults, slice.logger, sliceRequest);
 
                 expect(results).toEqual(times(10, () => 'hi'));
             });
@@ -163,12 +127,12 @@ describe('Slice', () => {
             });
 
             it('should call the correct events', () => {
-                expect(mocks.events['slice:success']).toHaveBeenCalledTimes(1);
-                expect(mocks.events['slice:success']).toHaveBeenCalled();
-                expect(mocks.events['slice:finalize']).toHaveBeenCalledTimes(1);
-                expect(mocks.events['slice:finalize']).toHaveBeenCalled();
-                expect(mocks.events['slice:retry']).not.toHaveBeenCalled();
-                expect(mocks.events['slice:failure']).not.toHaveBeenCalled();
+                expect(eventMocks['slice:success']).toHaveBeenCalledTimes(1);
+                expect(eventMocks['slice:success']).toHaveBeenCalled();
+                expect(eventMocks['slice:finalize']).toHaveBeenCalledTimes(1);
+                expect(eventMocks['slice:finalize']).toHaveBeenCalled();
+                expect(eventMocks['slice:retry']).not.toHaveBeenCalled();
+                expect(eventMocks['slice:failure']).not.toHaveBeenCalled();
             });
 
             it('should have the correct state storage', () => {
@@ -179,30 +143,27 @@ describe('Slice', () => {
         });
 
         describe('when the slice retries', () => {
-            let slice;
             let results;
-            let mocks;
 
             beforeAll(async () => {
-                mocks = makeMocks();
-                mocks.reader.mockRejectedValueOnce(new Error('Bad news bears'));
-                mocks.reader.mockResolvedValue(times(10, () => 'hello'));
-                mocks.op.mockResolvedValueOnce(times(10, () => 'hi'));
+                await setupSlice({ maxRetries: 3, analytics: false });
 
-                slice = await setupSlice({ maxRetries: 3, analytics: false });
-                mockEvents(slice.events, mocks.events);
+                testContext.reader.mockRejectedValueOnce(new Error('Bad news bears'));
+                testContext.reader.mockResolvedValue(times(10, () => 'hello'));
+                testContext.op.mockResolvedValue(times(10, () => 'hi'));
 
                 results = await slice.run();
             });
 
             it('should call all of the operations', () => {
+                const { reader, op } = testContext;
                 const sliceRequest = { example: 'slice-data' };
-                expect(mocks.reader).toHaveBeenCalledTimes(2);
-                expect(mocks.reader).toHaveBeenCalledWith(sliceRequest, slice.logger, sliceRequest);
+                expect(reader).toHaveBeenCalledTimes(2);
+                expect(reader).toHaveBeenCalledWith(sliceRequest, slice.logger, sliceRequest);
 
                 const readerResults = times(10, () => 'hello');
-                expect(mocks.op).toHaveBeenCalledTimes(1);
-                expect(mocks.op).toHaveBeenCalledWith(readerResults, slice.logger, sliceRequest);
+                expect(op).toHaveBeenCalledTimes(1);
+                expect(op).toHaveBeenCalledWith(readerResults, slice.logger, sliceRequest);
 
                 expect(results).toEqual(times(10, () => 'hi'));
             });
@@ -212,13 +173,13 @@ describe('Slice', () => {
             });
 
             it('should call the correct events', () => {
-                expect(mocks.events['slice:retry']).toHaveBeenCalledTimes(1);
-                expect(mocks.events['slice:retry']).toHaveBeenCalledWith(slice.slice);
-                expect(mocks.events['slice:success']).toHaveBeenCalledTimes(1);
-                expect(mocks.events['slice:success']).toHaveBeenCalledWith(slice.slice);
-                expect(mocks.events['slice:finalize']).toHaveBeenCalledTimes(1);
-                expect(mocks.events['slice:finalize']).toHaveBeenCalledWith(slice.slice);
-                expect(mocks.events['slice:failure']).not.toHaveBeenCalled();
+                expect(eventMocks['slice:retry']).toHaveBeenCalledTimes(1);
+                expect(eventMocks['slice:retry']).toHaveBeenCalledWith(slice.slice);
+                expect(eventMocks['slice:success']).toHaveBeenCalledTimes(1);
+                expect(eventMocks['slice:success']).toHaveBeenCalledWith(slice.slice);
+                expect(eventMocks['slice:finalize']).toHaveBeenCalledTimes(1);
+                expect(eventMocks['slice:finalize']).toHaveBeenCalledWith(slice.slice);
+                expect(eventMocks['slice:failure']).not.toHaveBeenCalled();
             });
 
             it('should have the correct state storage', () => {
@@ -229,18 +190,14 @@ describe('Slice', () => {
         });
 
         describe('when the slice fails', () => {
-            let slice;
             let results;
             let err;
-            let mocks;
 
             beforeAll(async () => {
-                mocks = makeMocks();
-                mocks.reader.mockResolvedValue(times(10, () => 'hello'));
-                mocks.op.mockRejectedValue(new Error('Bad news bears'));
+                await setupSlice({ maxRetries: 5, analytics: false });
 
-                slice = await setupSlice({ maxRetries: 5, analytics: false });
-                mockEvents(slice.events, mocks.events);
+                testContext.reader.mockResolvedValue(times(10, () => 'hello'));
+                testContext.op.mockRejectedValue(new Error('Bad news bears'));
 
                 try {
                     results = await slice.run();
@@ -258,23 +215,26 @@ describe('Slice', () => {
             });
 
             it('should call all of the operations', () => {
+                const { reader, op } = testContext;
+
                 const sliceRequest = { example: 'slice-data' };
-                expect(mocks.reader).toHaveBeenCalledTimes(5);
-                expect(mocks.reader).toHaveBeenCalledWith(sliceRequest, slice.logger, sliceRequest);
+
+                expect(reader).toHaveBeenCalledTimes(5);
+                expect(reader).toHaveBeenCalledWith(sliceRequest, slice.logger, sliceRequest);
 
                 const readerResults = times(10, () => 'hello');
-                expect(mocks.op).toHaveBeenCalledTimes(5);
-                expect(mocks.op).toHaveBeenCalledWith(readerResults, slice.logger, sliceRequest);
+                expect(op).toHaveBeenCalledTimes(5);
+                expect(op).toHaveBeenCalledWith(readerResults, slice.logger, sliceRequest);
             });
 
             it('should emit the events', () => {
-                expect(mocks.events['slice:retry']).toHaveBeenCalledTimes(5);
-                expect(mocks.events['slice:retry']).toHaveBeenCalledWith(slice.slice);
-                expect(mocks.events['slice:failure']).toHaveBeenCalledTimes(1);
-                expect(mocks.events['slice:failure']).toHaveBeenCalledWith(slice.slice);
-                expect(mocks.events['slice:success']).not.toHaveBeenCalled();
-                expect(mocks.events['slice:finalize']).toHaveBeenCalledTimes(1);
-                expect(mocks.events['slice:finalize']).toHaveBeenCalledWith(slice.slice);
+                expect(eventMocks['slice:retry']).toHaveBeenCalledTimes(5);
+                expect(eventMocks['slice:retry']).toHaveBeenCalledWith(slice.slice);
+                expect(eventMocks['slice:failure']).toHaveBeenCalledTimes(1);
+                expect(eventMocks['slice:failure']).toHaveBeenCalledWith(slice.slice);
+                expect(eventMocks['slice:success']).not.toHaveBeenCalled();
+                expect(eventMocks['slice:finalize']).toHaveBeenCalledTimes(1);
+                expect(eventMocks['slice:finalize']).toHaveBeenCalledWith(slice.slice);
             });
 
             it('should have the correct state storage', () => {
@@ -286,19 +246,13 @@ describe('Slice', () => {
     });
 
     describe('when given a completed slice', () => {
-        let slice;
-        let mocks;
-
         beforeAll(async () => {
-            mocks = makeMocks();
-            mocks.reader.mockResolvedValue(times(10, () => 'hello'));
-            mocks.op.mockResolvedValue(times(10, () => 'hi'));
+            await setupSlice();
 
-            slice = await setupSlice();
+            testContext.reader.mockResolvedValue(times(10, () => 'hello'));
+            testContext.op.mockResolvedValue(times(10, () => 'hi'));
 
             await slice._markCompleted();
-
-            mockEvents(slice.events, mocks.events);
         });
 
         it('should throw an error when calling run', () => {
@@ -309,14 +263,10 @@ describe('Slice', () => {
 
     describe('when logging the analytics state', () => {
         describe('when given invalid state', () => {
-            let mocks;
-            let slice;
-
             beforeAll(async () => {
-                mocks = makeMocks();
-                mocks.reader.mockResolvedValue(times(10, () => 'hello'));
-                mocks.op.mockResolvedValue(times(10, () => 'hi'));
-                slice = await setupSlice({ analytics: true });
+                await setupSlice({ analytics: true });
+                testContext.reader.mockResolvedValue(times(10, () => 'hello'));
+                testContext.op.mockResolvedValue(times(10, () => 'hi'));
             });
 
             it('should throw an error if given invalid state', async () => {
@@ -326,14 +276,11 @@ describe('Slice', () => {
         });
 
         describe('when the slice is a string', () => {
-            let mocks;
-            let slice;
-
             beforeAll(async () => {
-                mocks = makeMocks();
-                mocks.reader.mockResolvedValue(times(10, () => 'hello'));
-                mocks.op.mockResolvedValue(times(10, () => 'hi'));
-                slice = await setupSlice({ analytics: true });
+                await setupSlice({ analytics: true });
+
+                testContext.reader.mockResolvedValue(times(10, () => 'hello'));
+                testContext.op.mockResolvedValue(times(10, () => 'hi'));
             });
 
             it('should handle the case when the slice is a string', async () => {
@@ -345,16 +292,20 @@ describe('Slice', () => {
 
     describe('when marking the slice as complete', () => {
         it('should throw an error if given invalid state', async () => {
-            const slice = await setupSlice();
+            await setupSlice();
+
             slice.slice = { should: 'break' };
+
             return expect(slice._markCompleted()).rejects.toThrowError(/Failure to update success state/);
         });
     });
 
     describe('when marking the slice as failed', () => {
         it('should throw an error if given invalid state', async () => {
-            const slice = await setupSlice();
+            await setupSlice();
+
             slice.slice = { should: 'break' };
+
             await expect(slice._markFailed(new Error('some error'))).rejects.toThrowError(/Failure to update failed state/);
             await expect(slice._markFailed()).rejects.toThrowError(/Failure to update failed state/);
         });
