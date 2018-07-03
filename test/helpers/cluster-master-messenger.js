@@ -6,7 +6,7 @@ const toNumber = require('lodash/toNumber');
 const Server = require('socket.io');
 const porty = require('porty');
 const { EventEmitter } = require('events');
-const { onMessage } = require('../../lib/messenger/helpers');
+const { onMessage, serverClose } = require('../../lib/messenger/helpers');
 
 class ClusterMasterMessenger extends EventEmitter {
     constructor({ port, actionTimeout, networkerLatencyBuffer } = {}) {
@@ -81,10 +81,7 @@ class ClusterMasterMessenger extends EventEmitter {
     }
 
     async close() {
-        const close = Promise.promisify(this.server.close, {
-            context: this.server
-        });
-        await close();
+        await serverClose(this.server);
         this.removeAllListeners();
     }
 

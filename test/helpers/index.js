@@ -1,58 +1,38 @@
 'use strict';
 
-const path = require('path');
-const shortid = require('shortid');
+const porty = require('porty');
 const random = require('lodash/random');
 const ClusterMasterMessenger = require('./cluster-master-messenger');
 const overrideLogger = require('./override-logger');
 const saveAsset = require('./save-asset');
 const TestContext = require('./test-context');
-const newSysConfig = require('./sysconfig');
+const {
+    newSliceConfig,
+    newJobConfig,
+    newSysConfig,
+    opsPath,
+    newId,
+} = require('./configs');
 
-const newId = prefix => `${prefix}-${shortid.generate()}`.toLowerCase();
-const opsPath = path.join(__dirname, '..', 'fixtures', 'ops');
+const usedPorts = [];
 
-const newSliceConfig = (request = { example: 'slice-data' }) => ({
-    slice_id: newId('slice-id'),
-    slicer_id: newId('slicer-id'),
-    order: random(0, 1000),
-    request,
-    _created: new Date().toISOString()
-});
+async function findPort() {
+    const min = random(8000, 40000);
+    const max = min + 100;
 
-const newJobConfig = (options = {}) => {
-    const {
-        analytics = false,
-        maxRetries = 1,
-        slicerPort = 0,
-        operations = [
-            {
-                _op: path.join(opsPath, 'example-reader'),
-                exampleProp: 321
-            },
-            {
-                _op: path.join(opsPath, 'example-op'),
-                exampleProp: 123
-            }
-        ],
-        assets = []
-    } = options;
-    return {
-        assignment: 'worker',
-        job: {
-            assets,
-            analytics,
-            max_retries: maxRetries,
-            operations,
-        },
-        ex_id: newId('ex-id'),
-        job_id: newId('job-id'),
-        slicer_port: slicerPort,
-        slicer_hostname: 'localhost'
-    };
-};
+    const port = await porty.find({
+        min,
+        max,
+        avoids: usedPorts,
+    });
+
+    usedPorts.push(port);
+
+    return port;
+}
 
 module.exports = {
+    findPort,
     newJobConfig,
     newSliceConfig,
     opsPath,

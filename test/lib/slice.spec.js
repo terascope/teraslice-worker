@@ -4,10 +4,8 @@ const times = require('lodash/times');
 const Slice = require('../../lib/slice');
 const Job = require('../../lib/job');
 const {
-    newSliceConfig,
     overrideLogger,
     TestContext,
-    newJobConfig
 } = require('../helpers');
 
 const exampleReader = require('../fixtures/ops/example-reader');
@@ -43,23 +41,20 @@ describe('Slice', () => {
     }
 
     async function setupSlice(options) {
-        const testContext = new TestContext('slice:analytics');
+        const testContext = new TestContext('slice:analytics', options);
 
-        const jobConfig = newJobConfig(options);
-        const sliceConfig = newSliceConfig();
-
-        const job = new Job(testContext.context, jobConfig);
+        const job = new Job(testContext.context, testContext.jobConfig);
         await job.initialize();
 
-        const slice = new Slice(testContext.context, jobConfig);
+        const slice = new Slice(testContext.context, testContext.jobConfig);
         overrideLogger(slice, 'slice');
 
-        await testContext.addStateStore(slice.context);
-        await testContext.addAnalyticsStore(slice.context);
-        const { stores } = testContext;
-        await stores.stateStore.createState(jobConfig.ex_id, sliceConfig, 'start');
+        await testContext.addStateStore();
+        await testContext.addAnalyticsStore();
 
-        await slice.initialize(job, sliceConfig, stores);
+        await testContext.newSlice();
+
+        await slice.initialize(job, testContext.sliceConfig, testContext.stores);
 
         cleanupTasks.push(() => testContext.cleanup());
 
@@ -300,7 +295,9 @@ describe('Slice', () => {
             mocks.op.mockResolvedValue(times(10, () => 'hi'));
 
             slice = await setupSlice();
+
             await slice._markCompleted();
+
             mockEvents(slice.events, mocks.events);
         });
 

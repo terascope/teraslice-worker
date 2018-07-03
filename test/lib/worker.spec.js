@@ -1,32 +1,26 @@
 'use strict';
 
+/* eslint-disable no-console */
+
 const Promise = require('bluebird');
-const porty = require('porty');
-const shortid = require('shortid');
-const ElasticsearchClient = require('elasticsearch').Client;
 const { Worker } = require('../..');
 const ExecutionControllerMessenger = require('../../lib/messenger/execution-controller');
 const {
-    overrideLogger,
-    newSysConfig,
-    ClusterMasterMessenger,
-    newJobConfig,
+    TestContext,
     newSliceConfig,
+    ClusterMasterMessenger,
+    findPort,
 } = require('../helpers');
 
 describe('Worker', () => {
     describe('when constructed', () => {
         let worker;
-        let clusterName;
         let executionController;
         let clusterMaster;
-        let es;
-        let jobConfig;
+        let testContext;
 
         beforeEach(async () => {
-            clusterName = `tmp_${shortid.generate()}`.toLowerCase();
-
-            const clusterMasterPort = await porty.find();
+            const clusterMasterPort = await findPort();
 
             clusterMaster = new ClusterMasterMessenger({
                 port: clusterMasterPort,
@@ -36,7 +30,7 @@ describe('Worker', () => {
 
             await clusterMaster.start();
 
-            const slicerPort = await porty.find({ avoids: [clusterMasterPort] });
+            const slicerPort = await findPort();
             executionController = new ExecutionControllerMessenger({
                 port: slicerPort,
                 networkerLatencyBuffer: 0,
@@ -45,25 +39,16 @@ describe('Worker', () => {
 
             await executionController.start();
 
-            const config = newSysConfig({ clusterName, clusterMasterPort });
+            testContext = new TestContext('worker', { clusterMasterPort, slicerPort });
 
-            jobConfig = newJobConfig({ slicerPort });
-
-            worker = new Worker(jobConfig, config);
-            overrideLogger(worker, 'worker');
-            overrideLogger(worker.slice, 'worker:slice');
-
-            es = new ElasticsearchClient({
-                host: 'http://localhost:9200',
-                log: '' // This suppresses error logging from the ES library.
-            });
+            worker = new Worker(testContext.context, testContext.jobConfig);
         });
 
         afterEach(async () => {
             await clusterMaster.close();
             await executionController.close();
             await worker.shutdown();
-            await es.indices.delete({ index: `${clusterName}*` });
+            await testContext.cleanup();
         });
 
         describe('when the worker is started', () => {
@@ -77,81 +62,91 @@ describe('Worker', () => {
             });
 
             describe('when a slice is sent from the execution controller', () => {
-                let sliceConfig;
-
                 beforeEach(async () => {
-                    sliceConfig = newSliceConfig();
-                    await worker.stores.stateStore.createState(jobConfig.ex_id, sliceConfig, 'start');
+                    await testContext.newSlice();
+
                     await executionController.onWorkerReady(worker.workerId);
-                    await executionController.sendNewSlice(worker.workerId, sliceConfig);
+                    await executionController.sendNewSlice(
+                        worker.workerId,
+                        testContext.sliceConfig
+                    );
                 });
 
                 it('should return send a slice completed message to the execution controller', async () => {
                     const msg = await executionController.onMessage(`worker:slice:complete:${worker.workerId}`, 2000);
                     expect(msg).toMatchObject({
                         worker_id: worker.workerId,
-                        slice: sliceConfig,
+                        slice: testContext.sliceConfig,
                     });
                     expect(msg).not.toHaveProperty('error');
                 });
             });
 
             describe('when a new slice is not sent right away', () => {
-                let sliceConfig;
-
                 beforeEach(async () => {
-                    sliceConfig = newSliceConfig();
-                    await worker.stores.stateStore.createState(jobConfig.ex_id, sliceConfig, 'start');
+                    await testContext.newSlice();
+
                     await executionController.onWorkerReady(worker.workerId);
                     await Promise.delay(1000);
-                    await executionController.sendNewSlice(worker.workerId, sliceConfig);
+
+                    await executionController.sendNewSlice(
+                        worker.workerId,
+                        testContext.sliceConfig
+                    );
                 });
 
                 it('should return send a slice completed message to the execution controller', async () => {
                     const msg = await executionController.onMessage(`worker:slice:complete:${worker.workerId}`, 2000);
                     expect(msg).toMatchObject({
                         worker_id: worker.workerId,
-                        slice: sliceConfig,
+                        slice: testContext.sliceConfig,
                     });
                     expect(msg).not.toHaveProperty('error');
                 });
             });
 
             describe('when a slice errors', () => {
-                let sliceConfig;
-
                 beforeEach(async () => {
-                    sliceConfig = newSliceConfig();
                     worker.job.queue[1] = jest.fn().mockRejectedValue(new Error('Bad news bears'));
-                    await worker.stores.stateStore.createState(jobConfig.ex_id, sliceConfig, 'start');
+
+                    await testContext.newSlice();
+
                     await executionController.onWorkerReady(worker.workerId);
-                    await executionController.sendNewSlice(worker.workerId, sliceConfig);
+                    await executionController.sendNewSlice(
+                        worker.workerId,
+                        testContext.sliceConfig
+                    );
                 });
 
                 it('should return send a slice completed message with an error', async () => {
                     const msg = await executionController.onMessage(`worker:slice:complete:${worker.workerId}`, 2000);
                     expect(msg).toMatchObject({
                         worker_id: worker.workerId,
-                        slice: sliceConfig,
+                        slice: testContext.sliceConfig,
                     });
                     expect(msg.error).toStartWith('Error: Slice failed processing, caused by Error: Bad news bears');
                 });
             });
 
             describe('when the slice completes and shutdown is called', () => {
-                let sliceConfig;
-
                 beforeEach(async () => {
-                    sliceConfig = newSliceConfig();
-                    await worker.stores.stateStore.createState(jobConfig.ex_id, sliceConfig, 'start');
+                    await testContext.newSlice();
+
                     await executionController.onWorkerReady(worker.workerId);
-                    await executionController.sendNewSlice(worker.workerId, sliceConfig);
+
+                    await executionController.sendNewSlice(
+                        worker.workerId,
+                        testContext.sliceConfig
+                    );
+
                     await executionController.onMessage(`worker:slice:complete:${worker.workerId}`);
                 });
 
                 it('should handle the timeout correctly', async () => {
                     expect.hasAssertions();
-                    executionController.sendNewSlice(worker.workerId, sliceConfig);
+
+                    executionController.sendNewSlice(worker.workerId, testContext.sliceConfig);
+
                     const shutdown = worker.shutdown();
                     try {
                         await executionController.onMessage(`worker:slice:complete:${worker.workerId}`);
@@ -170,25 +165,21 @@ describe('Worker', () => {
             });
 
             describe('when a slice is in-progress and shutdown is called', () => {
-                let sliceConfig;
                 let workerShutdownEvent;
 
                 beforeEach(async () => {
                     workerShutdownEvent = jest.fn();
                     worker.events.on('worker:shutdown', workerShutdownEvent);
 
-                    worker.job.queue[0] = jest.fn(() => Promise.delay(1500));
+                    worker.job.queue[0] = jest.fn(async () => { await Promise.delay(1500); });
 
-                    sliceConfig = newSliceConfig();
-
-                    await worker.stores.stateStore.createState(jobConfig.ex_id, sliceConfig, 'start');
+                    testContext.newSlice();
 
                     await executionController.onWorkerReady(worker.workerId);
-                    await executionController.sendNewSlice(worker.workerId, sliceConfig);
-                });
-
-                afterEach(async () => {
-                    worker.events.removeListener('worker:shutdown', workerShutdownEvent);
+                    await executionController.sendNewSlice(
+                        worker.workerId,
+                        testContext.sliceConfig
+                    );
                 });
 
                 it('should handle the shutdown properly', async () => {
@@ -209,7 +200,6 @@ describe('Worker', () => {
             });
 
             describe('when a slice is in-progress and has to be forced to shutdown', () => {
-                let sliceConfig;
                 let workerShutdownEvent;
                 let resolveReader;
                 let shutdownErr;
@@ -228,12 +218,16 @@ describe('Worker', () => {
 
                     worker.job.queue[0] = jest.fn(() => promise);
 
-                    sliceConfig = newSliceConfig();
-
-                    await worker.stores.stateStore.createState(jobConfig.ex_id, sliceConfig, 'start');
+                    await testContext.newSlice();
 
                     await executionController.onWorkerReady(worker.workerId);
-                    await executionController.sendNewSlice(worker.workerId, sliceConfig);
+
+                    await executionController.sendNewSlice(
+                        worker.workerId,
+                        testContext.sliceConfig
+                    );
+
+                    await Promise.delay(100);
 
                     try {
                         await worker.shutdown();
@@ -243,13 +237,12 @@ describe('Worker', () => {
                 });
 
                 afterEach(() => {
-                    worker.events.removeListener('worker:shutdown', workerShutdownEvent);
                     resolveReader();
                 });
 
                 it('shutdown should throw an error', () => {
                     expect(shutdownErr).not.toBeNil();
-                    expect(shutdownErr.message).toEqual('Error: Worker shutdown timeout after 1 seconds, forcing shutdown');
+                    expect(shutdownErr.message).toEqual('Failed to shutdown correctly: Error: Worker shutdown timeout after 1 seconds, forcing shutdown');
                 });
 
                 it('should emit worker:shutdown', () => {

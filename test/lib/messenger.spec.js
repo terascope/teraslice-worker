@@ -2,12 +2,11 @@
 
 /* eslint-disable no-console, no-new */
 
-const porty = require('porty');
 const shortid = require('shortid');
 const { formatURL } = require('../../lib/utils');
 const WorkerMessenger = require('../../lib/messenger/worker');
 const ExecutionControllerMessenger = require('../../lib/messenger/execution-controller');
-const { ClusterMasterMessenger } = require('../helpers');
+const { ClusterMasterMessenger, findPort } = require('../helpers');
 
 describe('Messenger', () => {
     describe('when worker is constructed without a executionControllerUrl', () => {
@@ -49,7 +48,7 @@ describe('Messenger', () => {
 
     describe('when executionController started twice', () => {
         it('should throw an error', async () => {
-            const port = await porty.find();
+            const port = await findPort();
             const executionController = new ExecutionControllerMessenger({ port });
             await executionController.start();
             await expect(executionController.start()).rejects.toThrowError(`Port ${port} is already in-use`);
@@ -81,7 +80,7 @@ describe('Messenger', () => {
         let worker;
         let executionController;
         beforeEach(async () => {
-            const port = await porty.find();
+            const port = await findPort();
             executionController = new ExecutionControllerMessenger({ port });
 
             await executionController.start();
@@ -115,7 +114,7 @@ describe('Messenger', () => {
         let clusterMaster;
 
         beforeEach(async () => {
-            const slicerPort = await porty.find();
+            const slicerPort = await findPort();
             const executionControllerUrl = formatURL('localhost', slicerPort);
             executionController = new ExecutionControllerMessenger({
                 port: slicerPort,
@@ -125,7 +124,7 @@ describe('Messenger', () => {
 
             await executionController.start();
 
-            const clusterMasterPort = await porty.find();
+            const clusterMasterPort = await findPort();
             const clusterMasterUrl = formatURL('localhost', clusterMasterPort);
             clusterMaster = new ClusterMasterMessenger({
                 port: clusterMasterPort,
@@ -191,12 +190,17 @@ describe('Messenger', () => {
 
             describe('when sending worker:slice:complete', () => {
                 beforeEach(() => {
-                    worker.sendToExecutionController('worker:slice:complete', { example: 'worker-slice-complete' });
+                    worker.sliceComplete({ slice: 'worker-slice-complete', analyticsData: 'hello', error: 'hello' });
                 });
 
                 it('should emit worker:slice:complete on the executionController', async () => {
                     const msg = await executionController.onMessage(`worker:slice:complete:${workerId}`);
-                    expect(msg).toEqual({ example: 'worker-slice-complete' });
+                    expect(msg).toEqual({
+                        slice: 'worker-slice-complete',
+                        analytics: 'hello',
+                        error: 'hello',
+                        worker_id: workerId,
+                    });
                 });
             });
 

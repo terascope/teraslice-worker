@@ -6,7 +6,7 @@ module.exports = {
     globals: {
         __DEV__: true
     },
-    bail: false,
+    bail: true,
     restoreMocks: true,
     setupFiles: ['<rootDir>/test/env-setup.js'],
     setupTestFrameworkScriptFile: '<rootDir>/test/jest.setup.js',
@@ -23,10 +23,10 @@ module.exports = {
     ],
     coverageThreshold: {
         global: {
-            branches: 80,
+            branches: 75,
             functions: 80,
             lines: 80,
-            statements: -10
+            statements: -20
         }
     }
 };

@@ -6,6 +6,7 @@ const path = require('path');
 const yargs = require('yargs');
 const Worker = require('./lib/worker');
 const { readSysConfig } = require('./lib/terafoundation');
+const { generateContext } = require('lib/utils');
 
 class Command {
     constructor() {
@@ -24,8 +25,10 @@ class Command {
             slicer_port: job.slicer_port
         };
 
+        const context = generateContext(sysconfig);
+
         if (assignment === 'worker') {
-            this.worker = new Worker(jobConfig, sysconfig);
+            this.worker = new Worker(context, jobConfig);
         }
     }
 
