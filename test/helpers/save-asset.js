@@ -38,6 +38,6 @@ module.exports = async (context, assetDir) => {
     const assetStore = await makeAssetStore(context);
     const assetId = await assetStore.save(assetZip);
     delete context.apis.assets;
-    await assetStore.shutdown();
+    await assetStore.destroy();
     return assetId;
 };

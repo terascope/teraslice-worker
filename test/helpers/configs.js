@@ -18,7 +18,7 @@ const newSliceConfig = (request = { example: 'slice-data' }) => ({
 const newJobConfig = (options = {}) => {
     const {
         analytics = false,
-        maxRetries = 1,
+        maxRetries = 0,
         slicerPort = 0,
         operations = [
             {
@@ -51,7 +51,7 @@ const newJobConfig = (options = {}) => {
 const newSysConfig = (options = {}) => {
     const {
         clusterName = 'test-teraslice-cluster',
-        timeout = 5000,
+        timeout = 3000,
         actionTimeout = 2000,
         assetDir,
         clusterMasterPort,
