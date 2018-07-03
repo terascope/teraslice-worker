@@ -235,7 +235,7 @@ describe('Job (assignment "worker")', () => {
             let jobConfig;
             let _testContext;
 
-            beforeAll(async () => {
+            beforeEach(async () => {
                 _testContext = new TestContext('worker-job:assets');
                 await saveAsset(_testContext.context, exampleAssetDir);
                 jobConfig = {
@@ -260,7 +260,7 @@ describe('Job (assignment "worker")', () => {
                 await job.initialize();
             });
 
-            afterAll(() => _testContext.cleanup());
+            afterEach(() => _testContext.cleanup());
 
             it('should resolve an execution api', () => {
                 expect(job.queue).toBeArrayOfSize(2);
@@ -284,7 +284,7 @@ describe('Job (assignment "worker")', () => {
             let jobConfig;
             let _testContext;
 
-            beforeAll(async () => {
+            beforeEach(async () => {
                 _testContext = new TestContext('worker-job:assets-download');
 
                 const assetId = await saveAsset(_testContext.context, exampleAssetDir);
@@ -311,7 +311,7 @@ describe('Job (assignment "worker")', () => {
                 await job.initialize();
             });
 
-            afterAll(() => _testContext.cleanup());
+            afterEach(() => _testContext.cleanup());
 
             it('should resolve an execution api', () => {
                 expect(job.queue).toBeArrayOfSize(2);
@@ -335,7 +335,7 @@ describe('Job (assignment "worker")', () => {
             let jobConfig;
             let _testContext;
 
-            beforeAll(async () => {
+            beforeEach(async () => {
                 _testContext = new TestContext('worker-job:assets-fail');
 
                 jobConfig = {
@@ -358,7 +358,7 @@ describe('Job (assignment "worker")', () => {
                 job = new Job(_testContext.context, jobConfig);
             });
 
-            afterAll(() => _testContext.cleanup());
+            afterEach(() => _testContext.cleanup());
 
             it('should reject with a error', () => {
                 const errMsg = 'asset: missing-assets was not found';
@@ -371,7 +371,7 @@ describe('Job (assignment "worker")', () => {
             let jobConfig;
             let _testContext;
 
-            beforeAll(async () => {
+            beforeEach(async () => {
                 _testContext = new TestContext('worker-job:failing-asset');
                 await saveAsset(_testContext.context, path.join(opsPath, 'failing-asset'));
 
@@ -392,7 +392,7 @@ describe('Job (assignment "worker")', () => {
                 job = new Job(_testContext.context, jobConfig);
             });
 
-            afterAll(() => _testContext.cleanup());
+            afterEach(() => _testContext.cleanup());
 
             it('should reject with a error', () => {
                 const errMsg = new RegExp('Could not retrieve code for: failing-asset-reader');

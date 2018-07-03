@@ -8,6 +8,8 @@ const {
     TestContext,
 } = require('../helpers');
 
+jest.setTimeout(10000);
+
 describe('Slice', () => {
     let slice;
     let testContext;
@@ -42,13 +44,13 @@ describe('Slice', () => {
         });
     }
 
-    afterAll(() => testContext.cleanup());
+    afterEach(() => testContext.cleanup());
 
     describe('with analytics', () => {
         describe('when the slice succeeds', () => {
             let results;
 
-            beforeAll(async () => {
+            beforeEach(async () => {
                 await setupSlice({ analytics: true });
 
                 testContext.reader.mockResolvedValue(times(10, () => 'hello'));
@@ -99,7 +101,7 @@ describe('Slice', () => {
         describe('when the slice succeeds', () => {
             let results;
 
-            beforeAll(async () => {
+            beforeEach(async () => {
                 await setupSlice({ analytics: false });
 
                 testContext.reader.mockResolvedValue(times(10, () => 'hello'));
@@ -145,7 +147,7 @@ describe('Slice', () => {
         describe('when the slice retries', () => {
             let results;
 
-            beforeAll(async () => {
+            beforeEach(async () => {
                 await setupSlice({ maxRetries: 3, analytics: false });
 
                 testContext.reader.mockRejectedValueOnce(new Error('Bad news bears'));
@@ -193,7 +195,7 @@ describe('Slice', () => {
             let results;
             let err;
 
-            beforeAll(async () => {
+            beforeEach(async () => {
                 await setupSlice({ maxRetries: 5, analytics: false });
 
                 testContext.reader.mockResolvedValue(times(10, () => 'hello'));
@@ -246,7 +248,7 @@ describe('Slice', () => {
     });
 
     describe('when given a completed slice', () => {
-        beforeAll(async () => {
+        beforeEach(async () => {
             await setupSlice();
 
             testContext.reader.mockResolvedValue(times(10, () => 'hello'));
@@ -263,7 +265,7 @@ describe('Slice', () => {
 
     describe('when logging the analytics state', () => {
         describe('when given invalid state', () => {
-            beforeAll(async () => {
+            beforeEach(async () => {
                 await setupSlice({ analytics: true });
                 testContext.reader.mockResolvedValue(times(10, () => 'hello'));
                 testContext.op.mockResolvedValue(times(10, () => 'hi'));
@@ -276,7 +278,7 @@ describe('Slice', () => {
         });
 
         describe('when the slice is a string', () => {
-            beforeAll(async () => {
+            beforeEach(async () => {
                 await setupSlice({ analytics: true });
 
                 testContext.reader.mockResolvedValue(times(10, () => 'hello'));

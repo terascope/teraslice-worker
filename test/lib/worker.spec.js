@@ -11,6 +11,8 @@ const {
     findPort,
 } = require('../helpers');
 
+jest.setTimeout(10000);
+
 describe('Worker', () => {
     describe('when constructed', () => {
         let worker;
