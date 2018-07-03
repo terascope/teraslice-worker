@@ -347,9 +347,7 @@ describe('Messenger', () => {
                         worker.slicerSocket.emit('message:response', {
                             __msgId: msg.__msgId,
                             __source: 'execution_controller',
-                            payload: {
-                                error: 'this should fail'
-                            }
+                            error: 'this should fail'
                         });
                     });
                     try {
@@ -366,6 +364,28 @@ describe('Messenger', () => {
                 it('executionController should get an error back', () => {
                     expect(responseMsg).toBeNil();
                     expect(responseErr.toString()).toEqual('Error: this should fail');
+                });
+            });
+
+            describe('when the worker takes too long to respond', () => {
+                let responseMsg;
+                let responseErr;
+
+                beforeEach(async () => {
+                    try {
+                        responseMsg = await executionController.sendWithResponse(workerId, 'some:message', { hello: true }, {
+                            timeoutMs: 1000,
+                            source: 'execution_controller',
+                            to: workerId,
+                        });
+                    } catch (err) {
+                        responseErr = err;
+                    }
+                });
+
+                it('executionController should get an error back', () => {
+                    expect(responseMsg).toBeNil();
+                    expect(responseErr.toString()).toStartWith(`Error: Timeout error while communicating with ${workerId}, with message:`);
                 });
             });
         });
