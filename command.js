@@ -6,7 +6,7 @@ const path = require('path');
 const yargs = require('yargs');
 const Worker = require('./lib/worker');
 const { readSysConfig } = require('./lib/terafoundation');
-const { generateContext } = require('lib/utils');
+const { generateContext } = require('./lib/utils');
 
 class Command {
     constructor() {

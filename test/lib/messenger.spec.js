@@ -240,7 +240,7 @@ describe('Messenger', () => {
                 });
 
                 it('should receive the message on the worker', async () => {
-                    const msg = await worker.onMessage('cluster:error:terminal');
+                    const msg = await worker.onceWithTimeout('cluster:error:terminal');
                     expect(msg).toEqual({
                         ex_id: 'some-ex-id',
                         err: 'cluster-error-terminal'
@@ -256,7 +256,7 @@ describe('Messenger', () => {
                 });
 
                 it('should receive the message on the cluster master', async () => {
-                    const msg = await clusterMaster.onMessage(`execution:error:terminal:${workerId}`);
+                    const msg = await clusterMaster.onceWithTimeout(`execution:error:terminal:${workerId}`);
                     expect(msg).toEqual({
                         error: 'execution-error-terminal'
                     });
@@ -271,7 +271,7 @@ describe('Messenger', () => {
                 });
 
                 it('should emit slicer:slice:recorded on the worker', async () => {
-                    const msg = await worker.onMessage('slicer:slice:recorded');
+                    const msg = await worker.onceWithTimeout('slicer:slice:recorded');
                     expect(msg).toEqual({
                         example: 'slice-recorded-message'
                     });
@@ -287,7 +287,7 @@ describe('Messenger', () => {
                         const response = executionController.sendNewSlice(workerId, {
                             example: 'slice-new-message'
                         });
-                        const slice = worker.onMessage('slicer:slice:new');
+                        const slice = worker.onceWithTimeout('slicer:slice:new');
                         responseMsg = await response;
                         sliceMsg = await slice;
                     });
@@ -313,7 +313,7 @@ describe('Messenger', () => {
                     beforeEach(async () => {
                         const response = executionController.sendNewSlice(workerId, { example: 'slice-new-message' });
                         worker.available = false;
-                        slice = worker.onMessage('slicer:slice:new');
+                        slice = worker.onceWithTimeout('slicer:slice:new');
                         responseMsg = await response;
                     });
 
@@ -329,7 +329,7 @@ describe('Messenger', () => {
                 it('should throw a timeout error', async () => {
                     expect.hasAssertions();
                     try {
-                        await worker.onMessage('mystery:message');
+                        await worker.onceWithTimeout('mystery:message');
                     } catch (err) {
                         expect(err).not.toBeNil();
                         expect(err.message).toEqual('Timed out after 1000ms, waiting for event "mystery:message"');
@@ -343,8 +343,8 @@ describe('Messenger', () => {
                 let responseErr;
 
                 beforeEach(async () => {
-                    worker.slicerSocket.on('some:message', (msg) => {
-                        worker.slicerSocket.emit('messaging:response', {
+                    worker.exSocket.on('some:message', (msg) => {
+                        worker.exSocket.emit('messaging:response', {
                             __msgId: msg.__msgId,
                             __source: 'execution_controller',
                             error: 'this should fail'
