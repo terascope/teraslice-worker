@@ -344,18 +344,14 @@ describe('Messenger', () => {
 
                 beforeEach(async () => {
                     worker.slicerSocket.on('some:message', (msg) => {
-                        worker.slicerSocket.emit('message:response', {
+                        worker.slicerSocket.emit('messaging:response', {
                             __msgId: msg.__msgId,
                             __source: 'execution_controller',
                             error: 'this should fail'
                         });
                     });
                     try {
-                        responseMsg = await executionController.sendWithResponse(workerId, 'some:message', { hello: true }, {
-                            timeoutMs: 1000,
-                            source: 'execution_controller',
-                            to: workerId,
-                        });
+                        responseMsg = await executionController.sendWithResponse(workerId, 'some:message', { hello: true });
                     } catch (err) {
                         responseErr = err;
                     }
@@ -373,11 +369,7 @@ describe('Messenger', () => {
 
                 beforeEach(async () => {
                     try {
-                        responseMsg = await executionController.sendWithResponse(workerId, 'some:message', { hello: true }, {
-                            timeoutMs: 1000,
-                            source: 'execution_controller',
-                            to: workerId,
-                        });
+                        responseMsg = await executionController.sendWithResponse(workerId, 'some:message', { hello: true });
                     } catch (err) {
                         responseErr = err;
                     }
@@ -390,12 +382,21 @@ describe('Messenger', () => {
             });
         });
 
-
         describe('when the worker is not ready', () => {
-            it('should throw an error', () => {
-                expect(() => {
-                    executionController.sendNewSlice(workerId, { example: 'slice-new-message' });
-                }).toThrowError(`Cannot send message to worker ${workerId}`);
+            describe('when sending a slice', () => {
+                it('should throw an error', () => {
+                    const errMsg = `Cannot send message to worker ${workerId}`;
+                    const promise = executionController.sendNewSlice(workerId, { example: 'slice-new-message' });
+                    return expect(promise).rejects.toThrowError(errMsg);
+                });
+            });
+
+            describe('when sending a slice', () => {
+                it('should throw an error', () => {
+                    const errMsg = `Cannot send message to worker ${workerId}`;
+                    const promise = executionController.sendToWorker(workerId, 'some:event', { example: true });
+                    return expect(promise).rejects.toThrowError(errMsg);
+                });
             });
         });
     });

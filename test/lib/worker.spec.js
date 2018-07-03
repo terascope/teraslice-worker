@@ -115,7 +115,7 @@ describe('Worker', () => {
                 let msg;
 
                 beforeEach(async () => {
-                    worker.job.queue[1] = jest.fn().mockRejectedValue(new Error('Bad news bears'));
+                    worker.job.queue[1].mockRejectedValue(new Error('Bad news bears'));
 
                     await executionController.onWorkerReady(worker.workerId);
                     await executionController.sendNewSlice(worker.workerId, sliceConfig);
@@ -140,7 +140,8 @@ describe('Worker', () => {
                     workerShutdownEvent = jest.fn();
                     worker.events.on('worker:shutdown', workerShutdownEvent);
 
-                    worker.job.queue[0] = jest.fn(async () => { await Promise.delay(1500); });
+                    worker.shutdownTimeout = 2000;
+                    worker._processSlice = jest.fn(() => Promise.delay(1000));
 
                     await executionController.onWorkerReady(worker.workerId);
                     await executionController.sendNewSlice(
@@ -148,8 +149,11 @@ describe('Worker', () => {
                         sliceConfig
                     );
 
+                    // give the slice time to start being processed
+                    await Promise.delay(100);
+
                     try {
-                        worker.shutdown();
+                        await worker.shutdown();
                     } catch (err) {
                         shutdownErr = err;
                     }
@@ -162,61 +166,42 @@ describe('Worker', () => {
                 it('should call worker:shutdown', () => {
                     expect(workerShutdownEvent).toHaveBeenCalled();
                 });
-
-                it('should call op processor', () => {
-                    expect(worker.job.queue[1]).toHaveBeenCalled();
-                });
-
-                it('should call slice complete', () => {
-                    const promise = executionController.onSliceComplete(worker.workerId, 2000);
-                    return expect(promise).resolves.not.toBeNil();
-                });
             });
 
             describe('when a slice is in-progress and has to be forced to shutdown', () => {
-                let workerShutdownEvent;
-                let resolveReader;
-                let shutdownErr;
+                let shutdown;
 
-                beforeEach(async () => {
+                beforeEach(() => executionController.onWorkerReady(worker.workerId));
+
+                beforeEach((done) => {
                     worker.shutdownTimeout = 1000;
 
-                    workerShutdownEvent = jest.fn();
-                    worker.events.on('worker:shutdown', workerShutdownEvent);
-
-                    const promise = new Promise((resolve) => {
-                        resolveReader = () => {
-                            resolve();
-                        };
+                    worker._processSlice = jest.fn(() => {
+                        shutdown = worker.shutdown();
+                        return Promise.delay(1100);
                     });
 
-                    worker.job.queue[0] = jest.fn(() => promise);
+                    executionController.sendNewSlice(worker.workerId, sliceConfig).then(() => {
+                        let timeout;
+                        const interval = setInterval(() => {
+                            if (shutdown) {
+                                clearInterval(interval);
+                                clearTimeout(timeout);
+                                done();
+                            }
+                        }, 10);
 
-                    await executionController.onWorkerReady(worker.workerId);
-
-                    await executionController.sendNewSlice(
-                        worker.workerId,
-                        sliceConfig
-                    );
-
-                    try {
-                        await worker.shutdown();
-                    } catch (err) {
-                        shutdownErr = err;
-                    }
-                });
-
-                afterEach(() => {
-                    resolveReader();
+                        timeout = setTimeout(() => {
+                            clearInterval(interval);
+                            expect(worker._processSlice).toHaveBeenCalled();
+                            done();
+                        }, 2000);
+                    }).catch(done.fail);
                 });
 
                 it('shutdown should throw an error', () => {
-                    expect(shutdownErr).not.toBeNil();
-                    expect(shutdownErr.message).toEqual('Failed to shutdown correctly: Error: Worker shutdown timeout after 1 seconds, forcing shutdown');
-                });
-
-                it('should emit worker:shutdown', () => {
-                    expect(workerShutdownEvent).toHaveBeenCalled();
+                    const errMsg = 'Failed to shutdown correctly: Error: Worker shutdown timeout after 1 seconds, forcing shutdown';
+                    return expect(shutdown).rejects.toThrowError(errMsg);
                 });
             });
         });
