@@ -62,9 +62,9 @@ describe('Worker', () => {
 
             it('should create the correct stores', () => {
                 expect(worker.stores.stateStore).toBeDefined();
-                expect(worker.stores.stateStore).toHaveProperty('shutdown');
+                expect(worker.stores.stateStore).toHaveProperty('destroy');
                 expect(worker.stores.analyticsStore).toBeDefined();
-                expect(worker.stores.analyticsStore).toHaveProperty('shutdown');
+                expect(worker.stores.analyticsStore).toHaveProperty('destroy');
             });
 
             describe('when a slice is sent from the execution controller', () => {

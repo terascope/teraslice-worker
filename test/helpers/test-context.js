@@ -4,9 +4,9 @@ const { createTempDirSync, cleanupTempDirs } = require('jest-fixtures');
 const shortid = require('shortid');
 const ElasticsearchClient = require('elasticsearch').Client;
 const {
-    assetStore: makeAssetStore,
-    stateStore: makeStateStore,
-    analyticsStore: makeAnalyticsStore
+    makeAssetStore,
+    makeStateStore,
+    makeAnalyticsStore
 } = require('../../lib/teraslice');
 
 const exampleReader = require('../fixtures/ops/example-reader');

@@ -8,8 +8,6 @@
     "lint": "eslint *.js lib test",
     "lint:fix": "eslint --fix *.js lib test",
     "test": "jest --forceExit",
-    "test:dev": "jest --forceExit --onlyChanged --coverage=false",
-    "test:dev:watch": "jest --forceExit --onlyChanged --watch --notify",
     "test:debug": "env DEBUG='*teraslice*' jest --detectOpenHandles --coverage=false --runInBand",
     "report-coverage": "codecov"
   },
