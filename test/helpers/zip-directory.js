@@ -1,12 +1,10 @@
 'use strict';
 
-const fs = require('fs-extra');
 const path = require('path');
 const shortid = require('shortid');
 const random = require('lodash/random');
 const BufferStreams = require('bufferstreams');
 const archiver = require('archiver');
-const { makeAssetStore } = require('../../lib/teraslice');
 
 function zipDirectory(dir) {
     return new Promise((resolve, reject) => {
@@ -26,17 +24,5 @@ function zipDirectory(dir) {
         archive.directory(dir, 'asset').finalize();
     });
 }
-module.exports = async (context, assetDir) => {
-    const exists = await fs.pathExists(assetDir);
-    if (!exists) {
-        const err = new Error(`Asset Directory ${assetDir} does not exist`);
-        console.error(err.stack); // eslint-disable-line no-console
-        throw err;
-    }
-    const assetZip = await zipDirectory(assetDir);
-    const assetStore = await makeAssetStore(context);
-    const assetId = await assetStore.save(assetZip);
-    delete context.apis.assets;
-    await assetStore.shutdown(true);
-    return assetId;
-};
+
+module.exports = zipDirectory;

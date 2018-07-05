@@ -8,8 +8,6 @@ const {
     TestContext,
 } = require('../helpers');
 
-jest.setTimeout(10000);
-
 describe('Slice', () => {
     let slice;
     let testContext;

@@ -4,7 +4,6 @@ const porty = require('porty');
 const random = require('lodash/random');
 const ClusterMasterMessenger = require('./cluster-master-messenger');
 const overrideLogger = require('./override-logger');
-const saveAsset = require('./save-asset');
 const TestContext = require('./test-context');
 const {
     newSliceConfig,
@@ -39,7 +38,6 @@ module.exports = {
     newId,
     overrideLogger,
     ClusterMasterMessenger,
-    saveAsset,
     newSysConfig,
     TestContext,
 };

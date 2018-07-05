@@ -1,49 +1,38 @@
 'use strict';
 
-const fs = require('fs-extra');
 const path = require('path');
 const get = require('lodash/get');
 const Job = require('../../lib/job');
-const { TestContext, saveAsset, opsPath } = require('../helpers');
+const { TestContext, opsPath } = require('../helpers');
 
 const exampleAssetDir = path.join(opsPath, 'example-asset');
 
 describe('Job (assignment "worker")', () => {
     describe('when constructing', () => {
         let job;
-        let jobConfig;
-        let _testContext;
+        let testContext;
 
         beforeEach(() => {
-            _testContext = new TestContext('worker-job');
-            jobConfig = {
-                assignment: 'example',
-                job: {
-                    example: true,
-                    assets: [],
-                    operations: [
-                        {
-                            _op: 'example-op-one',
-                        },
-                        {
-                            _op: 'example-op-two',
-                        }
-                    ]
-                },
-                ex_id: 'example-ex-id',
-                job_id: 'example-job-id',
-                slicer_port: 0
-            };
-
-            job = new Job(_testContext.context, jobConfig);
+            testContext = new TestContext('worker-job', {
+                operations: [
+                    {
+                        _op: 'example-op-one',
+                    },
+                    {
+                        _op: 'example-op-two',
+                    }
+                ],
+            });
+            testContext.jobConfig.job.example = true;
+            job = new Job(testContext.context, testContext.jobConfig);
         });
 
-        afterEach(() => _testContext.cleanup());
+        afterEach(() => testContext.cleanup());
 
         it('should throw an error if reporters are specified', () => {
-            _testContext.context.sysconfig.teraslice.reporter = true;
+            testContext.context.sysconfig.teraslice.reporter = true;
             expect(() => {
-                new Job(_testContext.context, { hello: true }); // eslint-disable-line no-new
+                new Job(testContext.context, { hello: true }); // eslint-disable-line no-new
             }).toThrowError('reporters are not functional at this time, please do not set one in the configuration');
         });
 
@@ -84,29 +73,19 @@ describe('Job (assignment "worker")', () => {
     describe('->initialize', () => {
         describe('when op name is not a string', () => {
             let job;
-            let jobConfig;
-            let _testContext;
-
+            let testContext;
             beforeEach(() => {
-                _testContext = new TestContext('worker-job:fail');
-                jobConfig = {
-                    assignment: 'worker',
-                    job: {
-                        assets: [],
-                        operations: [
-                            {
-                                _op: null,
-                            }
-                        ]
-                    },
-                    ex_id: 'example-ex-id',
-                    job_id: 'example-job-id',
-                    slicer_port: 0,
-                };
-                job = new Job(_testContext.context, jobConfig);
+                testContext = new TestContext('worker-job:fail', {
+                    operations: [
+                        {
+                            _op: null,
+                        }
+                    ]
+                });
+                job = new Job(testContext.context, testContext.jobConfig);
             });
 
-            afterEach(() => _testContext.cleanup());
+            afterEach(() => testContext.cleanup());
 
             it('should reject with an error', () => {
                 const errMsg = 'please verify that ops_directory in config and _op for each job operations are strings';
@@ -116,157 +95,133 @@ describe('Job (assignment "worker")', () => {
 
         describe('when analytics is not enabled', () => {
             let job;
-            let jobConfig;
-            let _testContext;
+            let testContext;
 
             beforeEach(async () => {
-                _testContext = new TestContext('worker-job:no-analytics');
-                jobConfig = {
-                    assignment: 'worker',
-                    job: {
-                        assets: [],
-                        operations: [
-                            {
-                                _op: path.join(opsPath, 'example-reader'),
-                                exampleProp: 321
-                            },
-                            {
-                                _op: path.join(opsPath, 'example-op'),
-                                exampleProp: 123
-                            }
-                        ]
-                    },
-                    ex_id: 'example-ex-id',
-                    job_id: 'example-job-id',
-                    slicer_port: 0,
-                };
+                testContext = new TestContext('worker-job', {
+                    operations: [
+                        {
+                            _op: path.join(opsPath, 'example-reader'),
+                            exampleProp: 321
+                        },
+                        {
+                            _op: path.join(opsPath, 'example-op'),
+                            exampleProp: 123
+                        }
+                    ],
+                });
 
-                job = new Job(_testContext.context, jobConfig);
+                job = new Job(testContext.context, testContext.jobConfig);
 
                 await job.initialize();
             });
 
-            afterEach(() => _testContext.cleanup());
+            afterEach(() => testContext.cleanup());
 
             it('should resolve an execution api', () => {
                 expect(job.queue).toBeArrayOfSize(2);
                 expect(job.queue[0]).toBeFunction();
                 expect(job.queue[1]).toBeFunction();
                 expect(job.reader).toEqual(job.queue[0]);
-                expect(job.config).toEqual(jobConfig.job);
+                expect(job.config).toEqual(testContext.jobConfig.job);
                 expect(job.reporter).toBeNil();
                 expect(job.slicer).toBeNil();
             });
 
             it('should load the ops', () => {
-                expect(_testContext.newReader).toHaveBeenCalledTimes(1);
-                expect(_testContext.newReader).toHaveBeenCalledWith(_testContext.context, {
+                expect(testContext.newReader).toHaveBeenCalledTimes(1);
+                expect(testContext.newReader).toHaveBeenCalledWith(testContext.context, {
                     _op: path.join(opsPath, 'example-reader'),
                     exampleProp: 321
-                }, jobConfig.job);
-                expect(_testContext.newProcessor).toHaveBeenCalledTimes(1);
-                expect(_testContext.newProcessor).toHaveBeenCalledWith(_testContext.context, {
+                }, testContext.jobConfig.job);
+                expect(testContext.newProcessor).toHaveBeenCalledTimes(1);
+                expect(testContext.newProcessor).toHaveBeenCalledWith(testContext.context, {
                     _op: path.join(opsPath, 'example-op'),
                     exampleProp: 123
-                }, jobConfig.job);
+                }, testContext.jobConfig.job);
             });
         });
 
         describe('when analytics is enabled', () => {
             let job;
-            let jobConfig;
-            let _testContext;
+            let testContext;
 
             beforeEach(async () => {
-                _testContext = new TestContext('worker-job:analytics');
-                jobConfig = {
-                    assignment: 'worker',
-                    job: {
-                        assets: [],
-                        analytics: true,
-                        operations: [
-                            {
-                                _op: path.join(opsPath, 'example-reader'),
-                                exampleProp: 321
-                            },
-                            {
-                                _op: path.join(opsPath, 'example-op'),
-                                exampleProp: 123
-                            }
-                        ]
-                    },
-                    ex_id: 'example-ex-id',
-                    job_id: 'example-job-id',
-                    slicer_port: 0,
-                };
-                job = new Job(_testContext.context, jobConfig);
+                testContext = new TestContext('worker-job:analytics', {
+                    analytics: true,
+                    operations: [
+                        {
+                            _op: path.join(opsPath, 'example-reader'),
+                            exampleProp: 321
+                        },
+                        {
+                            _op: path.join(opsPath, 'example-op'),
+                            exampleProp: 123
+                        }
+                    ]
+                });
 
+                job = new Job(testContext.context, testContext.jobConfig);
                 await job.initialize();
             });
 
-            afterEach(() => _testContext.cleanup());
+            afterEach(() => testContext.cleanup());
 
             it('should resolve an execution api', () => {
                 expect(job.queue).toBeArrayOfSize(2);
                 expect(job.queue[0]).toBeFunction();
                 expect(job.queue[1]).toBeFunction();
                 expect(job.reader).toEqual(job.queue[0]);
-                expect(job.config).toEqual(jobConfig.job);
+                expect(job.config).toEqual(testContext.jobConfig.job);
                 expect(job.reporter).toBeNil();
                 expect(job.slicer).toBeNil();
             });
 
             it('should load the ops', () => {
-                expect(_testContext.newReader).toHaveBeenCalledTimes(1);
-                expect(_testContext.newReader).toHaveBeenCalledWith(_testContext.context, {
+                expect(testContext.newReader).toHaveBeenCalledTimes(1);
+                expect(testContext.newReader).toHaveBeenCalledWith(testContext.context, {
                     _op: path.join(opsPath, 'example-reader'),
                     exampleProp: 321
-                }, jobConfig.job);
-                expect(_testContext.newProcessor).toHaveBeenCalledTimes(1);
-                expect(_testContext.newProcessor).toHaveBeenCalledWith(_testContext.context, {
+                }, testContext.jobConfig.job);
+                expect(testContext.newProcessor).toHaveBeenCalledTimes(1);
+                expect(testContext.newProcessor).toHaveBeenCalledWith(testContext.context, {
                     _op: path.join(opsPath, 'example-op'),
                     exampleProp: 123
-                }, jobConfig.job);
+                }, testContext.jobConfig.job);
             });
         });
 
         describe('when using assets', () => {
             let job;
-            let jobConfig;
-            let _testContext;
+            let testContext;
 
             beforeEach(async () => {
-                _testContext = new TestContext('worker-job:assets');
-                await saveAsset(_testContext.context, exampleAssetDir);
-                jobConfig = {
-                    assignment: 'worker',
-                    job: {
-                        assets: ['example-asset'],
-                        operations: [
-                            {
-                                _op: 'example-asset-reader',
-                            },
-                            {
-                                _op: 'example-asset-op',
-                            }
-                        ]
-                    },
-                    ex_id: 'example-ex-id',
-                    job_id: 'example-job-id',
-                    slicer_port: 0,
-                };
-                job = new Job(_testContext.context, jobConfig);
+                testContext = new TestContext('worker-job:assets', {
+                    operations: [
+                        {
+                            _op: 'example-asset-reader',
+                        },
+                        {
+                            _op: 'example-asset-op',
+                        }
+                    ],
+                    assets: ['example-asset'],
+                });
+
+                await testContext.saveAsset(exampleAssetDir);
+
+                job = new Job(testContext.context, testContext.jobConfig);
 
                 await job.initialize();
             });
 
-            afterEach(() => _testContext.cleanup());
+            afterEach(() => testContext.cleanup());
 
             it('should resolve an execution api', () => {
                 expect(job.queue).toBeArrayOfSize(2);
                 expect(job.reader).toBeFunction();
                 expect(job.queue[1]).toBeFunction();
-                expect(job.config).toEqual(jobConfig.job);
+                expect(job.config).toEqual(testContext.jobConfig.job);
                 expect(job.reporter).toBeNil();
                 expect(job.slicer).toBeNil();
             });
@@ -281,43 +236,34 @@ describe('Job (assignment "worker")', () => {
 
         describe('when using assets that have not been downloaded', () => {
             let job;
-            let jobConfig;
-            let _testContext;
+            let testContext;
 
             beforeEach(async () => {
-                _testContext = new TestContext('worker-job:assets-download');
+                testContext = new TestContext('worker-job:assets-download', {
+                    assets: ['example-asset'],
+                    operations: [
+                        {
+                            _op: 'example-asset-reader',
+                        },
+                        {
+                            _op: 'example-asset-op',
+                        }
+                    ]
+                });
 
-                const assetId = await saveAsset(_testContext.context, exampleAssetDir);
-                await fs.remove(path.join(_testContext.assetDir, assetId));
+                await testContext.saveAsset(exampleAssetDir, true);
 
-                jobConfig = {
-                    assignment: 'worker',
-                    job: {
-                        assets: ['example-asset'],
-                        operations: [
-                            {
-                                _op: 'example-asset-reader',
-                            },
-                            {
-                                _op: 'example-asset-op',
-                            }
-                        ]
-                    },
-                    ex_id: 'example-ex-id',
-                    job_id: 'example-job-id',
-                    slicer_port: 0,
-                };
-                job = new Job(_testContext.context, jobConfig);
+                job = new Job(testContext.context, testContext.jobConfig);
                 await job.initialize();
             });
 
-            afterEach(() => _testContext.cleanup());
+            afterEach(() => testContext.cleanup());
 
             it('should resolve an execution api', () => {
                 expect(job.queue).toBeArrayOfSize(2);
                 expect(job.reader).toBeFunction();
                 expect(job.queue[1]).toBeFunction();
-                expect(job.config).toEqual(jobConfig.job);
+                expect(job.config).toEqual(testContext.jobConfig.job);
                 expect(job.reporter).toBeNil();
                 expect(job.slicer).toBeNil();
             });
@@ -332,33 +278,24 @@ describe('Job (assignment "worker")', () => {
 
         describe('when using assets and they do not exist', () => {
             let job;
-            let jobConfig;
-            let _testContext;
+            let testContext;
 
             beforeEach(async () => {
-                _testContext = new TestContext('worker-job:assets-fail');
-
-                jobConfig = {
-                    assignment: 'worker',
-                    job: {
-                        assets: ['missing-assets'],
-                        operations: [
-                            {
-                                _op: 'missing-assets-reader',
-                            },
-                            {
-                                _op: 'missing-assets-op',
-                            }
-                        ]
-                    },
-                    ex_id: 'example-ex-id',
-                    job_id: 'example-job-id',
-                    slicer_port: 0,
-                };
-                job = new Job(_testContext.context, jobConfig);
+                testContext = new TestContext('worker-job:assets-fail', {
+                    assets: ['missing-assets'],
+                    operations: [
+                        {
+                            _op: 'missing-assets-reader',
+                        },
+                        {
+                            _op: 'missing-assets-op',
+                        }
+                    ]
+                });
+                job = new Job(testContext.context, testContext.jobConfig);
             });
 
-            afterEach(() => _testContext.cleanup());
+            afterEach(() => testContext.cleanup());
 
             it('should reject with a error', () => {
                 const errMsg = 'asset: missing-assets was not found';
@@ -368,31 +305,22 @@ describe('Job (assignment "worker")', () => {
 
         describe('when using assets and the fail on require', () => {
             let job;
-            let jobConfig;
-            let _testContext;
+            let testContext;
 
             beforeEach(async () => {
-                _testContext = new TestContext('worker-job:failing-asset');
-                await saveAsset(_testContext.context, path.join(opsPath, 'failing-asset'));
-
-                jobConfig = {
-                    assignment: 'worker',
-                    job: {
-                        assets: ['failing-asset'],
-                        operations: [
-                            {
-                                _op: 'failing-asset-reader',
-                            }
-                        ]
-                    },
-                    ex_id: 'example-ex-id',
-                    job_id: 'example-job-id',
-                    slicer_port: 0,
-                };
-                job = new Job(_testContext.context, jobConfig);
+                testContext = new TestContext('worker-job:failing-asset', {
+                    assets: ['failing-asset'],
+                    operations: [
+                        {
+                            _op: 'failing-asset-reader',
+                        }
+                    ]
+                });
+                await testContext.saveAsset(path.join(opsPath, 'failing-asset'));
+                job = new Job(testContext.context, testContext.jobConfig);
             });
 
-            afterEach(() => _testContext.cleanup());
+            afterEach(() => testContext.cleanup());
 
             it('should reject with a error', () => {
                 const errMsg = new RegExp('Could not retrieve code for: failing-asset-reader');

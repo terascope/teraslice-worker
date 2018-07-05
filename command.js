@@ -9,8 +9,7 @@ const diehard = require('diehard');
 const yargs = require('yargs');
 const get = require('lodash/get');
 
-require('./lib/setup');
-const Worker = require('./lib/worker');
+const { Worker } = require('.');
 const { readSysConfig } = require('./lib/terafoundation');
 const { generateContext } = require('./lib/utils');
 

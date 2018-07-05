@@ -2,11 +2,14 @@
 
 const { createTempDirSync, cleanupTempDirs } = require('jest-fixtures');
 const shortid = require('shortid');
+const path = require('path');
+const fs = require('fs-extra');
 const ElasticsearchClient = require('elasticsearch').Client;
 const {
     makeAssetStore,
     makeStateStore,
-    makeAnalyticsStore
+    makeAnalyticsStore,
+    makeExStore,
 } = require('../../lib/teraslice');
 
 const exampleReader = require('../fixtures/ops/example-reader');
@@ -15,6 +18,7 @@ const exampleOp = require('../fixtures/ops/example-op');
 const overrideLogger = require('./override-logger');
 const { generateContext } = require('../../lib/utils');
 const { newJobConfig, newSysConfig, newSliceConfig } = require('./configs');
+const zipDirectory = require('./zip-directory');
 
 class TestContext {
     constructor(testName, options = {}) {
@@ -22,7 +26,10 @@ class TestContext {
             clusterMasterPort,
             slicerPort,
             analytics,
-            maxRetries
+            maxRetries,
+            operations,
+            assignment,
+            assets,
         } = options;
 
         exampleReader.reader.mockClear();
@@ -46,7 +53,14 @@ class TestContext {
             clusterMasterPort,
         });
 
-        this.jobConfig = newJobConfig({ slicerPort, analytics, maxRetries });
+        this.jobConfig = newJobConfig({
+            assignment,
+            slicerPort,
+            analytics,
+            maxRetries,
+            operations,
+            assets,
+        });
 
         this.exId = this.jobConfig.ex_id;
         this.jobId = this.jobConfig.job_id;
@@ -63,6 +77,20 @@ class TestContext {
         this.clean = false;
     }
 
+    async saveAsset(assetDir, cleanup) {
+        await this.addAssetStore();
+        const exists = await fs.pathExists(assetDir);
+        if (!exists) {
+            const err = new Error(`Asset Directory ${assetDir} does not exist`);
+            console.error(err.stack); // eslint-disable-line no-console
+            throw err;
+        }
+        const assetZip = await zipDirectory(assetDir);
+        const assetId = await this.stores.assetStore.save(assetZip);
+        if (cleanup) await fs.remove(path.join(this.assetDir, assetId));
+        return assetId;
+    }
+
     async newSlice() {
         this.sliceConfig = newSliceConfig();
         await this.addStateStore();
@@ -72,6 +100,7 @@ class TestContext {
     async addAssetStore() {
         if (this.stores.assetStore) return;
         this.stores.assetStore = await makeAssetStore(this.context);
+        delete this.context.apis.assets;
     }
 
     async addStateStore() {
@@ -82,6 +111,11 @@ class TestContext {
     async addAnalyticsStore() {
         if (this.stores.analyticsStore) return;
         this.stores.analyticsStore = await makeAnalyticsStore(this.context);
+    }
+
+    async addExStore() {
+        if (this.stores.exStore) return;
+        this.stores.exStore = await makeExStore(this.context);
     }
 
     async cleanup() {

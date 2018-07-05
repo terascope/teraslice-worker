@@ -18,6 +18,7 @@ const newSliceConfig = (request = { example: 'slice-data' }) => ({
 const newJobConfig = (options = {}) => {
     const {
         analytics = false,
+        assignment = 'worker',
         maxRetries = 0,
         slicerPort = 0,
         operations = [
@@ -33,7 +34,7 @@ const newJobConfig = (options = {}) => {
         assets = []
     } = options;
     return {
-        assignment: 'worker',
+        assignment,
         job: {
             assets,
             analytics,
