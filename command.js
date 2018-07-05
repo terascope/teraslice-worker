@@ -2,8 +2,14 @@
 
 'use strict';
 
+/* eslint-disable class-methods-use-this, no-console */
+
 const path = require('path');
+const diehard = require('diehard');
 const yargs = require('yargs');
+const get = require('lodash/get');
+
+require('./lib/setup');
 const Worker = require('./lib/worker');
 const { readSysConfig } = require('./lib/terafoundation');
 const { generateContext } = require('./lib/utils');
@@ -30,26 +36,97 @@ class Command {
         if (assignment === 'worker') {
             this.worker = new Worker(context, jobConfig);
         }
+
+        this.logger = context.logger;
+        this.shutdownTimeout = get(context, 'sysconfig.teraslice.shutdown_timeout', 60 * 1000);
     }
 
     async run() {
         try {
             await this.worker.start();
         } catch (err) {
-            console.error(err); // eslint-disable-line no-console
+            this.shutdown(err);
             process.exit(1);
         }
         process.exit(0);
     }
 
-    _parseArgs() { // eslint-disable-line class-methods-use-this
+    handleExit() {
+        diehard.register(async (signal, done) => {
+            this.logger.warn(`Exit called due to signal ${signal}, shutting down...`);
+            await this.shutdown();
+            done();
+        });
+
+        diehard.listen({
+            uncaughtException: false,
+            timeout: this.shutdownTimeout,
+        });
+    }
+
+
+    handleErrors() {
+        process.on('uncaughtException', async (err) => {
+            await this.shutdown(err);
+            process.exit(1);
+        });
+
+        process.on('unhandledRejection', async (err) => {
+            await this.shutdown(err);
+            process.exit(1);
+        });
+    }
+
+    async shutdown(err) {
+        if (err) {
+            this.logError(err);
+        }
+
+        try {
+            await this.worker.shutdown();
+        } catch (shutdowErr) {
+            this.logError(shutdowErr);
+        }
+
+        try {
+            await this.logger.flush();
+            // hack for logger to flush
+            await Promise.delay(600);
+        } catch (flushErr) {
+            this.logError(flushErr);
+        }
+    }
+
+    logError(err) {
+        const logErr = this.logger ? this.logger.error.bind(this.logger) : console.error;
+        if (err.message) {
+            logErr(err.message);
+        } else {
+            logErr(err);
+        }
+
+        if (err.stack) {
+            logErr(err.stack);
+        }
+    }
+
+    _parseArgs() {
         const { argv } = yargs.usage('Usage: $0 [options]')
             .scriptName('teraslice-worker')
             .help('h')
             .alias('h', 'help')
             .option('j', {
                 alias: 'job',
-                coerce: JSON.parse,
+                coerce: (arg) => {
+                    if (!arg) {
+                        throw new Error('Job configuration must not be not be empty');
+                    }
+                    try {
+                        return JSON.parse(arg);
+                    } catch (err) {
+                        throw new Error('Job configuration be a valid JSON');
+                    }
+                },
                 default: process.env.EX,
                 demandOption: true,
                 describe: 'Job configuration in JSON stringified form, defaults to env EX.',
@@ -74,4 +151,7 @@ class Command {
     }
 }
 
-new Command().run();
+const cmd = new Command();
+cmd.handleExit();
+cmd.handleErrors();
+cmd.run();

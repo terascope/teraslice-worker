@@ -1,6 +1,5 @@
 'use strict';
 
-const Promise = require('bluebird');
 const debug = require('debug');
 
 const newLogger = name => ({

@@ -4,7 +4,6 @@ const fs = require('fs-extra');
 const path = require('path');
 const shortid = require('shortid');
 const random = require('lodash/random');
-const Promise = require('bluebird');
 const BufferStreams = require('bufferstreams');
 const archiver = require('archiver');
 const { assetStore: makeAssetStore } = require('../../lib/teraslice');

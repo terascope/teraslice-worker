@@ -1,6 +1,5 @@
 'use strict';
 
-const Promise = require('bluebird');
 const times = require('lodash/times');
 const map = require('lodash/map');
 const mean = require('lodash/mean');

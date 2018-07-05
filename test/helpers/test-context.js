@@ -1,6 +1,5 @@
 'use strict';
 
-const Promise = require('bluebird');
 const { createTempDirSync, cleanupTempDirs } = require('jest-fixtures');
 const shortid = require('shortid');
 const ElasticsearchClient = require('elasticsearch').Client;

@@ -2,7 +2,6 @@
 
 /* eslint-disable no-console */
 
-const Promise = require('bluebird');
 const { Worker } = require('../..');
 const ExecutionControllerMessenger = require('../../lib/messenger/execution-controller');
 const {

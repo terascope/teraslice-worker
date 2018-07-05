@@ -2,7 +2,6 @@
 
 /* eslint-disable no-console, no-new */
 
-const Promise = require('bluebird');
 const shortid = require('shortid');
 const { formatURL } = require('../../lib/utils');
 const WorkerMessenger = require('../../lib/messenger/worker');
