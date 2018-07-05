@@ -88,7 +88,7 @@ class TestContext {
         if (this.clean) return;
 
         const stores = Object.values(this.stores);
-        await Promise.map(stores, store => store.destroy());
+        await Promise.map(stores, store => store.shutdown(true));
 
         cleanupTempDirs();
 

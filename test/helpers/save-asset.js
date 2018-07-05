@@ -6,7 +6,7 @@ const shortid = require('shortid');
 const random = require('lodash/random');
 const BufferStreams = require('bufferstreams');
 const archiver = require('archiver');
-const { assetStore: makeAssetStore } = require('../../lib/teraslice');
+const { makeAssetStore } = require('../../lib/teraslice');
 
 function zipDirectory(dir) {
     return new Promise((resolve, reject) => {
@@ -37,6 +37,6 @@ module.exports = async (context, assetDir) => {
     const assetStore = await makeAssetStore(context);
     const assetId = await assetStore.save(assetZip);
     delete context.apis.assets;
-    await assetStore.destroy();
+    await assetStore.shutdown(true);
     return assetId;
 };

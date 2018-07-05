@@ -16,7 +16,6 @@ describe('ExecutionController', () => {
         await exController.shutdown();
         await testContext.cleanup();
     });
-
     it('should the correct methods', () => {
         expect(exController).toHaveProperty('start');
         expect(exController.start).toBeFunction();
@@ -27,10 +26,10 @@ describe('ExecutionController', () => {
     describe('when started', () => {
         beforeEach(() => exController.start());
         it('should have the stores', () => {
-            expect(exController.stores.stateStore).toBeDefined();
-            expect(exController.stores.stateStore).toHaveProperty('destroy');
-            expect(exController.stores.analyticsStore).toBeDefined();
-            expect(exController.stores.analyticsStore).toHaveProperty('destroy');
+            expect(exController.stores).toHaveProperty('stateStore');
+            expect(exController.stores.stateStore).toHaveProperty('shutdown');
+            expect(exController.stores).toHaveProperty('exStore');
+            expect(exController.stores.exStore).toHaveProperty('shutdown');
         });
     });
 });
