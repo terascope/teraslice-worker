@@ -58,6 +58,7 @@ describe('Slice', () => {
             });
 
             it('should handle the slice correctly', () => {
+                expect(results).not.toBeNil();
                 // should call of the operations
                 const { reader, op } = testContext;
                 const sliceRequest = { example: 'slice-data' };
@@ -107,6 +108,8 @@ describe('Slice', () => {
             });
 
             it('should handle the slice correctly', () => {
+                expect(results).not.toBeNil();
+
                 // should call all of the operations
                 const { reader, op } = testContext;
 
@@ -152,6 +155,7 @@ describe('Slice', () => {
             });
 
             it('should handle the slice correctly', () => {
+                expect(results).not.toBeNil();
                 // should call all of the operations
                 const { reader, op } = testContext;
                 const sliceRequest = { example: 'slice-data' };
