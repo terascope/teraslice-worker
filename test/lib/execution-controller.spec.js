@@ -8,7 +8,9 @@ describe('ExecutionController', () => {
     let testContext;
 
     beforeEach(() => {
-        testContext = new TestContext('worker');
+        testContext = new TestContext('execution_controller', {
+            assignment: 'execution_controller'
+        });
         exController = new ExecutionController(testContext.context, testContext.jobConfig);
     });
 
@@ -16,6 +18,7 @@ describe('ExecutionController', () => {
         await exController.shutdown();
         await testContext.cleanup();
     });
+
     it('should the correct methods', () => {
         expect(exController).toHaveProperty('start');
         expect(exController.start).toBeFunction();

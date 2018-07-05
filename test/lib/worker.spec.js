@@ -101,7 +101,7 @@ describe('Worker', () => {
                 let msg;
 
                 beforeEach(async () => {
-                    worker.job.queue[1].mockRejectedValue(new Error('Bad news bears'));
+                    worker.executionContext.queue[1].mockRejectedValue(new Error('Bad news bears'));
 
                     await exMessenger.onWorkerReady(worker.workerId);
                     await exMessenger.sendNewSlice(worker.workerId, sliceConfig);

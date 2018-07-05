@@ -17,7 +17,7 @@ describe('Slice', () => {
         testContext = new TestContext('slice:analytics', options);
 
         const job = new Job(testContext.context, testContext.jobConfig);
-        await job.initialize();
+        const executionContext = await job.initialize();
 
         slice = new Slice(testContext.context, testContext.jobConfig);
         overrideLogger(slice, 'slice');
@@ -27,7 +27,7 @@ describe('Slice', () => {
 
         await testContext.newSlice();
 
-        await slice.initialize(job, testContext.sliceConfig, testContext.stores);
+        await slice.initialize(executionContext, testContext.sliceConfig, testContext.stores);
 
         eventMocks = {
             'slice:success': jest.fn(),
