@@ -1,15 +1,14 @@
 'use strict';
 
 const path = require('path');
-const shortid = require('shortid');
 const random = require('lodash/random');
+const { newId } = require('../../lib/utils');
 
-const newId = prefix => `${prefix}-${shortid.generate()}`.toLowerCase();
 const opsPath = path.join(__dirname, '..', 'fixtures', 'ops');
 
 const newSliceConfig = (request = { example: 'slice-data' }) => ({
-    slice_id: newId('slice-id'),
-    slicer_id: newId('slicer-id'),
+    slice_id: newId('slice-id', true),
+    slicer_id: newId('slicer-id', true),
     order: random(0, 1000),
     request,
     _created: new Date().toISOString()
@@ -41,8 +40,8 @@ const newJobConfig = (options = {}) => {
             max_retries: maxRetries,
             operations,
         },
-        ex_id: newId('ex-id'),
-        job_id: newId('job-id'),
+        ex_id: newId('ex-id', true),
+        job_id: newId('job-id', true),
         slicer_port: slicerPort,
         slicer_hostname: 'localhost'
     };

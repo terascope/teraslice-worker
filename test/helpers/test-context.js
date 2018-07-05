@@ -1,7 +1,6 @@
 'use strict';
 
 const { createTempDirSync, cleanupTempDirs } = require('jest-fixtures');
-const shortid = require('shortid');
 const path = require('path');
 const fs = require('fs-extra');
 const ElasticsearchClient = require('elasticsearch').Client;
@@ -11,6 +10,7 @@ const {
     makeAnalyticsStore,
     makeExStore,
 } = require('../../lib/teraslice');
+const { newId } = require('../../lib/utils');
 
 const exampleReader = require('../fixtures/ops/example-reader');
 const exampleOp = require('../fixtures/ops/example-op');
@@ -50,7 +50,7 @@ class TestContext {
         this.op = exampleOp.op;
         this.newProcessor = exampleOp.newProcessor;
 
-        this.clusterName = `tmp_${shortid.generate()}`.toLowerCase();
+        this.clusterName = newId('tmp', true);
         this.assetDir = createTempDirSync();
 
         this.sysconfig = newSysConfig({

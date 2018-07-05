@@ -1,10 +1,10 @@
 'use strict';
 
 const path = require('path');
-const shortid = require('shortid');
 const random = require('lodash/random');
 const BufferStreams = require('bufferstreams');
 const archiver = require('archiver');
+const { newId } = require('../../lib/utils');
 
 function zipDirectory(dir) {
     return new Promise((resolve, reject) => {
@@ -12,7 +12,7 @@ function zipDirectory(dir) {
         archive.append(JSON.stringify({
             name: path.basename(dir),
             version: `${random(0, 100)}.${random(0, 100)}.${random(0, 100)}`,
-            someProp: shortid.generate()
+            someProp: newId()
         }, null, 4), { name: 'asset.json' });
         archive.pipe(new BufferStreams((err, buf) => {
             if (err) {

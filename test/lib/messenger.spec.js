@@ -2,8 +2,7 @@
 
 /* eslint-disable no-console, no-new */
 
-const shortid = require('shortid');
-const { formatURL } = require('../../lib/utils');
+const { formatURL, newId } = require('../../lib/utils');
 const WorkerMessenger = require('../../lib/messenger/worker');
 const { closeServer } = require('../../lib/messenger/helpers');
 const ExecutionControllerMessenger = require('../../lib/messenger/execution-controller');
@@ -81,7 +80,7 @@ describe('Messenger', () => {
 
             await exMessenger.start();
 
-            workerId = shortid.generate();
+            workerId = newId('worker-id');
             worker = new WorkerMessenger({
                 workerId,
                 executionControllerUrl,
