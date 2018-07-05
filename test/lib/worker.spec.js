@@ -6,7 +6,6 @@ const { Worker } = require('../..');
 const ExecutionControllerMessenger = require('../../lib/messenger/execution-controller');
 const {
     TestContext,
-    ClusterMasterMessenger,
     findPort,
 } = require('../helpers');
 
@@ -14,20 +13,9 @@ describe('Worker', () => {
     describe('when constructed', () => {
         let worker;
         let exMessenger;
-        let cmMessenger;
         let testContext;
 
         beforeEach(async () => {
-            const clusterMasterPort = await findPort();
-
-            cmMessenger = new ClusterMasterMessenger({
-                port: clusterMasterPort,
-                networkerLatencyBuffer: 0,
-                actionTimeout: 1000
-            });
-
-            await cmMessenger.start();
-
             const slicerPort = await findPort();
             exMessenger = new ExecutionControllerMessenger({
                 port: slicerPort,
@@ -37,13 +25,12 @@ describe('Worker', () => {
 
             await exMessenger.start();
 
-            testContext = new TestContext('worker', { clusterMasterPort, slicerPort });
+            testContext = new TestContext('worker', { slicerPort });
 
             worker = new Worker(testContext.context, testContext.jobConfig);
         });
 
         afterEach(async () => {
-            await cmMessenger.close();
             await exMessenger.close();
             await worker.shutdown();
             await testContext.cleanup();

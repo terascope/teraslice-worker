@@ -2,6 +2,8 @@
 
 const reader = jest.fn(() => Promise.resolve(Array(100).fill('default-reader-data')));
 const newReader = jest.fn(() => Promise.resolve(reader));
+const slicer = jest.fn(() => Promise.resolve(Array(100).fill('default-slicer-data')));
+const newSlicer = jest.fn(() => Promise.resolve(slicer));
 
 function schema() {
     return {
@@ -23,4 +25,6 @@ module.exports = {
     reader,
     newReader,
     schema,
+    slicer,
+    newSlicer,
 };

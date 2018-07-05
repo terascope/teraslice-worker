@@ -15,6 +15,12 @@ describe('Worker Config Validation', () => {
         });
     });
 
+    describe('when constructed with a invalid assignment', () => {
+        it('should throw an error', () => {
+            expect(() => validateJobConfig({ assignment: 'invalid' })).toThrow('Job configuration requires assignment to worker, or execution_controller');
+        });
+    });
+
     describe('when constructed without a job', () => {
         it('should throw an error', () => {
             const config = {

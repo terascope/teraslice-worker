@@ -35,11 +35,17 @@ class TestContext {
         exampleReader.reader.mockClear();
         exampleReader.newReader.mockClear();
 
+        exampleReader.slicer.mockClear();
+        exampleReader.newSlicer.mockClear();
+
         exampleOp.op.mockClear();
         exampleOp.newProcessor.mockClear();
 
         this.reader = exampleReader.reader;
         this.newReader = exampleReader.newReader;
+
+        this.slicer = exampleReader.slicer;
+        this.newSlicer = exampleReader.newSlicer;
 
         this.op = exampleOp.op;
         this.newProcessor = exampleOp.newProcessor;

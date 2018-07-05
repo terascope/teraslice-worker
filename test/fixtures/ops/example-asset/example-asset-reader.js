@@ -4,6 +4,10 @@ function newReader() {
     return () => Array(100).fill('howdy');
 }
 
+function newSlicer() {
+    return () => Array(100).fill('sliced-data');
+}
+
 function schema() {
     return {
         exampleProp: {
@@ -21,6 +25,7 @@ function schema() {
 }
 
 module.exports = {
+    newSlicer,
     newReader,
     schema,
 };

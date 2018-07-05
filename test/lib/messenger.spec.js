@@ -7,7 +7,7 @@ const { formatURL } = require('../../lib/utils');
 const WorkerMessenger = require('../../lib/messenger/worker');
 const { closeServer } = require('../../lib/messenger/helpers');
 const ExecutionControllerMessenger = require('../../lib/messenger/execution-controller');
-const { ClusterMasterMessenger, findPort } = require('../helpers');
+const { findPort } = require('../helpers');
 
 describe('Messenger', () => {
     describe('when worker is constructed without a executionControllerUrl', () => {
@@ -18,22 +18,11 @@ describe('Messenger', () => {
         });
     });
 
-    describe('when worker is constructed without a clusterMasterUrl', () => {
-        it('should throw an error', () => {
-            expect(() => {
-                new WorkerMessenger({
-                    executionControllerUrl: 'example.com'
-                });
-            }).toThrowError('WorkerMessenger requires a valid clusterMasterUrl');
-        });
-    });
-
     describe('when WorkerMessenger is constructed without a workerId', () => {
         it('should throw an error', () => {
             expect(() => {
                 new WorkerMessenger({
-                    executionControllerUrl: 'example.com',
-                    clusterMasterUrl: 'example.com'
+                    executionControllerUrl: 'example.com'
                 });
             }).toThrowError('WorkerMessenger requires a valid workerId');
         });
@@ -62,7 +51,6 @@ describe('Messenger', () => {
         beforeEach(() => {
             worker = new WorkerMessenger({
                 executionControllerUrl: 'http://idk.example.com',
-                clusterMasterUrl: 'http:idk.example.com',
                 workerId: 'hello',
                 socketOptions: {
                     timeout: 1000,
@@ -72,38 +60,7 @@ describe('Messenger', () => {
         });
 
         it('start should throw an error', () => {
-            const errMsg = /^Unable to connect to slicer/;
-            return expect(worker.start()).rejects.toThrowError(errMsg);
-        });
-    });
-
-    describe('when constructed with an invalid clusterMasterUrl', () => {
-        let worker;
-        let exMessenger;
-        beforeEach(async () => {
-            const port = await findPort();
-            exMessenger = new ExecutionControllerMessenger({ port });
-
-            await exMessenger.start();
-
-            worker = new WorkerMessenger({
-                executionControllerUrl: formatURL('localhost', port),
-                clusterMasterUrl: 'http://idk.example.com',
-                workerId: 'hello',
-                socketOptions: {
-                    timeout: 1000,
-                    reconnection: false,
-                }
-            });
-        });
-
-        afterEach(async () => {
-            await exMessenger.close();
-            await worker.close();
-        });
-
-        it('start should throw an error', async () => {
-            const errMsg = /^Unable to connect to cluster master/;
+            const errMsg = /^Unable to connect to execution controller/;
             return expect(worker.start()).rejects.toThrowError(errMsg);
         });
     });
@@ -112,7 +69,6 @@ describe('Messenger', () => {
         let worker;
         let exMessenger;
         let workerId;
-        let cmMessenger;
 
         beforeEach(async () => {
             const slicerPort = await findPort();
@@ -125,21 +81,10 @@ describe('Messenger', () => {
 
             await exMessenger.start();
 
-            const clusterMasterPort = await findPort();
-            const clusterMasterUrl = formatURL('localhost', clusterMasterPort);
-            cmMessenger = new ClusterMasterMessenger({
-                port: clusterMasterPort,
-                networkerLatencyBuffer: 0,
-                actionTimeout: 1000
-            });
-
-            await cmMessenger.start();
-
             workerId = shortid.generate();
             worker = new WorkerMessenger({
                 workerId,
                 executionControllerUrl,
-                clusterMasterUrl,
                 networkerLatencyBuffer: 0,
                 actionTimeout: 1000,
                 socketOptions: {
@@ -153,7 +98,6 @@ describe('Messenger', () => {
 
         afterEach(async () => {
             await exMessenger.close();
-            await cmMessenger.close();
             await worker.close();
         });
 
@@ -163,15 +107,12 @@ describe('Messenger', () => {
 
         describe('when the worker is ready', () => {
             let slicerReadyMsg;
-            let clusterMasterReadyMsg;
 
             beforeEach(async () => {
                 const workerReady = worker.ready();
                 const slicerReady = exMessenger.onWorkerReady(workerId);
-                const clusterMasterReady = cmMessenger.onWorkerReady(workerId);
                 await workerReady;
                 slicerReadyMsg = await slicerReady;
-                clusterMasterReadyMsg = await clusterMasterReady;
             });
 
             it('should be marked as available', () => {
@@ -180,7 +121,6 @@ describe('Messenger', () => {
 
             it('should call worker ready on the exMessenger', () => {
                 expect(slicerReadyMsg).toEqual({ worker_id: workerId });
-                expect(clusterMasterReadyMsg).toEqual({ worker_id: workerId });
                 expect(exMessenger.workers).toHaveProperty(workerId);
             });
 
@@ -232,7 +172,7 @@ describe('Messenger', () => {
 
             describe('when receiving cluster:error:terminal', () => {
                 beforeEach(() => {
-                    cmMessenger.sendToWorker(workerId, 'cluster:error:terminal', {
+                    exMessenger.sendToWorker(workerId, 'cluster:error:terminal', {
                         ex_id: 'some-ex-id',
                         err: 'cluster-error-terminal'
                     });
@@ -247,14 +187,15 @@ describe('Messenger', () => {
                 });
             });
 
-            describe('when sending execution:error:terminal', () => {
+            xdescribe('when sending execution:error:terminal', () => {
                 beforeEach(() => {
-                    worker.sendToClusterMaster('execution:error:terminal', {
+                    exMessenger.send('execution:error:terminal', {
                         error: 'execution-error-terminal'
                     });
                 });
 
                 it('should receive the message on the cluster master', async () => {
+                    // eslint-disable-next-line no-undef
                     const msg = await cmMessenger.onceWithTimeout(`execution:error:terminal:${workerId}`);
                     expect(msg).toEqual({
                         error: 'execution-error-terminal'
@@ -342,8 +283,8 @@ describe('Messenger', () => {
                 let responseErr;
 
                 beforeEach(async () => {
-                    worker.exSocket.on('some:message', (msg) => {
-                        worker.exSocket.emit('messaging:response', {
+                    worker.socket.on('some:message', (msg) => {
+                        worker.socket.emit('messaging:response', {
                             __msgId: msg.__msgId,
                             __source: 'execution_controller',
                             error: 'this should fail'
