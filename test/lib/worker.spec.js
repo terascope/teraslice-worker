@@ -15,29 +15,29 @@ jest.setTimeout(10000);
 describe('Worker', () => {
     describe('when constructed', () => {
         let worker;
-        let executionController;
-        let clusterMaster;
+        let exMessenger;
+        let cmMessenger;
         let testContext;
 
         beforeEach(async () => {
             const clusterMasterPort = await findPort();
 
-            clusterMaster = new ClusterMasterMessenger({
+            cmMessenger = new ClusterMasterMessenger({
                 port: clusterMasterPort,
                 networkerLatencyBuffer: 0,
                 actionTimeout: 1000
             });
 
-            await clusterMaster.start();
+            await cmMessenger.start();
 
             const slicerPort = await findPort();
-            executionController = new ExecutionControllerMessenger({
+            exMessenger = new ExecutionControllerMessenger({
                 port: slicerPort,
                 networkerLatencyBuffer: 0,
                 actionTimeout: 1000
             });
 
-            await executionController.start();
+            await exMessenger.start();
 
             testContext = new TestContext('worker', { clusterMasterPort, slicerPort });
 
@@ -45,8 +45,8 @@ describe('Worker', () => {
         });
 
         afterEach(async () => {
-            await clusterMaster.close();
-            await executionController.close();
+            await cmMessenger.close();
+            await exMessenger.close();
             await worker.shutdown();
             await testContext.cleanup();
         });
@@ -71,12 +71,12 @@ describe('Worker', () => {
                 let msg;
 
                 beforeEach(async () => {
-                    await executionController.onWorkerReady(worker.workerId);
-                    await executionController.sendNewSlice(
+                    await exMessenger.onWorkerReady(worker.workerId);
+                    await exMessenger.sendNewSlice(
                         worker.workerId,
                         sliceConfig
                     );
-                    msg = await executionController.onSliceComplete(worker.workerId);
+                    msg = await exMessenger.onSliceComplete(worker.workerId);
                 });
 
                 it('should return send a slice completed message to the execution controller', () => {
@@ -92,15 +92,15 @@ describe('Worker', () => {
                 let msg;
 
                 beforeEach(async () => {
-                    await executionController.onWorkerReady(worker.workerId);
+                    await exMessenger.onWorkerReady(worker.workerId);
                     await Promise.delay(1000);
 
-                    await executionController.sendNewSlice(
+                    await exMessenger.sendNewSlice(
                         worker.workerId,
                         sliceConfig
                     );
 
-                    msg = await executionController.onSliceComplete(worker.workerId, 2000);
+                    msg = await exMessenger.onSliceComplete(worker.workerId, 2000);
                 });
 
                 it('should return send a slice completed message to the execution controller', () => {
@@ -118,10 +118,10 @@ describe('Worker', () => {
                 beforeEach(async () => {
                     worker.job.queue[1].mockRejectedValue(new Error('Bad news bears'));
 
-                    await executionController.onWorkerReady(worker.workerId);
-                    await executionController.sendNewSlice(worker.workerId, sliceConfig);
+                    await exMessenger.onWorkerReady(worker.workerId);
+                    await exMessenger.sendNewSlice(worker.workerId, sliceConfig);
 
-                    msg = await executionController.onSliceComplete(worker.workerId);
+                    msg = await exMessenger.onSliceComplete(worker.workerId);
                 });
 
                 it('should return send a slice completed message with an error', async () => {
@@ -144,8 +144,8 @@ describe('Worker', () => {
                     worker.shutdownTimeout = 2000;
                     worker._processSlice = jest.fn(() => Promise.delay(1000));
 
-                    await executionController.onWorkerReady(worker.workerId);
-                    await executionController.sendNewSlice(
+                    await exMessenger.onWorkerReady(worker.workerId);
+                    await exMessenger.sendNewSlice(
                         worker.workerId,
                         sliceConfig
                     );
@@ -172,7 +172,7 @@ describe('Worker', () => {
             describe('when a slice is in-progress and has to be forced to shutdown', () => {
                 let shutdown;
 
-                beforeEach(() => executionController.onWorkerReady(worker.workerId));
+                beforeEach(() => exMessenger.onWorkerReady(worker.workerId));
 
                 beforeEach((done) => {
                     worker.shutdownTimeout = 1000;
@@ -182,7 +182,7 @@ describe('Worker', () => {
                         return Promise.delay(1100);
                     });
 
-                    executionController.sendNewSlice(worker.workerId, sliceConfig).then(() => {
+                    exMessenger.sendNewSlice(worker.workerId, sliceConfig).then(() => {
                         let timeout;
                         const interval = setInterval(() => {
                             if (shutdown) {

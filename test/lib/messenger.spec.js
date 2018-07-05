@@ -28,7 +28,7 @@ describe('Messenger', () => {
         });
     });
 
-    describe('when worker is constructed without a workerId', () => {
+    describe('when WorkerMessenger is constructed without a workerId', () => {
         it('should throw an error', () => {
             expect(() => {
                 new WorkerMessenger({
@@ -39,7 +39,7 @@ describe('Messenger', () => {
         });
     });
 
-    describe('when executionController is constructed without a port', () => {
+    describe('when ExecutionControllerMessenger is constructed without a port', () => {
         it('should throw an error', () => {
             expect(() => {
                 new ExecutionControllerMessenger(); // eslint-disable-line
@@ -47,13 +47,13 @@ describe('Messenger', () => {
         });
     });
 
-    describe('when executionController started twice', () => {
+    describe('when ExecutionControllerMessenger started twice', () => {
         it('should throw an error', async () => {
             const port = await findPort();
-            const executionController = new ExecutionControllerMessenger({ port });
-            await executionController.start();
-            await expect(executionController.start()).rejects.toThrowError(`Port ${port} is already in-use`);
-            await executionController.close();
+            const exMessenger = new ExecutionControllerMessenger({ port });
+            await exMessenger.start();
+            await expect(exMessenger.start()).rejects.toThrowError(`Port ${port} is already in-use`);
+            await exMessenger.close();
         });
     });
 
@@ -79,12 +79,12 @@ describe('Messenger', () => {
 
     describe('when constructed with an invalid clusterMasterUrl', () => {
         let worker;
-        let executionController;
+        let exMessenger;
         beforeEach(async () => {
             const port = await findPort();
-            executionController = new ExecutionControllerMessenger({ port });
+            exMessenger = new ExecutionControllerMessenger({ port });
 
-            await executionController.start();
+            await exMessenger.start();
 
             worker = new WorkerMessenger({
                 executionControllerUrl: formatURL('localhost', port),
@@ -98,7 +98,7 @@ describe('Messenger', () => {
         });
 
         afterEach(async () => {
-            await executionController.close();
+            await exMessenger.close();
             await worker.close();
         });
 
@@ -110,30 +110,30 @@ describe('Messenger', () => {
 
     describe('when constructed with an valid host', () => {
         let worker;
-        let executionController;
+        let exMessenger;
         let workerId;
-        let clusterMaster;
+        let cmMessenger;
 
         beforeEach(async () => {
             const slicerPort = await findPort();
             const executionControllerUrl = formatURL('localhost', slicerPort);
-            executionController = new ExecutionControllerMessenger({
+            exMessenger = new ExecutionControllerMessenger({
                 port: slicerPort,
                 networkerLatencyBuffer: 0,
                 actionTimeout: 1000
             });
 
-            await executionController.start();
+            await exMessenger.start();
 
             const clusterMasterPort = await findPort();
             const clusterMasterUrl = formatURL('localhost', clusterMasterPort);
-            clusterMaster = new ClusterMasterMessenger({
+            cmMessenger = new ClusterMasterMessenger({
                 port: clusterMasterPort,
                 networkerLatencyBuffer: 0,
                 actionTimeout: 1000
             });
 
-            await clusterMaster.start();
+            await cmMessenger.start();
 
             workerId = shortid.generate();
             worker = new WorkerMessenger({
@@ -152,8 +152,8 @@ describe('Messenger', () => {
         });
 
         afterEach(async () => {
-            await executionController.close();
-            await clusterMaster.close();
+            await exMessenger.close();
+            await cmMessenger.close();
             await worker.close();
         });
 
@@ -167,8 +167,8 @@ describe('Messenger', () => {
 
             beforeEach(async () => {
                 const workerReady = worker.ready();
-                const slicerReady = executionController.onWorkerReady(workerId);
-                const clusterMasterReady = clusterMaster.onWorkerReady(workerId);
+                const slicerReady = exMessenger.onWorkerReady(workerId);
+                const clusterMasterReady = cmMessenger.onWorkerReady(workerId);
                 await workerReady;
                 slicerReadyMsg = await slicerReady;
                 clusterMasterReadyMsg = await clusterMasterReady;
@@ -178,15 +178,15 @@ describe('Messenger', () => {
                 expect(worker.available).toBeTrue();
             });
 
-            it('should call worker ready on the executionController', () => {
+            it('should call worker ready on the exMessenger', () => {
                 expect(slicerReadyMsg).toEqual({ worker_id: workerId });
                 expect(clusterMasterReadyMsg).toEqual({ worker_id: workerId });
-                expect(executionController.workers).toHaveProperty(workerId);
+                expect(exMessenger.workers).toHaveProperty(workerId);
             });
 
             it('should return immediately when calling onWorkerReady', () => {
                 const msg = { worker_id: workerId };
-                return expect(executionController.onWorkerReady(workerId)).resolves.toEqual(msg);
+                return expect(exMessenger.onWorkerReady(workerId)).resolves.toEqual(msg);
             });
 
             describe('when sending worker:slice:complete', () => {
@@ -194,8 +194,8 @@ describe('Messenger', () => {
                     worker.sliceComplete({ slice: 'worker-slice-complete', analyticsData: 'hello', error: 'hello' });
                 });
 
-                it('should emit worker:slice:complete on the executionController', async () => {
-                    const msg = await executionController.onSliceComplete(workerId);
+                it('should emit worker:slice:complete on the exMessenger', async () => {
+                    const msg = await exMessenger.onSliceComplete(workerId);
                     expect(msg).toEqual({
                         slice: 'worker-slice-complete',
                         analytics: 'hello',
@@ -212,15 +212,15 @@ describe('Messenger', () => {
                     await Promise.delay(500);
                 });
 
-                it('should emit worker:slice:complete on the executionController', async () => {
-                    const msg = await executionController.onSliceComplete(workerId);
+                it('should emit worker:slice:complete on the exMessenger', async () => {
+                    const msg = await exMessenger.onSliceComplete(workerId);
                     expect(msg).toEqual({
                         slice: 'hello-1',
                         analytics: 'hello',
                         error: 'hello',
                         worker_id: workerId,
                     });
-                    const msg2 = await executionController.onSliceComplete(workerId);
+                    const msg2 = await exMessenger.onSliceComplete(workerId);
                     expect(msg2).toEqual({
                         slice: 'hello-2',
                         analytics: 'hello',
@@ -232,7 +232,7 @@ describe('Messenger', () => {
 
             describe('when receiving cluster:error:terminal', () => {
                 beforeEach(() => {
-                    clusterMaster.sendToWorker(workerId, 'cluster:error:terminal', {
+                    cmMessenger.sendToWorker(workerId, 'cluster:error:terminal', {
                         ex_id: 'some-ex-id',
                         err: 'cluster-error-terminal'
                     });
@@ -255,7 +255,7 @@ describe('Messenger', () => {
                 });
 
                 it('should receive the message on the cluster master', async () => {
-                    const msg = await clusterMaster.onceWithTimeout(`execution:error:terminal:${workerId}`);
+                    const msg = await cmMessenger.onceWithTimeout(`execution:error:terminal:${workerId}`);
                     expect(msg).toEqual({
                         error: 'execution-error-terminal'
                     });
@@ -264,7 +264,7 @@ describe('Messenger', () => {
 
             describe('when receiving slicer:slice:recorded', () => {
                 beforeEach(() => {
-                    executionController.sendToWorker(workerId, 'slicer:slice:recorded', {
+                    exMessenger.sendToWorker(workerId, 'slicer:slice:recorded', {
                         example: 'slice-recorded-message'
                     });
                 });
@@ -283,7 +283,7 @@ describe('Messenger', () => {
                     let sliceMsg;
 
                     beforeEach(async () => {
-                        const response = executionController.sendNewSlice(workerId, {
+                        const response = exMessenger.sendNewSlice(workerId, {
                             example: 'slice-new-message'
                         });
                         const slice = worker.onceWithTimeout('slicer:slice:new');
@@ -299,7 +299,7 @@ describe('Messenger', () => {
                         expect(sliceMsg).toEqual({ example: 'slice-new-message' });
                     });
 
-                    it('executionController should get a will process message back', () => {
+                    it('exMessenger should get a will process message back', () => {
                         expect(responseMsg).toEqual({ willProcess: true });
                     });
                 });
@@ -310,7 +310,7 @@ describe('Messenger', () => {
                     let slice;
 
                     beforeEach(async () => {
-                        const response = executionController.sendNewSlice(workerId, { example: 'slice-new-message' });
+                        const response = exMessenger.sendNewSlice(workerId, { example: 'slice-new-message' });
                         worker.available = false;
                         slice = worker.onceWithTimeout('slicer:slice:new');
                         responseMsg = await response;
@@ -350,13 +350,13 @@ describe('Messenger', () => {
                         });
                     });
                     try {
-                        responseMsg = await executionController.sendWithResponse(workerId, 'some:message', { hello: true });
+                        responseMsg = await exMessenger.sendWithResponse(workerId, 'some:message', { hello: true });
                     } catch (err) {
                         responseErr = err;
                     }
                 });
 
-                it('executionController should get an error back', () => {
+                it('exMessenger should get an error back', () => {
                     expect(responseMsg).toBeNil();
                     expect(responseErr.toString()).toEqual('Error: this should fail');
                 });
@@ -368,13 +368,13 @@ describe('Messenger', () => {
 
                 beforeEach(async () => {
                     try {
-                        responseMsg = await executionController.sendWithResponse(workerId, 'some:message', { hello: true });
+                        responseMsg = await exMessenger.sendWithResponse(workerId, 'some:message', { hello: true });
                     } catch (err) {
                         responseErr = err;
                     }
                 });
 
-                it('executionController should get an error back', () => {
+                it('exMessenger should get an error back', () => {
                     expect(responseMsg).toBeNil();
                     expect(responseErr.toString()).toStartWith(`Error: Timeout error while communicating with ${workerId}, with message:`);
                 });
@@ -385,7 +385,7 @@ describe('Messenger', () => {
             describe('when sending a slice', () => {
                 it('should throw an error', () => {
                     const errMsg = `Cannot send message to worker ${workerId}`;
-                    const promise = executionController.sendNewSlice(workerId, { example: 'slice-new-message' });
+                    const promise = exMessenger.sendNewSlice(workerId, { example: 'slice-new-message' });
                     return expect(promise).rejects.toThrowError(errMsg);
                 });
             });
@@ -393,7 +393,7 @@ describe('Messenger', () => {
             describe('when sending a slice', () => {
                 it('should throw an error', () => {
                     const errMsg = `Cannot send message to worker ${workerId}`;
-                    const promise = executionController.sendToWorker(workerId, 'some:event', { example: true });
+                    const promise = exMessenger.sendToWorker(workerId, 'some:event', { example: true });
                     return expect(promise).rejects.toThrowError(errMsg);
                 });
             });

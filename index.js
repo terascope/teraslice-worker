@@ -1,7 +1,9 @@
 'use strict';
 
 const Worker = require('./lib/worker');
+const ExecutionController = require('./lib/execution-controller');
 
 module.exports = {
-    Worker
+    Worker,
+    ExecutionController
 };
