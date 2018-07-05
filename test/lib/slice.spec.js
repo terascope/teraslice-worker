@@ -57,7 +57,8 @@ describe('Slice', () => {
                 results = await slice.run();
             });
 
-            it('should call all of the operations', () => {
+            it('should handle the slice correctly', () => {
+                // should call of the operations
                 const { reader, op } = testContext;
                 const sliceRequest = { example: 'slice-data' };
 
@@ -69,25 +70,22 @@ describe('Slice', () => {
                 expect(op).toHaveBeenCalledWith(readerResults, slice.logger, sliceRequest);
 
                 expect(results).toEqual(times(10, () => 'hi'));
-            });
 
-            it('should modify change the analyticsData', () => {
+                // should have the correct analytics data
                 expect(slice.analyticsData).toBeObject();
                 expect(slice.analyticsData.memory).toBeArrayOfSize(2);
                 expect(slice.analyticsData.size).toBeArrayOfSize(2);
                 expect(slice.analyticsData.time).toBeArrayOfSize(2);
-            });
 
-            it('should call the correct events', () => {
+                // should call the correct events
                 expect(eventMocks['slice:success']).toHaveBeenCalledTimes(1);
                 expect(eventMocks['slice:success']).toHaveBeenCalled();
                 expect(eventMocks['slice:finalize']).toHaveBeenCalledTimes(1);
                 expect(eventMocks['slice:finalize']).toHaveBeenCalled();
                 expect(eventMocks['slice:failure']).not.toHaveBeenCalled();
                 expect(eventMocks['slice:retry']).not.toHaveBeenCalled();
-            });
 
-            it('should have the correct state storage', () => {
+                // should have the correct state storage
                 const { ex_id: exId } = slice.jobConfig;
                 const query = `ex_id:${exId} AND state:completed`;
                 return expect(slice.stateStore.count(query)).resolves.toEqual(1);
@@ -108,7 +106,8 @@ describe('Slice', () => {
                 results = await slice.run();
             });
 
-            it('should call all of the operations', () => {
+            it('should handle the slice correctly', () => {
+                // should call all of the operations
                 const { reader, op } = testContext;
 
                 const sliceRequest = { example: 'slice-data' };
@@ -120,22 +119,19 @@ describe('Slice', () => {
                 expect(op).toHaveBeenCalledWith(readerResults, slice.logger, sliceRequest);
 
                 expect(results).toEqual(times(10, () => 'hi'));
-            });
 
-            it('should have have the spec data', () => {
+                // should have have the analytics data
                 expect(slice).not.toHaveProperty('analyticsData');
-            });
 
-            it('should call the correct events', () => {
+                // should call the correct events
                 expect(eventMocks['slice:success']).toHaveBeenCalledTimes(1);
                 expect(eventMocks['slice:success']).toHaveBeenCalled();
                 expect(eventMocks['slice:finalize']).toHaveBeenCalledTimes(1);
                 expect(eventMocks['slice:finalize']).toHaveBeenCalled();
                 expect(eventMocks['slice:retry']).not.toHaveBeenCalled();
                 expect(eventMocks['slice:failure']).not.toHaveBeenCalled();
-            });
 
-            it('should have the correct state storage', () => {
+                // should have the correct state storage
                 const { ex_id: exId } = slice.jobConfig;
                 const query = `ex_id:${exId} AND state:completed`;
                 return expect(slice.stateStore.count(query, 0)).resolves.toEqual(1);
@@ -155,7 +151,8 @@ describe('Slice', () => {
                 results = await slice.run();
             });
 
-            it('should call all of the operations', () => {
+            it('should handle the slice correctly', () => {
+                // should call all of the operations
                 const { reader, op } = testContext;
                 const sliceRequest = { example: 'slice-data' };
                 expect(reader).toHaveBeenCalledTimes(2);
@@ -166,13 +163,11 @@ describe('Slice', () => {
                 expect(op).toHaveBeenCalledWith(readerResults, slice.logger, sliceRequest);
 
                 expect(results).toEqual(times(10, () => 'hi'));
-            });
 
-            it('should have have the spec data', () => {
+                // should have have the analytics data
                 expect(slice).not.toHaveProperty('analyticsData');
-            });
 
-            it('should call the correct events', () => {
+                // should call the correct events
                 expect(eventMocks['slice:retry']).toHaveBeenCalledTimes(1);
                 expect(eventMocks['slice:retry']).toHaveBeenCalledWith(slice.slice);
                 expect(eventMocks['slice:success']).toHaveBeenCalledTimes(1);
@@ -180,9 +175,8 @@ describe('Slice', () => {
                 expect(eventMocks['slice:finalize']).toHaveBeenCalledTimes(1);
                 expect(eventMocks['slice:finalize']).toHaveBeenCalledWith(slice.slice);
                 expect(eventMocks['slice:failure']).not.toHaveBeenCalled();
-            });
 
-            it('should have the correct state storage', () => {
+                // should have the correct state storage
                 const { ex_id: exId } = slice.jobConfig;
                 const query = `ex_id:${exId} AND state:completed`;
                 return expect(slice.stateStore.count(query, 0)).resolves.toEqual(1);
@@ -206,15 +200,13 @@ describe('Slice', () => {
                 }
             });
 
-            it('should not have any results', () => {
+            it('should handle the slice correctly', () => {
                 expect(results).not.toBeDefined();
-            });
 
-            it('should have reject with the error', () => {
+                // should have reject with the error
                 expect(err.toString()).toStartWith('Error: Slice failed processing, caused by Error: Bad news bears');
-            });
 
-            it('should call all of the operations', () => {
+                // should call all of the operations
                 const { reader, op } = testContext;
 
                 const sliceRequest = { example: 'slice-data' };
@@ -225,9 +217,8 @@ describe('Slice', () => {
                 const readerResults = times(10, () => 'hello');
                 expect(op).toHaveBeenCalledTimes(5);
                 expect(op).toHaveBeenCalledWith(readerResults, slice.logger, sliceRequest);
-            });
 
-            it('should emit the events', () => {
+                // should emit the events
                 expect(eventMocks['slice:retry']).toHaveBeenCalledTimes(5);
                 expect(eventMocks['slice:retry']).toHaveBeenCalledWith(slice.slice);
                 expect(eventMocks['slice:failure']).toHaveBeenCalledTimes(1);
@@ -235,9 +226,8 @@ describe('Slice', () => {
                 expect(eventMocks['slice:success']).not.toHaveBeenCalled();
                 expect(eventMocks['slice:finalize']).toHaveBeenCalledTimes(1);
                 expect(eventMocks['slice:finalize']).toHaveBeenCalledWith(slice.slice);
-            });
 
-            it('should have the correct state storage', () => {
+                // should have the correct state storage
                 const { ex_id: exId } = slice.jobConfig;
                 const query = `ex_id:${exId} AND state:error`;
                 return expect(slice.stateStore.count(query, 0)).resolves.toEqual(1);
