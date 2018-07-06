@@ -7,23 +7,21 @@ const { TestContext } = require('../helpers');
 
 describe('Slice', () => {
     async function setupSlice(testContext, eventMocks = {}) {
-        console.time('job');
         const job = new Job(testContext.context, testContext.jobConfig);
         testContext.attachCleanup(() => job.shutdown());
         const executionContext = await job.initialize();
-        console.timeEnd('job');
 
         const slice = new Slice(testContext.context, testContext.jobConfig);
         testContext.attachCleanup(() => slice.shutdown());
 
-        console.time('store');
-        await testContext.addAnalyticsStore();
-        const sliceConfig = await testContext.newSlice();
-        console.timeEnd('store');
+        await Promise.all([
+            testContext.addAnalyticsStore(),
+            testContext.addStateStore(),
+        ]);
 
-        console.time('slice');
+        const sliceConfig = await testContext.newSlice();
+
         await slice.initialize(executionContext, sliceConfig, testContext.stores);
-        console.timeEnd('slice');
 
         eventMocks['slice:success'] = jest.fn();
         eventMocks['slice:finalize'] = jest.fn();
