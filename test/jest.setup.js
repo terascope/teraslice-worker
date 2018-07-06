@@ -3,4 +3,4 @@
 require('jest-extended');
 require('../global-setup');
 
-jest.setTimeout(10000);
+jest.setTimeout(8000);

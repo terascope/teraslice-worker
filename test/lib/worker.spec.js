@@ -38,11 +38,17 @@ describe('Worker', () => {
 
         describe('when the worker is started', () => {
             let sliceConfig;
+            let workerStart;
 
             beforeEach(async () => {
-                await worker.start();
+                await worker.initialize();
+                workerStart = worker.start();
                 await testContext.newSlice();
                 ({ sliceConfig } = testContext);
+            });
+
+            afterEach(async () => {
+                await workerStart;
             });
 
             it('should create the correct stores', () => {

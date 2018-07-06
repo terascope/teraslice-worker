@@ -9,7 +9,7 @@ const diehard = require('diehard');
 const yargs = require('yargs');
 const get = require('lodash/get');
 
-const { Worker } = require('.');
+const { Worker, ExecutionController } = require('.');
 const { readSysConfig } = require('./lib/terafoundation');
 const { generateContext } = require('./lib/utils');
 
@@ -34,6 +34,8 @@ class Command {
 
         if (assignment === 'worker') {
             this.worker = new Worker(context, jobConfig);
+        } else if (assignment === 'execution_controller') {
+            this.worker = new ExecutionController(context, jobConfig);
         }
 
         this.logger = context.logger;
@@ -41,6 +43,8 @@ class Command {
     }
 
     async run() {
+        await this.worker.initialize();
+
         try {
             await this.worker.start();
         } catch (err) {

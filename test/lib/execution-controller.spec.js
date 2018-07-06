@@ -27,7 +27,11 @@ describe('ExecutionController', () => {
     });
 
     describe('when started', () => {
-        beforeEach(() => exController.start());
+        beforeEach(async () => {
+            await exController.initialize();
+            await exController.start();
+        });
+
         it('should have the stores', () => {
             expect(exController.stores).toHaveProperty('stateStore');
             expect(exController.stores.stateStore).toHaveProperty('shutdown');
