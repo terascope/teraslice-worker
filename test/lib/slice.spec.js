@@ -9,66 +9,64 @@ const {
 } = require('../helpers');
 
 describe('Slice', () => {
-    let slice;
-    let testContext;
-    let eventMocks;
-
-    async function setupSlice(options) {
-        testContext = new TestContext('slice:analytics', options);
-
+    async function setupSlice(testContext, eventMocks = {}) {
         const job = new Job(testContext.context, testContext.jobConfig);
         const executionContext = await job.initialize();
+        await job.shutdown();
 
-        slice = new Slice(testContext.context, testContext.jobConfig);
+        const slice = new Slice(testContext.context, testContext.jobConfig);
         overrideLogger(slice, 'slice');
 
         await testContext.addStateStore();
         await testContext.addAnalyticsStore();
 
-        await testContext.newSlice();
+        const sliceConfig = await testContext.newSlice();
 
-        await slice.initialize(executionContext, testContext.sliceConfig, testContext.stores);
+        await slice.initialize(executionContext, sliceConfig, testContext.stores);
 
-        eventMocks = {
-            'slice:success': jest.fn(),
-            'slice:finalize': jest.fn(),
-            'slice:failure': jest.fn(),
-            'slice:retry': jest.fn(),
-        };
+        eventMocks['slice:success'] = jest.fn();
+        eventMocks['slice:finalize'] = jest.fn();
+        eventMocks['slice:failure'] = jest.fn();
+        eventMocks['slice:retry'] = jest.fn();
 
         Object.keys(eventMocks).forEach((name) => {
             const mock = eventMocks[name];
             slice.events.on(name, mock);
         });
-    }
 
-    afterEach(() => testContext.cleanup());
+        return slice;
+    }
 
     describe('with analytics', () => {
         describe('when the slice succeeds', () => {
+            let slice;
             let results;
+            let testContext;
+            const eventMocks = {};
 
             beforeEach(async () => {
-                await setupSlice({ analytics: true });
-
-                testContext.reader.mockResolvedValue(times(10, () => 'hello'));
-                testContext.op.mockResolvedValue(times(10, () => 'hi'));
+                testContext = new TestContext('slice', { analytics: true });
+                slice = await setupSlice(testContext, eventMocks);
 
                 results = await slice.run();
             });
 
+            afterEach(async () => {
+                await slice.shutdown();
+                await testContext.cleanup();
+            });
+
             it('should handle the slice correctly', () => {
-                expect(results).not.toBeNil();
                 // should call of the operations
-                const { reader, op } = testContext;
+                const { reader } = testContext.exampleReader;
+                const { op } = testContext.exampleOp;
+
                 const sliceRequest = { example: 'slice-data' };
 
                 expect(reader).toHaveBeenCalledTimes(1);
                 expect(reader).toHaveBeenCalledWith(sliceRequest, slice.logger, sliceRequest);
 
-                const readerResults = times(10, () => 'hello');
                 expect(op).toHaveBeenCalledTimes(1);
-                expect(op).toHaveBeenCalledWith(readerResults, slice.logger, sliceRequest);
 
                 expect(results).toEqual(times(10, () => 'hi'));
 
@@ -96,22 +94,27 @@ describe('Slice', () => {
 
     describe('without analytics', () => {
         describe('when the slice succeeds', () => {
+            let slice;
             let results;
+            let testContext;
+            const eventMocks = {};
 
             beforeEach(async () => {
-                await setupSlice({ analytics: false });
-
-                testContext.reader.mockResolvedValue(times(10, () => 'hello'));
-                testContext.op.mockResolvedValue(times(10, () => 'hi'));
+                testContext = new TestContext('slice', { analytics: false });
+                slice = await setupSlice(testContext, eventMocks);
 
                 results = await slice.run();
             });
 
-            it('should handle the slice correctly', () => {
-                expect(results).not.toBeNil();
+            afterEach(async () => {
+                await slice.shutdown();
+                await testContext.cleanup();
+            });
 
+            it('should handle the slice correctly', () => {
                 // should call all of the operations
-                const { reader, op } = testContext;
+                const { reader } = testContext.exampleReader;
+                const { op } = testContext.exampleOp;
 
                 const sliceRequest = { example: 'slice-data' };
                 expect(reader).toHaveBeenCalledTimes(1);
@@ -142,23 +145,32 @@ describe('Slice', () => {
         });
 
         describe('when the slice retries', () => {
+            let slice;
             let results;
+            let testContext;
+            const eventMocks = {};
 
             beforeEach(async () => {
-                await setupSlice({ maxRetries: 3, analytics: false });
+                testContext = new TestContext('slice', { maxRetries: 3, analytics: false });
+                testContext.exampleReader.reader.mockRejectedValueOnce(new Error('Bad news bears'));
+                testContext.exampleReader.reader.mockResolvedValue(times(10, () => 'hello'));
+                testContext.exampleOp.op.mockResolvedValue(times(10, () => 'hi'));
 
-                testContext.reader.mockRejectedValueOnce(new Error('Bad news bears'));
-                testContext.reader.mockResolvedValue(times(10, () => 'hello'));
-                testContext.op.mockResolvedValue(times(10, () => 'hi'));
+                slice = await setupSlice(testContext, eventMocks);
 
                 results = await slice.run();
             });
 
+            afterEach(async () => {
+                await slice.shutdown();
+                await testContext.cleanup();
+            });
+
             it('should handle the slice correctly', () => {
-                expect(results).not.toBeNil();
                 // should call all of the operations
-                const { reader, op } = testContext;
-                const sliceRequest = { example: 'slice-data' };
+                const { reader } = testContext.exampleReader;
+                const { op } = testContext.exampleOp; const sliceRequest = { example: 'slice-data' };
+
                 expect(reader).toHaveBeenCalledTimes(2);
                 expect(reader).toHaveBeenCalledWith(sliceRequest, slice.logger, sliceRequest);
 
@@ -188,30 +200,39 @@ describe('Slice', () => {
         });
 
         describe('when the slice fails', () => {
+            let slice;
             let results;
+            let testContext;
+            const eventMocks = {};
             let err;
 
             beforeEach(async () => {
-                await setupSlice({ maxRetries: 5, analytics: false });
+                testContext = new TestContext('slice', { maxRetries: 5, analytics: false });
+                testContext.exampleReader.reader.mockResolvedValue(times(10, () => 'hello'));
+                testContext.exampleOp.op.mockRejectedValue(new Error('Bad news bears'));
 
-                testContext.reader.mockResolvedValue(times(10, () => 'hello'));
-                testContext.op.mockRejectedValue(new Error('Bad news bears'));
+                slice = await setupSlice(testContext, eventMocks);
 
                 try {
-                    results = await slice.run();
+                    await slice.run();
                 } catch (_err) {
                     err = _err;
                 }
             });
 
-            it('should handle the slice correctly', () => {
-                expect(results).not.toBeDefined();
+            afterEach(async () => {
+                await slice.shutdown();
+                await testContext.cleanup();
+            });
 
+            it('should handle the slice correctly', () => {
                 // should have reject with the error
+                expect(err).toBeDefined();
                 expect(err.toString()).toStartWith('Error: Slice failed processing, caused by Error: Bad news bears');
 
                 // should call all of the operations
-                const { reader, op } = testContext;
+                const { reader } = testContext.exampleReader;
+                const { op } = testContext.exampleOp;
 
                 const sliceRequest = { example: 'slice-data' };
 
@@ -240,13 +261,21 @@ describe('Slice', () => {
     });
 
     describe('when given a completed slice', () => {
-        beforeEach(async () => {
-            await setupSlice();
+        let slice;
+        let testContext;
 
-            testContext.reader.mockResolvedValue(times(10, () => 'hello'));
-            testContext.op.mockResolvedValue(times(10, () => 'hi'));
+        beforeEach(async () => {
+            testContext = new TestContext('slice');
+            testContext.exampleReader.reader.mockResolvedValue(times(10, () => 'hello'));
+            testContext.exampleOp.op.mockResolvedValue(times(10, () => 'hi'));
+
+            slice = await setupSlice(testContext);
 
             await slice._markCompleted();
+        });
+
+        afterEach(async () => {
+            await testContext.cleanup();
         });
 
         it('should throw an error when calling run', () => {
@@ -257,10 +286,20 @@ describe('Slice', () => {
 
     describe('when logging the analytics state', () => {
         describe('when given invalid state', () => {
+            let testContext;
+            let slice;
+
             beforeEach(async () => {
-                await setupSlice({ analytics: true });
-                testContext.reader.mockResolvedValue(times(10, () => 'hello'));
-                testContext.op.mockResolvedValue(times(10, () => 'hi'));
+                testContext = new TestContext('slice', { analytics: true });
+                testContext.exampleReader.reader.mockResolvedValue(times(10, () => 'hello'));
+                testContext.exampleOp.op.mockResolvedValue(times(10, () => 'hi'));
+
+                slice = await setupSlice(testContext);
+            });
+
+            afterEach(async () => {
+                await slice.shutdown();
+                await testContext.cleanup();
             });
 
             it('should throw an error if given invalid state', async () => {
@@ -270,38 +309,52 @@ describe('Slice', () => {
         });
 
         describe('when the slice is a string', () => {
-            beforeEach(async () => {
-                await setupSlice({ analytics: true });
+            let testContext;
+            let slice;
 
-                testContext.reader.mockResolvedValue(times(10, () => 'hello'));
-                testContext.op.mockResolvedValue(times(10, () => 'hi'));
+            beforeEach(async () => {
+                testContext = new TestContext('slice', { analytics: true });
+                testContext.exampleReader.reader.mockResolvedValue(times(10, () => 'hello'));
+                testContext.exampleOp.op.mockResolvedValue(times(10, () => 'hi'));
+
+                slice = await setupSlice(testContext);
+                slice.slice = 'hello-there';
+            });
+
+            afterEach(async () => {
+                await slice.shutdown();
+                await testContext.cleanup();
             });
 
             it('should handle the case when the slice is a string', async () => {
-                slice.slice = 'hello-there';
                 await slice._logAnalytics();
             });
         });
     });
 
-    describe('when marking the slice as complete', () => {
-        it('should throw an error if given invalid state', async () => {
-            await setupSlice();
+    describe('when marking an invalid slice', () => {
+        let testContext;
+        let slice;
+
+        beforeEach(async () => {
+            testContext = new TestContext('slice');
+            slice = await setupSlice(testContext);
 
             slice.slice = { should: 'break' };
-
-            return expect(slice._markCompleted()).rejects.toThrowError(/Failure to update success state/);
         });
-    });
 
-    describe('when marking the slice as failed', () => {
-        it('should throw an error if given invalid state', async () => {
-            await setupSlice();
+        afterEach(async () => {
+            await slice.shutdown();
+            await testContext.cleanup();
+        });
 
-            slice.slice = { should: 'break' };
-
+        it('should throw an when marking it as failed', async () => {
             await expect(slice._markFailed(new Error('some error'))).rejects.toThrowError(/Failure to update failed state/);
             await expect(slice._markFailed()).rejects.toThrowError(/Failure to update failed state/);
+        });
+
+        it('should throw an when marking it as complete', async () => {
+            await expect(slice._markCompleted()).rejects.toThrowError(/Failure to update success state/);
         });
     });
 });

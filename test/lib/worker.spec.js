@@ -36,19 +36,13 @@ describe('Worker', () => {
             await testContext.cleanup();
         });
 
-        describe('when the worker is started', () => {
+        describe('when processing a single slice', () => {
             let sliceConfig;
-            let workerStart;
 
             beforeEach(async () => {
                 await worker.initialize();
-                workerStart = worker.start();
-                await testContext.newSlice();
-                ({ sliceConfig } = testContext);
-            });
 
-            afterEach(async () => {
-                await workerStart;
+                sliceConfig = await testContext.newSlice();
             });
 
             it('should create the correct stores', () => {
@@ -62,12 +56,16 @@ describe('Worker', () => {
                 let msg;
 
                 beforeEach(async () => {
-                    await exMessenger.onWorkerReady(worker.workerId);
+                    const workerStart = worker.runOnce();
+
                     await exMessenger.sendNewSlice(
                         worker.workerId,
                         sliceConfig
                     );
+
                     msg = await exMessenger.onSliceComplete(worker.workerId);
+
+                    await workerStart;
                 });
 
                 it('should return send a slice completed message to the execution controller', () => {
@@ -83,15 +81,18 @@ describe('Worker', () => {
                 let msg;
 
                 beforeEach(async () => {
-                    await exMessenger.onWorkerReady(worker.workerId);
-                    await Promise.delay(1000);
+                    const workerStart = worker.runOnce();
 
                     await exMessenger.sendNewSlice(
                         worker.workerId,
                         sliceConfig
                     );
 
+                    await Promise.delay(500);
+
                     msg = await exMessenger.onSliceComplete(worker.workerId, 2000);
+
+                    await workerStart;
                 });
 
                 it('should return send a slice completed message to the execution controller', () => {
@@ -104,23 +105,33 @@ describe('Worker', () => {
             });
 
             describe('when a slice errors', () => {
-                let msg;
+                it('should return send a slice completed message with an error', async () => {
+                    const errMsg = 'Error: Slice failed processing, caused by Error: Bad news bears';
+                    const workerStart = worker.runOnce();
 
-                beforeEach(async () => {
+                    const newSlice = exMessenger.sendNewSlice(
+                        worker.workerId,
+                        sliceConfig
+                    );
+
                     worker.executionContext.queue[1].mockRejectedValue(new Error('Bad news bears'));
 
-                    await exMessenger.onWorkerReady(worker.workerId);
-                    await exMessenger.sendNewSlice(worker.workerId, sliceConfig);
+                    try {
+                        await workerStart;
+                    } catch (err) {
+                        expect(err).toStartWith(errMsg);
+                    }
 
-                    msg = await exMessenger.onSliceComplete(worker.workerId);
-                });
+                    await newSlice;
 
-                it('should return send a slice completed message with an error', async () => {
+                    const msg = await exMessenger.onSliceComplete(worker.workerId);
+
                     expect(msg).toMatchObject({
                         worker_id: worker.workerId,
                         slice: sliceConfig,
                     });
-                    expect(msg.error).toStartWith('Error: Slice failed processing, caused by Error: Bad news bears');
+
+                    expect(msg.error).toStartWith(errMsg);
                 });
             });
 
@@ -133,22 +144,22 @@ describe('Worker', () => {
                     worker.events.on('worker:shutdown', workerShutdownEvent);
 
                     worker.shutdownTimeout = 2000;
-                    worker._processSlice = jest.fn(() => Promise.delay(1000));
+                    worker.slice.run = jest.fn(() => Promise.delay(1000));
 
-                    await exMessenger.onWorkerReady(worker.workerId);
+                    const workerStart = worker.runOnce();
+
                     await exMessenger.sendNewSlice(
                         worker.workerId,
                         sliceConfig
                     );
-
-                    // give the slice time to start being processed
-                    await Promise.delay(100);
 
                     try {
                         await worker.shutdown();
                     } catch (err) {
                         shutdownErr = err;
                     }
+
+                    await workerStart;
                 });
 
                 it('should not have a shutdown err', () => {
@@ -161,39 +172,30 @@ describe('Worker', () => {
             });
 
             describe('when a slice is in-progress and has to be forced to shutdown', () => {
-                let shutdown;
+                beforeEach(async () => {
+                    worker.shutdownTimeout = 500;
 
-                beforeEach(() => exMessenger.onWorkerReady(worker.workerId));
-
-                beforeEach((done) => {
-                    worker.shutdownTimeout = 1000;
-
-                    worker._processSlice = jest.fn(() => {
-                        shutdown = worker.shutdown();
-                        return Promise.delay(1100);
-                    });
-
-                    exMessenger.sendNewSlice(worker.workerId, sliceConfig).then(() => {
-                        let timeout;
-                        const interval = setInterval(() => {
-                            if (shutdown) {
-                                clearInterval(interval);
-                                clearTimeout(timeout);
-                                done();
-                            }
-                        }, 10);
-
-                        timeout = setTimeout(() => {
-                            clearInterval(interval);
-                            expect(worker._processSlice).toHaveBeenCalled();
-                            done();
-                        }, 2000);
-                    }).catch(done.fail);
+                    worker.slice.run = jest.fn(() => Promise.delay(1000));
                 });
 
-                it('shutdown should throw an error', () => {
-                    const errMsg = 'Failed to shutdown correctly: Error: Worker shutdown timeout after 1 seconds, forcing shutdown';
-                    return expect(shutdown).rejects.toThrowError(errMsg);
+                it('shutdown should throw an error', async () => {
+                    const workerStart = worker.runOnce();
+
+                    await exMessenger.sendNewSlice(
+                        worker.workerId,
+                        sliceConfig
+                    );
+
+                    const shutdown = worker.shutdown();
+
+                    await Promise.delay(200);
+
+                    expect(worker.slice.run).toHaveBeenCalled();
+
+                    const errMsg = 'Failed to shutdown correctly: Error: Worker shutdown timeout after 0.5 seconds, forcing shutdown';
+                    await expect(shutdown).rejects.toThrowError(errMsg);
+
+                    await expect(workerStart).rejects.toThrow();
                 });
             });
         });

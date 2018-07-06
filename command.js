@@ -46,7 +46,7 @@ class Command {
         await this.worker.initialize();
 
         try {
-            await this.worker.start();
+            await this.worker.run();
         } catch (err) {
             this.shutdown(err);
             process.exit(1);

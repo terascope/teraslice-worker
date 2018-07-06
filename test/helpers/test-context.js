@@ -10,15 +10,12 @@ const {
     makeAnalyticsStore,
     makeExStore,
 } = require('../../lib/teraslice');
-const { newId } = require('../../lib/utils');
-
-const exampleReader = require('../fixtures/ops/example-reader');
-const exampleOp = require('../fixtures/ops/example-op');
-
+const { newId, generateContext } = require('../../lib/utils');
 const overrideLogger = require('./override-logger');
-const { generateContext } = require('../../lib/utils');
 const { newJobConfig, newSysConfig, newSliceConfig } = require('./configs');
 const zipDirectory = require('./zip-directory');
+const defaultReaderSchema = require('../fixtures/ops/example-reader').schema;
+const defaultOpSchema = require('../fixtures/ops/example-op').schema;
 
 class TestContext {
     constructor(testName, options = {}) {
@@ -32,23 +29,32 @@ class TestContext {
             assets,
         } = options;
 
-        exampleReader.reader.mockClear();
-        exampleReader.newReader.mockClear();
+        jest.doMock('../fixtures/ops/example-reader', () => {
+            const reader = jest.fn(() => Promise.resolve(Array(10).fill('hello')));
+            const newReader = jest.fn(() => Promise.resolve(reader));
+            const slicer = jest.fn(() => Promise.resolve(Array(10).fill('howdy')));
+            const newSlicer = jest.fn(() => Promise.resolve(slicer));
+            return {
+                schema: jest.fn(defaultReaderSchema),
+                reader,
+                newReader,
+                slicer,
+                newSlicer,
+            };
+        });
 
-        exampleReader.slicer.mockClear();
-        exampleReader.newSlicer.mockClear();
+        jest.doMock('../fixtures/ops/example-op', () => {
+            const op = jest.fn(() => Array(10).fill('hi'));
+            const newProcessor = jest.fn(() => Promise.resolve(op));
+            return {
+                schema: jest.fn(defaultOpSchema),
+                op,
+                newProcessor,
+            };
+        });
 
-        exampleOp.op.mockClear();
-        exampleOp.newProcessor.mockClear();
-
-        this.reader = exampleReader.reader;
-        this.newReader = exampleReader.newReader;
-
-        this.slicer = exampleReader.slicer;
-        this.newSlicer = exampleReader.newSlicer;
-
-        this.op = exampleOp.op;
-        this.newProcessor = exampleOp.newProcessor;
+        this.exampleReader = require('../fixtures/ops/example-reader');
+        this.exampleOp = require('../fixtures/ops/example-op');
 
         this.clusterName = newId('tmp', true);
         this.assetDir = createTempDirSync();
@@ -98,9 +104,10 @@ class TestContext {
     }
 
     async newSlice() {
-        this.sliceConfig = newSliceConfig();
+        const sliceConfig = newSliceConfig();
         await this.addStateStore();
-        await this.stores.stateStore.createState(this.exId, this.sliceConfig, 'start');
+        await this.stores.stateStore.createState(this.exId, sliceConfig, 'start');
+        return sliceConfig;
     }
 
     async addAssetStore() {
@@ -126,6 +133,14 @@ class TestContext {
 
     async cleanup() {
         if (this.clean) return;
+
+        Object.values(this.exampleReader).forEach((mock) => {
+            mock.mockClear();
+        });
+
+        Object.values(this.exampleOp).forEach((mock) => {
+            mock.mockClear();
+        });
 
         const stores = Object.values(this.stores);
         await Promise.map(stores, store => store.shutdown(true));

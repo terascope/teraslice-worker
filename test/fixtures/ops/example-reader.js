@@ -1,10 +1,5 @@
 'use strict';
 
-const reader = jest.fn(() => Promise.resolve(Array(100).fill('default-reader-data')));
-const newReader = jest.fn(() => Promise.resolve(reader));
-const slicer = jest.fn(() => Promise.resolve(Array(100).fill('default-slicer-data')));
-const newSlicer = jest.fn(() => Promise.resolve(slicer));
-
 function schema() {
     return {
         exampleProp: {
@@ -22,9 +17,9 @@ function schema() {
 }
 
 module.exports = {
-    reader,
-    newReader,
     schema,
-    slicer,
-    newSlicer,
+    reader: () => Promise.resolve(Array(100).fill('default-reader-data')),
+    newReader: () => Promise.resolve(module.exports.reader),
+    slicer: () => Promise.resolve(Array(100).fill('default-slicer-data')),
+    newSlicer: () => Promise.resolve(module.exports.slicer)
 };

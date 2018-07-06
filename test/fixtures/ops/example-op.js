@@ -1,8 +1,5 @@
 'use strict';
 
-const op = jest.fn(() => Promise.resolve(Array(100).fill('default-op-data')));
-const newProcessor = jest.fn(() => Promise.resolve(op));
-
 function schema() {
     return {
         exampleProp: {
@@ -20,7 +17,7 @@ function schema() {
 }
 
 module.exports = {
-    op,
-    newProcessor,
     schema,
+    op: () => Promise.resolve(Array(100).fill('default-op-data')),
+    newProcessor: () => Promise.resolve(module.exports.op),
 };

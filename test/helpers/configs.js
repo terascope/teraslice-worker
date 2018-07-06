@@ -9,7 +9,7 @@ const opsPath = path.join(__dirname, '..', 'fixtures', 'ops');
 const newSliceConfig = (request = { example: 'slice-data' }) => ({
     slice_id: newId('slice-id', true),
     slicer_id: newId('slicer-id', true),
-    order: random(0, 1000),
+    slicer_order: random(0, 1000),
     request,
     _created: new Date().toISOString()
 });

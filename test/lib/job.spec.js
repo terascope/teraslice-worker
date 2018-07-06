@@ -87,7 +87,10 @@ describe('Job', () => {
                 job = new Job(testContext.context, testContext.jobConfig);
             });
 
-            afterEach(() => testContext.cleanup());
+            afterEach(async () => {
+                await job.shutdown();
+                await testContext.cleanup();
+            });
 
             it('should reject with an error', () => {
                 const errMsg = 'please verify that ops_directory in config and _op for each job operations are strings';
@@ -120,7 +123,10 @@ describe('Job', () => {
                 executionContext = await job.initialize();
             });
 
-            afterEach(() => testContext.cleanup());
+            afterEach(async () => {
+                await job.shutdown();
+                await testContext.cleanup();
+            });
 
             it('should resolve an execution api', () => {
                 expect(executionContext.queue).toBeArrayOfSize(2);
@@ -133,13 +139,13 @@ describe('Job', () => {
             });
 
             it('should load the ops', () => {
-                expect(testContext.newReader).toHaveBeenCalledTimes(1);
-                expect(testContext.newReader).toHaveBeenCalledWith(testContext.context, {
+                expect(testContext.exampleReader.newReader).toHaveBeenCalledTimes(1);
+                expect(testContext.exampleReader.newReader).toHaveBeenCalledWith(testContext.context, {
                     _op: path.join(opsPath, 'example-reader'),
                     exampleProp: 321
                 }, testContext.jobConfig.job);
-                expect(testContext.newProcessor).toHaveBeenCalledTimes(1);
-                expect(testContext.newProcessor).toHaveBeenCalledWith(testContext.context, {
+                expect(testContext.exampleOp.newProcessor).toHaveBeenCalledTimes(1);
+                expect(testContext.exampleOp.newProcessor).toHaveBeenCalledWith(testContext.context, {
                     _op: path.join(opsPath, 'example-op'),
                     exampleProp: 123
                 }, testContext.jobConfig.job);
@@ -171,7 +177,10 @@ describe('Job', () => {
                 executionContext = await job.initialize();
             });
 
-            afterEach(() => testContext.cleanup());
+            afterEach(async () => {
+                await job.shutdown();
+                await testContext.cleanup();
+            });
 
             it('should resolve an execution api', () => {
                 expect(executionContext.queue).toBeArrayOfSize(2);
@@ -184,13 +193,13 @@ describe('Job', () => {
             });
 
             it('should load the ops', () => {
-                expect(testContext.newReader).toHaveBeenCalledTimes(1);
-                expect(testContext.newReader).toHaveBeenCalledWith(testContext.context, {
+                expect(testContext.exampleReader.newReader).toHaveBeenCalledTimes(1);
+                expect(testContext.exampleReader.newReader).toHaveBeenCalledWith(testContext.context, {
                     _op: path.join(opsPath, 'example-reader'),
                     exampleProp: 321
                 }, testContext.jobConfig.job);
-                expect(testContext.newProcessor).toHaveBeenCalledTimes(1);
-                expect(testContext.newProcessor).toHaveBeenCalledWith(testContext.context, {
+                expect(testContext.exampleOp.newProcessor).toHaveBeenCalledTimes(1);
+                expect(testContext.exampleOp.newProcessor).toHaveBeenCalledWith(testContext.context, {
                     _op: path.join(opsPath, 'example-op'),
                     exampleProp: 123
                 }, testContext.jobConfig.job);
@@ -223,7 +232,10 @@ describe('Job', () => {
                 executionContext = await job.initialize();
             });
 
-            afterEach(() => testContext.cleanup());
+            afterEach(async () => {
+                await job.shutdown();
+                await testContext.cleanup();
+            });
 
             it('should resolve an execution api', () => {
                 expect(executionContext.queue).toBeArrayOfSize(2);
@@ -267,7 +279,10 @@ describe('Job', () => {
                 executionContext = await job.initialize();
             });
 
-            afterEach(() => testContext.cleanup());
+            afterEach(async () => {
+                await job.shutdown();
+                await testContext.cleanup();
+            });
 
             it('should resolve an execution api', () => {
                 expect(executionContext.queue).toBeArrayOfSize(2);
@@ -306,7 +321,10 @@ describe('Job', () => {
                 job = new Job(testContext.context, testContext.jobConfig);
             });
 
-            afterEach(() => testContext.cleanup());
+            afterEach(async () => {
+                await job.shutdown();
+                await testContext.cleanup();
+            });
 
             it('should reject with a error', () => {
                 const errMsg = 'asset: missing-assets was not found';
@@ -332,7 +350,10 @@ describe('Job', () => {
                 job = new Job(testContext.context, testContext.jobConfig);
             });
 
-            afterEach(() => testContext.cleanup());
+            afterEach(async () => {
+                await job.shutdown();
+                await testContext.cleanup();
+            });
 
             it('should reject with a error', () => {
                 const errMsg = new RegExp('Could not retrieve code for: failing-asset-reader');
@@ -357,7 +378,10 @@ describe('Job', () => {
                 job = new Job(testContext.context, testContext.jobConfig);
             });
 
-            afterEach(() => testContext.cleanup());
+            afterEach(async () => {
+                await job.shutdown();
+                await testContext.cleanup();
+            });
 
             it('should reject with an error', () => {
                 const errMsg = 'please verify that ops_directory in config and _op for each job operations are strings';
@@ -390,7 +414,10 @@ describe('Job', () => {
                 executionContext = await job.initialize();
             });
 
-            afterEach(() => testContext.cleanup());
+            afterEach(async () => {
+                await job.shutdown();
+                await testContext.cleanup();
+            });
 
             it('should resolve an execution api', () => {
                 expect(executionContext.queue).toBeArrayOfSize(0);
@@ -401,7 +428,7 @@ describe('Job', () => {
             });
 
             it('should not call newSlicer', () => {
-                expect(testContext.newSlicer).not.toHaveBeenCalled();
+                expect(testContext.exampleReader.newSlicer).not.toHaveBeenCalled();
             });
         });
 
@@ -431,7 +458,10 @@ describe('Job', () => {
                 executionContext = await job.initialize();
             });
 
-            afterEach(() => testContext.cleanup());
+            afterEach(async () => {
+                await job.shutdown();
+                await testContext.cleanup();
+            });
 
             it('should resolve an execution api', () => {
                 expect(executionContext.queue).toBeArrayOfSize(0);
@@ -473,7 +503,10 @@ describe('Job', () => {
                 executionContext = await job.initialize();
             });
 
-            afterEach(() => testContext.cleanup());
+            afterEach(async () => {
+                await job.shutdown();
+                await testContext.cleanup();
+            });
 
             it('should resolve an execution api', () => {
                 expect(executionContext.queue).toBeArrayOfSize(0);
@@ -510,7 +543,10 @@ describe('Job', () => {
                 job = new Job(testContext.context, testContext.jobConfig);
             });
 
-            afterEach(() => testContext.cleanup());
+            afterEach(async () => {
+                await job.shutdown();
+                await testContext.cleanup();
+            });
 
             it('should reject with a error', () => {
                 const errMsg = 'asset: missing-assets was not found';
@@ -536,7 +572,10 @@ describe('Job', () => {
                 job = new Job(testContext.context, testContext.jobConfig);
             });
 
-            afterEach(() => testContext.cleanup());
+            afterEach(async () => {
+                await job.shutdown();
+                await testContext.cleanup();
+            });
 
             it('should reject with a error', () => {
                 const errMsg = new RegExp('Could not retrieve code for: failing-asset-reader');

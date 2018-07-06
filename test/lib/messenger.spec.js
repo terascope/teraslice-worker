@@ -114,10 +114,6 @@ describe('Messenger', () => {
                 slicerReadyMsg = await slicerReady;
             });
 
-            it('should be marked as available', () => {
-                expect(worker.available).toBeTrue();
-            });
-
             it('should call worker ready on the exMessenger', () => {
                 expect(slicerReadyMsg).toEqual({ worker_id: workerId });
                 expect(exMessenger.workers).toHaveProperty(workerId);
@@ -219,47 +215,36 @@ describe('Messenger', () => {
 
             describe('when receiving slicer:slice:new', () => {
                 describe('when the worker is set as available', () => {
-                    let responseMsg;
-                    let sliceMsg;
+                    beforeEach(() => {
+                        worker.available = true;
+                    });
 
-                    beforeEach(async () => {
+                    it('should resolve with correct messages', async () => {
                         const response = exMessenger.sendNewSlice(workerId, {
                             example: 'slice-new-message'
                         });
+
                         const slice = worker.onceWithTimeout('slicer:slice:new');
-                        responseMsg = await response;
-                        sliceMsg = await slice;
-                    });
 
-                    it('should set available to false', () => {
-                        expect(worker.available).toBeFalse();
-                    });
-
-                    it('should emit slicer:slice:new on the worker', () => {
-                        expect(sliceMsg).toEqual({ example: 'slice-new-message' });
-                    });
-
-                    it('exMessenger should get a will process message back', () => {
-                        expect(responseMsg).toEqual({ willProcess: true });
+                        await expect(response).resolves.toEqual({ willProcess: true });
+                        await expect(slice).resolves.toEqual({ example: 'slice-new-message' });
                     });
                 });
 
-
                 describe('when the worker is set as unavailable', () => {
-                    let responseMsg;
-                    let slice;
-
-                    beforeEach(async () => {
-                        const response = exMessenger.sendNewSlice(workerId, { example: 'slice-new-message' });
+                    beforeEach(() => {
                         worker.available = false;
-                        slice = worker.onceWithTimeout('slicer:slice:new');
-                        responseMsg = await response;
                     });
 
-                    it('should the response correctly', () => {
-                        expect(responseMsg).toEqual({ willProcess: false });
-                        const errMsg = 'Timed out after 1000ms, waiting for event "slicer:slice:new"';
-                        return expect(slice).rejects.toThrowError(errMsg);
+                    it('should reject with the correct error messages', async () => {
+                        const response = exMessenger.sendNewSlice(workerId, {
+                            example: 'slice-new-message'
+                        });
+
+                        const slice = worker.onceWithTimeout('slicer:slice:new');
+
+                        await expect(response).rejects.toThrowError(`Worker ${workerId} will not process new slice`);
+                        await expect(slice).rejects.toThrowError('Timed out after 1000ms, waiting for event "slicer:slice:new"');
                     });
                 });
             });
@@ -317,24 +302,6 @@ describe('Messenger', () => {
                 it('exMessenger should get an error back', () => {
                     expect(responseMsg).toBeNil();
                     expect(responseErr.toString()).toStartWith(`Error: Timeout error while communicating with ${workerId}, with message:`);
-                });
-            });
-        });
-
-        describe('when the worker is not ready', () => {
-            describe('when sending a slice', () => {
-                it('should throw an error', () => {
-                    const errMsg = `Cannot send message to worker ${workerId}`;
-                    const promise = exMessenger.sendNewSlice(workerId, { example: 'slice-new-message' });
-                    return expect(promise).rejects.toThrowError(errMsg);
-                });
-            });
-
-            describe('when sending a slice', () => {
-                it('should throw an error', () => {
-                    const errMsg = `Cannot send message to worker ${workerId}`;
-                    const promise = exMessenger.sendToWorker(workerId, 'some:event', { example: true });
-                    return expect(promise).rejects.toThrowError(errMsg);
                 });
             });
         });
