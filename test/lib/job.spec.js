@@ -411,11 +411,12 @@ describe('Job', () => {
 
                 job = new Job(testContext.context, testContext.jobConfig);
 
+                testContext.attachCleanup(() => job.shutdown());
+
                 executionContext = await job.initialize();
             });
 
             afterEach(async () => {
-                await job.shutdown();
                 await testContext.cleanup();
             });
 
@@ -455,11 +456,12 @@ describe('Job', () => {
 
                 job = new Job(testContext.context, testContext.jobConfig);
 
+                testContext.attachCleanup(() => job.shutdown());
+
                 executionContext = await job.initialize();
             });
 
             afterEach(async () => {
-                await job.shutdown();
                 await testContext.cleanup();
             });
 
@@ -500,11 +502,13 @@ describe('Job', () => {
                 await testContext.saveAsset(exampleAssetDir, true);
 
                 job = new Job(testContext.context, testContext.jobConfig);
+
+                testContext.attachCleanup(() => job.shutdown());
+
                 executionContext = await job.initialize();
             });
 
             afterEach(async () => {
-                await job.shutdown();
                 await testContext.cleanup();
             });
 
@@ -541,10 +545,11 @@ describe('Job', () => {
                     ]
                 });
                 job = new Job(testContext.context, testContext.jobConfig);
+
+                testContext.attachCleanup(() => job.shutdown());
             });
 
             afterEach(async () => {
-                await job.shutdown();
                 await testContext.cleanup();
             });
 
@@ -570,10 +575,11 @@ describe('Job', () => {
                 });
                 await testContext.saveAsset(path.join(opsPath, 'failing-asset'));
                 job = new Job(testContext.context, testContext.jobConfig);
+
+                testContext.attachCleanup(() => job.shutdown());
             });
 
             afterEach(async () => {
-                await job.shutdown();
                 await testContext.cleanup();
             });
 

@@ -3,26 +3,27 @@
 const times = require('lodash/times');
 const Slice = require('../../lib/slice');
 const Job = require('../../lib/job');
-const {
-    overrideLogger,
-    TestContext,
-} = require('../helpers');
+const { TestContext } = require('../helpers');
 
 describe('Slice', () => {
     async function setupSlice(testContext, eventMocks = {}) {
+        console.time('job');
         const job = new Job(testContext.context, testContext.jobConfig);
+        testContext.attachCleanup(() => job.shutdown());
         const executionContext = await job.initialize();
-        await job.shutdown();
+        console.timeEnd('job');
 
         const slice = new Slice(testContext.context, testContext.jobConfig);
-        overrideLogger(slice, 'slice');
+        testContext.attachCleanup(() => slice.shutdown());
 
-        await testContext.addStateStore();
+        console.time('store');
         await testContext.addAnalyticsStore();
-
         const sliceConfig = await testContext.newSlice();
+        console.timeEnd('store');
 
+        console.time('slice');
         await slice.initialize(executionContext, sliceConfig, testContext.stores);
+        console.timeEnd('slice');
 
         eventMocks['slice:success'] = jest.fn();
         eventMocks['slice:finalize'] = jest.fn();
@@ -52,7 +53,6 @@ describe('Slice', () => {
             });
 
             afterEach(async () => {
-                await slice.shutdown();
                 await testContext.cleanup();
             });
 
@@ -107,7 +107,6 @@ describe('Slice', () => {
             });
 
             afterEach(async () => {
-                await slice.shutdown();
                 await testContext.cleanup();
             });
 
@@ -162,7 +161,6 @@ describe('Slice', () => {
             });
 
             afterEach(async () => {
-                await slice.shutdown();
                 await testContext.cleanup();
             });
 
@@ -201,7 +199,6 @@ describe('Slice', () => {
 
         describe('when the slice fails', () => {
             let slice;
-            let results;
             let testContext;
             const eventMocks = {};
             let err;
@@ -221,7 +218,6 @@ describe('Slice', () => {
             });
 
             afterEach(async () => {
-                await slice.shutdown();
                 await testContext.cleanup();
             });
 
@@ -298,7 +294,6 @@ describe('Slice', () => {
             });
 
             afterEach(async () => {
-                await slice.shutdown();
                 await testContext.cleanup();
             });
 
@@ -322,7 +317,6 @@ describe('Slice', () => {
             });
 
             afterEach(async () => {
-                await slice.shutdown();
                 await testContext.cleanup();
             });
 
@@ -344,7 +338,6 @@ describe('Slice', () => {
         });
 
         afterEach(async () => {
-            await slice.shutdown();
             await testContext.cleanup();
         });
 

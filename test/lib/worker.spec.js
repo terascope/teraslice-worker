@@ -17,22 +17,25 @@ describe('Worker', () => {
 
         beforeEach(async () => {
             const slicerPort = await findPort();
+
+            testContext = new TestContext('worker', { slicerPort });
+
             exMessenger = new ExecutionControllerMessenger({
                 port: slicerPort,
                 networkerLatencyBuffer: 0,
                 actionTimeout: 1000
             });
 
+            testContext.attachCleanup(() => exMessenger.close());
+
             await exMessenger.start();
 
-            testContext = new TestContext('worker', { slicerPort });
-
             worker = new Worker(testContext.context, testContext.jobConfig);
+
+            testContext.attachCleanup(() => worker.shutdown());
         });
 
         afterEach(async () => {
-            await exMessenger.close();
-            await worker.shutdown();
             await testContext.cleanup();
         });
 

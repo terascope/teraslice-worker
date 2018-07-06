@@ -1,5 +1,7 @@
 'use strict';
 
+/* eslint-disable no-console */
+
 const { createTempDirSync, cleanupTempDirs } = require('jest-fixtures');
 const path = require('path');
 const fs = require('fs-extra');
@@ -16,6 +18,10 @@ const { newJobConfig, newSysConfig, newSliceConfig } = require('./configs');
 const zipDirectory = require('./zip-directory');
 const defaultReaderSchema = require('../fixtures/ops/example-reader').schema;
 const defaultOpSchema = require('../fixtures/ops/example-op').schema;
+
+jest.setTimeout(8000);
+
+const cleanups = {};
 
 class TestContext {
     constructor(testName, options = {}) {
@@ -80,6 +86,8 @@ class TestContext {
         this.context = generateContext(this.sysconfig);
         overrideLogger(this.context, testName);
 
+        this.events = this.context.apis.foundation.getSystemEvents();
+
         this.es = new ElasticsearchClient({
             host: 'http://localhost:9200',
             log: '' // This suppresses error logging from the ES library.
@@ -87,6 +95,13 @@ class TestContext {
 
         this.stores = {};
         this.clean = false;
+        this._cleanupFns = [];
+
+        cleanups[this.clusterName] = () => this.cleanup();
+    }
+
+    attachCleanup(fn) {
+        this._cleanupFns.push(fn);
     }
 
     async saveAsset(assetDir, cleanup) {
@@ -134,6 +149,9 @@ class TestContext {
     async cleanup() {
         if (this.clean) return;
 
+        await Promise.map(this._cleanupFns, fn => fn());
+        this._cleanupFns.length = 0;
+
         Object.values(this.exampleReader).forEach((mock) => {
             mock.mockClear();
         });
@@ -143,13 +161,43 @@ class TestContext {
         });
 
         const stores = Object.values(this.stores);
-        await Promise.map(stores, store => store.shutdown(true));
+        try {
+            await Promise.map(stores, store => store.shutdown(true));
+        } catch (err) { } // eslint-disable-line
 
-        cleanupTempDirs();
+        try {
+            cleanupTempDirs();
+        } catch (err) { }  // eslint-disable-line
 
-        await this.es.indices.delete({ index: `${this.clusterName}*` });
+        try {
+            await this.es.indices.delete({ index: `${this.clusterName}*` });
+        } catch (err) { } // eslint-disable-line
+
+        this.events.removeAllListeners();
+
+        delete cleanups[this.clusterName];
+
         this.clean = true;
     }
 }
+
+// make sure we cleanup if any test fails to cleanup properly
+beforeEach(async () => {
+    const count = Object.keys(cleanups).length;
+    if (!count) return;
+
+    console.error(`cleaning up ${count}`);
+
+    const fns = Object.keys(cleanups).map(async (name) => {
+        const fn = cleanups[name];
+        try {
+            await fn();
+        } catch (err) {
+            console.error(`Failed to cleanup ${name}`, err);
+        }
+        delete cleanups[name];
+    });
+    await Promise.all(fns);
+}, Object.keys(cleanups).length * 5000);
 
 module.exports = TestContext;

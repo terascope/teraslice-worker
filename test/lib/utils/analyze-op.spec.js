@@ -77,7 +77,7 @@ describe('Operation Analytics', () => {
             };
             const analyticsData = { time: [], size: [], memory: [] };
             const numberOfOps = 5;
-            const expectedMem = getMemoryUsage();
+            const expectedMem = getMemoryUsage() + MEM_DIFF;
 
             await Promise.each(times(numberOfOps), async (i) => {
                 const analyzedFn = analyzeOp(op, i);
@@ -97,9 +97,7 @@ describe('Operation Analytics', () => {
 
                 expect(analyticsData.size[i]).toEqual(count);
 
-                const memLower = expectedMem - MEM_DIFF;
-                const memUpper = expectedMem + MEM_DIFF;
-                expect(analyticsData.memory[i]).toBeWithin(memLower, memUpper);
+                expect(analyticsData.memory[i]).toBeWithin(-expectedMem, expectedMem);
             });
 
             expect(analyticsData.time).toBeArrayOfSize(numberOfOps);

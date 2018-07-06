@@ -12,12 +12,10 @@ describe('ExecutionController', () => {
             assignment: 'execution_controller'
         });
         exController = new ExecutionController(testContext.context, testContext.jobConfig);
+        testContext.attachCleanup(() => exController.shutdown());
     });
 
-    afterEach(async () => {
-        await exController.shutdown();
-        await testContext.cleanup();
-    });
+    afterEach(() => testContext.cleanup());
 
     it('should the correct methods', () => {
         expect(exController).toHaveProperty('start');
