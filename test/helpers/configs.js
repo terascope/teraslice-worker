@@ -6,6 +6,8 @@ const { newId } = require('../../lib/utils');
 
 const opsPath = path.join(__dirname, '..', 'fixtures', 'ops');
 
+const { ELASTICSEARCH_HOST } = process.env;
+
 const newSliceConfig = (request = { example: 'slice-data' }) => ({
     slice_id: newId('slice-id', true),
     slicer_id: newId('slicer-id', true),
@@ -63,7 +65,7 @@ const newSysConfig = (options = {}) => {
             connectors: {
                 elasticsearch: {
                     default: {
-                        host: ['127.0.0.1:9200'],
+                        host: [ELASTICSEARCH_HOST],
                         requestTimeout: timeout,
                         deadTimeout: timeout,
                     }

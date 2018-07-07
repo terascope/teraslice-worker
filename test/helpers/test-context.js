@@ -5,7 +5,6 @@
 const { createTempDirSync, cleanupTempDirs } = require('jest-fixtures');
 const path = require('path');
 const fs = require('fs-extra');
-const ElasticsearchClient = require('elasticsearch').Client;
 const {
     makeAssetStore,
     makeStateStore,
@@ -22,6 +21,7 @@ const defaultOpSchema = require('../fixtures/ops/example-op').schema;
 jest.setTimeout(8000);
 
 const cleanups = {};
+const clusterName = `${process.env.TERASLICE_CLUSTER_NAME}${newId('', true, 5)}`;
 
 class TestContext {
     constructor(testName, options = {}) {
@@ -62,11 +62,11 @@ class TestContext {
         this.exampleReader = require('../fixtures/ops/example-reader');
         this.exampleOp = require('../fixtures/ops/example-op');
 
-        this.clusterName = newId('tmp', true);
+        this.setupId = newId('setup', true);
         this.assetDir = createTempDirSync();
 
         this.sysconfig = newSysConfig({
-            clusterName: this.clusterName,
+            clusterName,
             assetDir: this.assetDir,
             clusterMasterPort,
         });
@@ -88,16 +88,11 @@ class TestContext {
 
         this.events = this.context.apis.foundation.getSystemEvents();
 
-        this.es = new ElasticsearchClient({
-            host: 'http://localhost:9200',
-            log: '' // This suppresses error logging from the ES library.
-        });
-
         this.stores = {};
         this.clean = false;
         this._cleanupFns = [];
 
-        cleanups[this.clusterName] = () => this.cleanup();
+        cleanups[this.setupId] = () => this.cleanup();
     }
 
     attachCleanup(fn) {
@@ -169,20 +164,16 @@ class TestContext {
             cleanupTempDirs();
         } catch (err) { }  // eslint-disable-line
 
-        try {
-            await this.es.indices.delete({ index: `${this.clusterName}*` });
-        } catch (err) { } // eslint-disable-line
-
         this.events.removeAllListeners();
 
-        delete cleanups[this.clusterName];
+        delete cleanups[this.setupId];
 
         this.clean = true;
     }
 }
 
 // make sure we cleanup if any test fails to cleanup properly
-beforeEach(async () => {
+beforeAll(async () => {
     const count = Object.keys(cleanups).length;
     if (!count) return;
 

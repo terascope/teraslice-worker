@@ -7,8 +7,10 @@ module.exports = {
         __DEV__: true
     },
     bail: false,
-    setupFiles: ['<rootDir>/test/env-setup.js'],
-    setupTestFrameworkScriptFile: '<rootDir>/test/jest.setup.js',
+    globalSetup: '<rootDir>/test/global.setup.js',
+    globalTeardown: '<rootDir>/test/global.teardown.js',
+    setupFiles: ['<rootDir>/test/env.setup.js'],
+    setupTestFrameworkScriptFile: '<rootDir>/test/test.setup.js',
     collectCoverage: true,
     coverageReporters: ['json', 'lcov', 'text', 'html'],
     coverageDirectory: 'coverage',

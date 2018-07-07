@@ -7,7 +7,7 @@ describe('ExecutionController', () => {
     let exController;
     let testContext;
 
-    beforeEach(() => {
+    beforeAll(() => {
         testContext = new TestContext('execution_controller', {
             assignment: 'execution_controller'
         });
@@ -15,7 +15,7 @@ describe('ExecutionController', () => {
         testContext.attachCleanup(() => exController.shutdown());
     });
 
-    afterEach(() => testContext.cleanup());
+    afterAll(() => testContext.cleanup());
 
     it('should the correct methods', () => {
         expect(exController).toHaveProperty('start');
@@ -25,7 +25,7 @@ describe('ExecutionController', () => {
     });
 
     describe('when started', () => {
-        beforeEach(async () => {
+        beforeAll(async () => {
             await exController.initialize();
             await exController.start();
         });

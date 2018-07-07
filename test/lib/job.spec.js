@@ -12,7 +12,7 @@ describe('Job', () => {
         let job;
         let testContext;
 
-        beforeEach(() => {
+        beforeAll(() => {
             testContext = new TestContext('worker-job', {
                 assignment: 'worker',
                 operations: [
@@ -28,7 +28,7 @@ describe('Job', () => {
             job = new Job(testContext.context, testContext.jobConfig);
         });
 
-        afterEach(() => testContext.cleanup());
+        afterAll(() => testContext.cleanup());
 
         it('should throw an error if reporters are specified', () => {
             testContext.context.sysconfig.teraslice.reporter = true;
@@ -75,7 +75,7 @@ describe('Job', () => {
         describe('when op name is not a string', () => {
             let job;
             let testContext;
-            beforeEach(() => {
+            beforeAll(() => {
                 testContext = new TestContext('worker-job:fail', {
                     assignment: 'worker',
                     operations: [
@@ -87,7 +87,7 @@ describe('Job', () => {
                 job = new Job(testContext.context, testContext.jobConfig);
             });
 
-            afterEach(async () => {
+            afterAll(async () => {
                 await job.shutdown();
                 await testContext.cleanup();
             });
@@ -103,7 +103,7 @@ describe('Job', () => {
             let testContext;
             let executionContext;
 
-            beforeEach(async () => {
+            beforeAll(async () => {
                 testContext = new TestContext('worker-job', {
                     assignment: 'worker',
                     operations: [
@@ -123,7 +123,7 @@ describe('Job', () => {
                 executionContext = await job.initialize();
             });
 
-            afterEach(async () => {
+            afterAll(async () => {
                 await job.shutdown();
                 await testContext.cleanup();
             });
@@ -139,13 +139,15 @@ describe('Job', () => {
             });
 
             it('should load the ops', () => {
-                expect(testContext.exampleReader.newReader).toHaveBeenCalledTimes(1);
-                expect(testContext.exampleReader.newReader).toHaveBeenCalledWith(testContext.context, {
+                const { newReader } = testContext.exampleReader;
+                const { newProcessor } = testContext.exampleOp;
+                expect(newReader).toHaveBeenCalledTimes(1);
+                expect(newReader).toHaveBeenCalledWith(testContext.context, {
                     _op: path.join(opsPath, 'example-reader'),
                     exampleProp: 321
                 }, testContext.jobConfig.job);
-                expect(testContext.exampleOp.newProcessor).toHaveBeenCalledTimes(1);
-                expect(testContext.exampleOp.newProcessor).toHaveBeenCalledWith(testContext.context, {
+                expect(newProcessor).toHaveBeenCalledTimes(1);
+                expect(newProcessor).toHaveBeenCalledWith(testContext.context, {
                     _op: path.join(opsPath, 'example-op'),
                     exampleProp: 123
                 }, testContext.jobConfig.job);
@@ -157,7 +159,7 @@ describe('Job', () => {
             let testContext;
             let executionContext;
 
-            beforeEach(async () => {
+            beforeAll(async () => {
                 testContext = new TestContext('worker-job:analytics', {
                     assignment: 'worker',
                     analytics: true,
@@ -177,7 +179,7 @@ describe('Job', () => {
                 executionContext = await job.initialize();
             });
 
-            afterEach(async () => {
+            afterAll(async () => {
                 await job.shutdown();
                 await testContext.cleanup();
             });
@@ -193,13 +195,15 @@ describe('Job', () => {
             });
 
             it('should load the ops', () => {
-                expect(testContext.exampleReader.newReader).toHaveBeenCalledTimes(1);
-                expect(testContext.exampleReader.newReader).toHaveBeenCalledWith(testContext.context, {
+                const { newReader } = testContext.exampleReader;
+                const { newProcessor } = testContext.exampleOp;
+                expect(newReader).toHaveBeenCalledTimes(1);
+                expect(newReader).toHaveBeenCalledWith(testContext.context, {
                     _op: path.join(opsPath, 'example-reader'),
                     exampleProp: 321
                 }, testContext.jobConfig.job);
-                expect(testContext.exampleOp.newProcessor).toHaveBeenCalledTimes(1);
-                expect(testContext.exampleOp.newProcessor).toHaveBeenCalledWith(testContext.context, {
+                expect(newProcessor).toHaveBeenCalledTimes(1);
+                expect(newProcessor).toHaveBeenCalledWith(testContext.context, {
                     _op: path.join(opsPath, 'example-op'),
                     exampleProp: 123
                 }, testContext.jobConfig.job);
@@ -211,7 +215,7 @@ describe('Job', () => {
             let testContext;
             let executionContext;
 
-            beforeEach(async () => {
+            beforeAll(async () => {
                 testContext = new TestContext('worker-job:assets', {
                     assignment: 'worker',
                     operations: [
@@ -232,7 +236,7 @@ describe('Job', () => {
                 executionContext = await job.initialize();
             });
 
-            afterEach(async () => {
+            afterAll(async () => {
                 await job.shutdown();
                 await testContext.cleanup();
             });
@@ -259,7 +263,7 @@ describe('Job', () => {
             let testContext;
             let executionContext;
 
-            beforeEach(async () => {
+            beforeAll(async () => {
                 testContext = new TestContext('worker-job:assets-download', {
                     assignment: 'worker',
                     assets: ['example-asset'],
@@ -279,7 +283,7 @@ describe('Job', () => {
                 executionContext = await job.initialize();
             });
 
-            afterEach(async () => {
+            afterAll(async () => {
                 await job.shutdown();
                 await testContext.cleanup();
             });
@@ -305,7 +309,7 @@ describe('Job', () => {
             let job;
             let testContext;
 
-            beforeEach(async () => {
+            beforeAll(async () => {
                 testContext = new TestContext('worker-job:assets-fail', {
                     assignment: 'worker',
                     assets: ['missing-assets'],
@@ -321,7 +325,7 @@ describe('Job', () => {
                 job = new Job(testContext.context, testContext.jobConfig);
             });
 
-            afterEach(async () => {
+            afterAll(async () => {
                 await job.shutdown();
                 await testContext.cleanup();
             });
@@ -336,7 +340,7 @@ describe('Job', () => {
             let job;
             let testContext;
 
-            beforeEach(async () => {
+            beforeAll(async () => {
                 testContext = new TestContext('worker-job:failing-asset', {
                     assignment: 'worker',
                     assets: ['failing-asset'],
@@ -350,7 +354,7 @@ describe('Job', () => {
                 job = new Job(testContext.context, testContext.jobConfig);
             });
 
-            afterEach(async () => {
+            afterAll(async () => {
                 await job.shutdown();
                 await testContext.cleanup();
             });
@@ -366,7 +370,7 @@ describe('Job', () => {
         describe('when op name is not a string', () => {
             let job;
             let testContext;
-            beforeEach(() => {
+            beforeAll(() => {
                 testContext = new TestContext('worker-job:fail', {
                     assignment: 'execution_controller',
                     operations: [
@@ -378,7 +382,7 @@ describe('Job', () => {
                 job = new Job(testContext.context, testContext.jobConfig);
             });
 
-            afterEach(async () => {
+            afterAll(async () => {
                 await job.shutdown();
                 await testContext.cleanup();
             });
@@ -394,7 +398,7 @@ describe('Job', () => {
             let testContext;
             let executionContext;
 
-            beforeEach(async () => {
+            beforeAll(async () => {
                 testContext = new TestContext('worker-job', {
                     assignment: 'execution_controller',
                     operations: [
@@ -416,7 +420,7 @@ describe('Job', () => {
                 executionContext = await job.initialize();
             });
 
-            afterEach(async () => {
+            afterAll(async () => {
                 await testContext.cleanup();
             });
 
@@ -438,7 +442,7 @@ describe('Job', () => {
             let testContext;
             let executionContext;
 
-            beforeEach(async () => {
+            beforeAll(async () => {
                 testContext = new TestContext('worker-job:assets', {
                     assignment: 'execution_controller',
                     operations: [
@@ -461,7 +465,7 @@ describe('Job', () => {
                 executionContext = await job.initialize();
             });
 
-            afterEach(async () => {
+            afterAll(async () => {
                 await testContext.cleanup();
             });
 
@@ -485,7 +489,7 @@ describe('Job', () => {
             let testContext;
             let executionContext;
 
-            beforeEach(async () => {
+            beforeAll(async () => {
                 testContext = new TestContext('worker-job:assets-download', {
                     assignment: 'execution_controller',
                     assets: ['example-asset'],
@@ -508,7 +512,7 @@ describe('Job', () => {
                 executionContext = await job.initialize();
             });
 
-            afterEach(async () => {
+            afterAll(async () => {
                 await testContext.cleanup();
             });
 
@@ -531,7 +535,7 @@ describe('Job', () => {
             let job;
             let testContext;
 
-            beforeEach(async () => {
+            beforeAll(async () => {
                 testContext = new TestContext('worker-job:assets-fail', {
                     assignment: 'execution_controller',
                     assets: ['missing-assets'],
@@ -549,7 +553,7 @@ describe('Job', () => {
                 testContext.attachCleanup(() => job.shutdown());
             });
 
-            afterEach(async () => {
+            afterAll(async () => {
                 await testContext.cleanup();
             });
 
@@ -563,7 +567,7 @@ describe('Job', () => {
             let job;
             let testContext;
 
-            beforeEach(async () => {
+            beforeAll(async () => {
                 testContext = new TestContext('worker-job:failing-asset', {
                     assignment: 'execution_controller',
                     assets: ['failing-asset'],
@@ -579,7 +583,7 @@ describe('Job', () => {
                 testContext.attachCleanup(() => job.shutdown());
             });
 
-            afterEach(async () => {
+            afterAll(async () => {
                 await testContext.cleanup();
             });
 

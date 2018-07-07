@@ -182,22 +182,6 @@ describe('Messenger', () => {
                 });
             });
 
-            xdescribe('when sending execution:error:terminal', () => {
-                beforeEach(() => {
-                    exMessenger.send('execution:error:terminal', {
-                        error: 'execution-error-terminal'
-                    });
-                });
-
-                it('should receive the message on the cluster master', async () => {
-                    // eslint-disable-next-line no-undef
-                    const msg = await cmMessenger.onceWithTimeout(`execution:error:terminal:${workerId}`);
-                    expect(msg).toEqual({
-                        error: 'execution-error-terminal'
-                    });
-                });
-            });
-
             describe('when receiving slicer:slice:recorded', () => {
                 beforeEach(() => {
                     exMessenger.sendToWorker(workerId, 'slicer:slice:recorded', {

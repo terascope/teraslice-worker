@@ -40,12 +40,8 @@ describe('Worker', () => {
         });
 
         describe('when processing a single slice', () => {
-            let sliceConfig;
-
             beforeEach(async () => {
                 await worker.initialize();
-
-                sliceConfig = await testContext.newSlice();
             });
 
             it('should create the correct stores', () => {
@@ -57,9 +53,12 @@ describe('Worker', () => {
 
             describe('when a slice is sent from the execution controller', () => {
                 let msg;
+                let sliceConfig;
 
                 beforeEach(async () => {
                     const workerStart = worker.runOnce();
+
+                    sliceConfig = await testContext.newSlice();
 
                     await exMessenger.sendNewSlice(
                         worker.workerId,
@@ -82,9 +81,12 @@ describe('Worker', () => {
 
             describe('when a new slice is not sent right away', () => {
                 let msg;
+                let sliceConfig;
 
                 beforeEach(async () => {
                     const workerStart = worker.runOnce();
+
+                    sliceConfig = await testContext.newSlice();
 
                     await exMessenger.sendNewSlice(
                         worker.workerId,
@@ -111,6 +113,8 @@ describe('Worker', () => {
                 it('should return send a slice completed message with an error', async () => {
                     const errMsg = 'Error: Slice failed processing, caused by Error: Bad news bears';
                     const workerStart = worker.runOnce();
+
+                    const sliceConfig = await testContext.newSlice();
 
                     const newSlice = exMessenger.sendNewSlice(
                         worker.workerId,
@@ -146,10 +150,11 @@ describe('Worker', () => {
                     workerShutdownEvent = jest.fn();
                     worker.events.on('worker:shutdown', workerShutdownEvent);
 
-                    worker.shutdownTimeout = 2000;
-                    worker.slice.run = jest.fn(() => Promise.delay(1000));
+                    worker.shutdownTimeout = 1000;
+                    worker.slice.run = jest.fn(() => Promise.delay(500));
 
                     const workerStart = worker.runOnce();
+                    const sliceConfig = await testContext.newSlice();
 
                     await exMessenger.sendNewSlice(
                         worker.workerId,
@@ -167,38 +172,41 @@ describe('Worker', () => {
 
                 it('should not have a shutdown err', () => {
                     expect(shutdownErr).toBeNil();
-                });
-
-                it('should call worker:shutdown', () => {
                     expect(workerShutdownEvent).toHaveBeenCalled();
                 });
             });
 
             describe('when a slice is in-progress and has to be forced to shutdown', () => {
+                let runErr;
+                let shutdownErr;
+
                 beforeEach(async () => {
                     worker.shutdownTimeout = 500;
 
                     worker.slice.run = jest.fn(() => Promise.delay(1000));
-                });
-
-                it('shutdown should throw an error', async () => {
-                    const workerStart = worker.runOnce();
+                    const sliceConfig = await testContext.newSlice();
+                    const runOnce = worker.runOnce();
 
                     await exMessenger.sendNewSlice(
                         worker.workerId,
                         sliceConfig
                     );
 
-                    const shutdown = worker.shutdown();
+                    await Promise.delay(100);
 
-                    await Promise.delay(200);
+                    try {
+                        await worker.shutdown();
+                        await runOnce;
+                    } catch (err) {
+                        shutdownErr = err;
+                    }
+                });
 
-                    expect(worker.slice.run).toHaveBeenCalled();
+                afterEach(() => testContext.cleanup());
 
-                    const errMsg = 'Failed to shutdown correctly: Error: Worker shutdown timeout after 0.5 seconds, forcing shutdown';
-                    await expect(shutdown).rejects.toThrowError(errMsg);
-
-                    await expect(workerStart).rejects.toThrow();
+                it('shutdown should throw an error', () => {
+                    const errMsg = 'Error: Failed to shutdown correctly: Error: Worker shutdown timeout after 0.5 seconds, forcing shutdown';
+                    expect(shutdownErr.toString()).toStartWith(errMsg);
                 });
             });
         });

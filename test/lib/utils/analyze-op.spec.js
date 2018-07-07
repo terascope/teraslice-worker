@@ -5,8 +5,8 @@ const map = require('lodash/map');
 const mean = require('lodash/mean');
 const { analyzeOp, getMemoryUsage } = require('../../../lib/utils');
 
-const MB = 1024 * 1024;
-const MEM_DIFF = MB * 100;
+const GB = 1024 * 1024 * 1024;
+const MEM_DIFF = GB;
 const TIME_DIFF = 1000;
 
 describe('Operation Analytics', () => {
