@@ -29,8 +29,13 @@ describe('ExecutionController', () => {
             await exController.runOnce();
         });
 
-        it('should have a length of 10 slices', () => {
+        it('should enqueue the slices', () => {
             expect(exController.slicerQueue.size()).toEqual(10);
+
+            const { exId } = testContext;
+            const { stateStore } = exController.stores;
+            const query = `ex_id:${exId} AND state:start`;
+            return expect(stateStore.count(query, 0)).resolves.toEqual(10);
         });
     });
 });
