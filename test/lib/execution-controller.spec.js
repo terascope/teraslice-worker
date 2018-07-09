@@ -18,16 +18,20 @@ describe('ExecutionController', () => {
     afterEach(() => testContext.cleanup());
 
     it('should the correct methods', () => {
-        expect(exController).toHaveProperty('start');
-        expect(exController.start).toBeFunction();
+        expect(exController).toHaveProperty('initialize');
+        expect(exController.initialize).toBeFunction();
+
+        expect(exController).toHaveProperty('run');
+        expect(exController.run).toBeFunction();
+
         expect(exController).toHaveProperty('shutdown');
         expect(exController.shutdown).toBeFunction();
     });
 
-    describe('when started', () => {
+    describe('when running', () => {
         beforeEach(async () => {
             await exController.initialize();
-            await exController.start();
+            await exController.run();
         });
 
         it('should have the stores', () => {

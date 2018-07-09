@@ -3,6 +3,7 @@
 /* eslint-disable no-console */
 
 const { createTempDirSync, cleanupTempDirs } = require('jest-fixtures');
+const ElasticsearchClient = require('elasticsearch').Client;
 const path = require('path');
 const fs = require('fs-extra');
 const {
@@ -20,8 +21,14 @@ const defaultOpSchema = require('../fixtures/ops/example-op').schema;
 
 jest.setTimeout(8000);
 
+const { TERASLICE_CLUSTER_NAME, ELASTICSEARCH_HOST } = process.env;
+
 const cleanups = {};
-const clusterName = `${process.env.TERASLICE_CLUSTER_NAME}${newId('', true, 5)}`;
+const clusterName = `${TERASLICE_CLUSTER_NAME}${newId('', true, 5)}`;
+const es = new ElasticsearchClient({
+    host: ELASTICSEARCH_HOST,
+    log: '' // This suppresses error logging from the ES library.
+});
 
 class TestContext {
     constructor(testName, options = {}) {
@@ -173,7 +180,7 @@ class TestContext {
 }
 
 // make sure we cleanup if any test fails to cleanup properly
-afterEach(async () => {
+async function cleanupAll() {
     const count = Object.keys(cleanups).length;
     if (!count) return;
 
@@ -189,6 +196,13 @@ afterEach(async () => {
         delete cleanups[name];
     });
     await Promise.all(fns);
+}
+
+beforeAll(async () => {
+    await cleanupAll();
+    await es.indices.delete({ index: `${clusterName}*` });
 }, Object.keys(cleanups).length * 5000);
+
+afterEach(() => cleanupAll(), Object.keys(cleanups).length * 5000);
 
 module.exports = TestContext;
