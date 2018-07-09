@@ -46,7 +46,7 @@ class TestContext {
             const reader = jest.fn(() => Promise.resolve(Array(10).fill('hello')));
             const newReader = jest.fn(() => Promise.resolve(reader));
             const slicer = jest.fn(() => Promise.resolve(Array(10).fill('howdy')));
-            const newSlicer = jest.fn(() => Promise.resolve(slicer));
+            const newSlicer = jest.fn(() => Promise.resolve([slicer]));
             return {
                 schema: jest.fn(defaultReaderSchema),
                 reader,
@@ -183,8 +183,6 @@ class TestContext {
 async function cleanupAll() {
     const count = Object.keys(cleanups).length;
     if (!count) return;
-
-    console.error(`cleaning up ${count}`);
 
     const fns = Object.keys(cleanups).map(async (name) => {
         const fn = cleanups[name];

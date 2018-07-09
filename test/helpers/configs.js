@@ -22,6 +22,7 @@ const newJobConfig = (options = {}) => {
         assignment = 'worker',
         maxRetries = 0,
         slicerPort = 0,
+        lifecycle = 'once',
         operations = [
             {
                 _op: path.join(opsPath, 'example-reader'),
@@ -39,6 +40,7 @@ const newJobConfig = (options = {}) => {
         job: {
             assets,
             analytics,
+            lifecycle,
             max_retries: maxRetries,
             operations,
         },

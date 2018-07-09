@@ -7,38 +7,30 @@ describe('ExecutionController', () => {
     let exController;
     let testContext;
 
-    beforeEach(() => {
+    beforeEach(async () => {
         testContext = new TestContext('execution_controller', {
             assignment: 'execution_controller'
         });
         exController = new ExecutionController(testContext.context, testContext.jobConfig);
+
         testContext.attachCleanup(() => exController.shutdown());
+
+        await exController.initialize();
     });
 
     afterEach(() => testContext.cleanup());
 
-    it('should the correct methods', () => {
-        expect(exController).toHaveProperty('initialize');
-        expect(exController.initialize).toBeFunction();
-
-        expect(exController).toHaveProperty('run');
-        expect(exController.run).toBeFunction();
-
-        expect(exController).toHaveProperty('shutdown');
-        expect(exController.shutdown).toBeFunction();
+    it('should an array of slicers', () => {
+        expect(exController.slicers).toBeArray();
     });
 
-    describe('when running', () => {
+    describe('when running a slice', () => {
         beforeEach(async () => {
-            await exController.initialize();
-            await exController.run();
+            await exController.runOnce();
         });
 
-        it('should have the stores', () => {
-            expect(exController.stores).toHaveProperty('stateStore');
-            expect(exController.stores.stateStore).toHaveProperty('shutdown');
-            expect(exController.stores).toHaveProperty('exStore');
-            expect(exController.stores.exStore).toHaveProperty('shutdown');
+        it('should have a length of 10 slices', () => {
+            expect(exController.slicerQueue.size()).toEqual(10);
         });
     });
 });

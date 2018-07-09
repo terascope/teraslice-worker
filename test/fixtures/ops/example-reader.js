@@ -21,5 +21,5 @@ module.exports = {
     reader: () => Promise.resolve(Array(100).fill('default-reader-data')),
     newReader: () => Promise.resolve(module.exports.reader),
     slicer: () => Promise.resolve(Array(100).fill('default-slicer-data')),
-    newSlicer: () => Promise.resolve(module.exports.slicer)
+    newSlicer: () => Promise.resolve([module.exports.slicer])
 };
