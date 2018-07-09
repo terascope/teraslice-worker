@@ -92,6 +92,7 @@ const newSysConfig = (options = {}) => {
 };
 
 module.exports = {
+    newId,
     opsPath,
     newJobConfig,
     newSliceConfig,
