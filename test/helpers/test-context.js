@@ -16,8 +16,7 @@ const { newId, generateContext } = require('../../lib/utils');
 const overrideLogger = require('./override-logger');
 const { newJobConfig, newSysConfig, newSliceConfig } = require('./configs');
 const zipDirectory = require('./zip-directory');
-const defaultReaderSchema = require('../fixtures/ops/example-reader').schema;
-const defaultOpSchema = require('../fixtures/ops/example-op').schema;
+const newExampleOps = require('./test-ops');
 
 jest.setTimeout(8000);
 
@@ -42,32 +41,10 @@ class TestContext {
             assets,
         } = options;
 
-        jest.doMock('../fixtures/ops/example-reader', () => {
-            const reader = jest.fn(() => Promise.resolve(Array(10).fill('hello')));
-            const newReader = jest.fn(() => Promise.resolve(reader));
-            const slicer = jest.fn(() => Promise.resolve(Array(10).fill('howdy')));
-            const newSlicer = jest.fn(() => Promise.resolve([slicer]));
-            return {
-                schema: jest.fn(defaultReaderSchema),
-                reader,
-                newReader,
-                slicer,
-                newSlicer,
-            };
-        });
+        const { exampleOp, exampleReader } = newExampleOps(options);
 
-        jest.doMock('../fixtures/ops/example-op', () => {
-            const op = jest.fn(() => Array(10).fill('hi'));
-            const newProcessor = jest.fn(() => Promise.resolve(op));
-            return {
-                schema: jest.fn(defaultOpSchema),
-                op,
-                newProcessor,
-            };
-        });
-
-        this.exampleReader = require('../fixtures/ops/example-reader');
-        this.exampleOp = require('../fixtures/ops/example-op');
+        this.exampleOp = exampleOp;
+        this.exampleReader = exampleReader;
 
         this.setupId = newId('setup', true);
         this.assetDir = createTempDirSync();
