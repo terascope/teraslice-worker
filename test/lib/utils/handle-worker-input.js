@@ -6,7 +6,7 @@ const { newJobConfig } = require('../../helpers');
 
 describe('HandleWorkerInput', () => {
     let worker;
-    beforeAll(() => {
+    beforeEach(() => {
         const config = {
             terafoundation: {
                 environment: 'development',

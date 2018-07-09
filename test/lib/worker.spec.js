@@ -177,7 +177,6 @@ describe('Worker', () => {
             });
 
             describe('when a slice is in-progress and has to be forced to shutdown', () => {
-                let runErr;
                 let shutdownErr;
 
                 beforeEach(async () => {

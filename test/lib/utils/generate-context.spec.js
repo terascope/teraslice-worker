@@ -6,7 +6,7 @@ const { newSysConfig } = require('../../helpers');
 describe('Terafoundation Context', () => {
     let context;
 
-    beforeAll(() => {
+    beforeEach(() => {
         context = generateContext(newSysConfig());
     });
 

@@ -43,14 +43,14 @@ describe('Slice', () => {
             let testContext;
             const eventMocks = {};
 
-            beforeAll(async () => {
+            beforeEach(async () => {
                 testContext = new TestContext('slice', { analytics: true });
                 slice = await setupSlice(testContext, eventMocks);
 
                 results = await slice.run();
             });
 
-            afterAll(async () => {
+            afterEach(async () => {
                 await testContext.cleanup();
             });
 
@@ -97,14 +97,14 @@ describe('Slice', () => {
             let testContext;
             const eventMocks = {};
 
-            beforeAll(async () => {
+            beforeEach(async () => {
                 testContext = new TestContext('slice', { analytics: false });
                 slice = await setupSlice(testContext, eventMocks);
 
                 results = await slice.run();
             });
 
-            afterAll(async () => {
+            afterEach(async () => {
                 await testContext.cleanup();
             });
 
@@ -147,7 +147,7 @@ describe('Slice', () => {
             let testContext;
             const eventMocks = {};
 
-            beforeAll(async () => {
+            beforeEach(async () => {
                 testContext = new TestContext('slice', { maxRetries: 3, analytics: false });
                 testContext.exampleReader.reader.mockRejectedValueOnce(new Error('Bad news bears'));
                 testContext.exampleReader.reader.mockResolvedValue(times(10, () => 'hello'));
@@ -158,7 +158,7 @@ describe('Slice', () => {
                 results = await slice.run();
             });
 
-            afterAll(async () => {
+            afterEach(async () => {
                 await testContext.cleanup();
             });
 
@@ -201,7 +201,7 @@ describe('Slice', () => {
             const eventMocks = {};
             let err;
 
-            beforeAll(async () => {
+            beforeEach(async () => {
                 testContext = new TestContext('slice', { maxRetries: 5, analytics: false });
                 testContext.exampleReader.reader.mockResolvedValue(times(10, () => 'hello'));
                 testContext.exampleOp.op.mockRejectedValue(new Error('Bad news bears'));
@@ -215,7 +215,7 @@ describe('Slice', () => {
                 }
             });
 
-            afterAll(async () => {
+            afterEach(async () => {
                 await testContext.cleanup();
             });
 
@@ -258,7 +258,7 @@ describe('Slice', () => {
         let slice;
         let testContext;
 
-        beforeAll(async () => {
+        beforeEach(async () => {
             testContext = new TestContext('slice');
             testContext.exampleReader.reader.mockResolvedValue(times(10, () => 'hello'));
             testContext.exampleOp.op.mockResolvedValue(times(10, () => 'hi'));
@@ -268,7 +268,7 @@ describe('Slice', () => {
             await slice._markCompleted();
         });
 
-        afterAll(async () => {
+        afterEach(async () => {
             await testContext.cleanup();
         });
 
@@ -283,7 +283,7 @@ describe('Slice', () => {
             let testContext;
             let slice;
 
-            beforeAll(async () => {
+            beforeEach(async () => {
                 testContext = new TestContext('slice', { analytics: true });
                 testContext.exampleReader.reader.mockResolvedValue(times(10, () => 'hello'));
                 testContext.exampleOp.op.mockResolvedValue(times(10, () => 'hi'));
@@ -291,7 +291,7 @@ describe('Slice', () => {
                 slice = await setupSlice(testContext);
             });
 
-            afterAll(async () => {
+            afterEach(async () => {
                 await testContext.cleanup();
             });
 
@@ -305,7 +305,7 @@ describe('Slice', () => {
             let testContext;
             let slice;
 
-            beforeAll(async () => {
+            beforeEach(async () => {
                 testContext = new TestContext('slice', { analytics: true });
                 testContext.exampleReader.reader.mockResolvedValue(times(10, () => 'hello'));
                 testContext.exampleOp.op.mockResolvedValue(times(10, () => 'hi'));
@@ -314,7 +314,7 @@ describe('Slice', () => {
                 slice.slice = 'hello-there';
             });
 
-            afterAll(async () => {
+            afterEach(async () => {
                 await testContext.cleanup();
             });
 
@@ -328,14 +328,14 @@ describe('Slice', () => {
         let testContext;
         let slice;
 
-        beforeAll(async () => {
+        beforeEach(async () => {
             testContext = new TestContext('slice');
             slice = await setupSlice(testContext);
 
             slice.slice = { should: 'break' };
         });
 
-        afterAll(async () => {
+        afterEach(async () => {
             await testContext.cleanup();
         });
 

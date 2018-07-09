@@ -173,7 +173,7 @@ class TestContext {
 }
 
 // make sure we cleanup if any test fails to cleanup properly
-beforeAll(async () => {
+afterEach(async () => {
     const count = Object.keys(cleanups).length;
     if (!count) return;
 
