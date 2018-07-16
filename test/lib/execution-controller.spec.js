@@ -16,6 +16,7 @@ describe('ExecutionController', () => {
         let workerMessenger;
         let slice;
 
+        beforeAll(() => TestContext.cleanupAll(true));
         beforeEach(async () => {
             const port = await findPort();
 

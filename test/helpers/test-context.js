@@ -29,6 +29,13 @@ const es = new ElasticsearchClient({
     log: '' // This suppresses error logging from the ES library.
 });
 
+setInterval(() => {
+    const count = Object.keys(cleanups).length;
+    if (count > 1) {
+        console.error(`MORE THAN CONTEXT IS RUNNING ${count}`);
+    }
+}, 10).unref();
+
 class TestContext {
     constructor(testName, options = {}) {
         const {
@@ -75,6 +82,7 @@ class TestContext {
         this.stores = {};
         this.clean = false;
         this._cleanupFns = [];
+
 
         cleanups[this.setupId] = () => this.cleanup();
     }
@@ -142,11 +150,15 @@ class TestContext {
         const stores = Object.values(this.stores);
         try {
             await Promise.map(stores, store => store.shutdown(true));
-        } catch (err) { } // eslint-disable-line
+        } catch (err) {
+            console.error(err);
+        }
 
         try {
             cleanupTempDirs();
-        } catch (err) { }  // eslint-disable-line
+        } catch (err) {
+            console.error(err);
+        }
 
         this.events.removeAllListeners();
 
@@ -157,7 +169,7 @@ class TestContext {
 }
 
 // make sure we cleanup if any test fails to cleanup properly
-async function cleanupAll() {
+async function cleanupAll(withEs) {
     const count = Object.keys(cleanups).length;
     if (!count) return;
 
@@ -171,13 +183,17 @@ async function cleanupAll() {
         delete cleanups[name];
     });
     await Promise.all(fns);
+    if (withEs) {
+        await es.indices.delete({ index: `${clusterName}*` });
+    }
 }
 
 beforeAll(async () => {
-    await cleanupAll();
-    await es.indices.delete({ index: `${clusterName}*` });
+    await cleanupAll(true);
 }, Object.keys(cleanups).length * 5000);
 
 afterEach(() => cleanupAll(), Object.keys(cleanups).length * 5000);
 
 module.exports = TestContext;
+
+module.exports.cleanupAll = cleanupAll;

@@ -18,13 +18,13 @@
   "devDependencies": {
     "archiver": "^2.1.1",
     "bufferstreams": "^2.0.1",
-    "codecov": "^3.0.3",
+    "codecov": "^3.0.4",
     "debug": "^3.1.0",
     "elasticsearch": "^15.1.1",
     "eslint": "^4.19.1",
     "eslint-config-airbnb-base": "^13.0.0",
     "eslint-plugin-import": "^2.12.0",
-    "jest": "^23.3.0",
+    "jest": "^23.4.1",
     "jest-extended": "^0.7.2",
     "jest-fixtures": "^0.6.0",
     "tmp": "^0.0.33"
@@ -37,13 +37,13 @@
     "diehard": "^1.5.2",
     "fs-extra": "^6.0.1",
     "lodash": "^4.17.10",
-    "nanoid": "^1.0.4",
+    "nanoid": "^1.1.0",
     "nested-error-stacks": "^2.0.1",
     "porty": "^3.1.1",
     "socket.io": "^2.1.1",
     "socket.io-client": "^2.1.1",
     "terafoundation": "^0.2.1",
-    "teraslice": "terascope/teraslice#d121f18",
+    "teraslice": "terascope/teraslice#ab8b064",
     "yargs": "^12.0.1"
   }
 }

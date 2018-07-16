@@ -1,6 +1,6 @@
 'use strict';
 
-require('./global-setup');
+global.Promise = require('bluebird');
 
 const Worker = require('./lib/worker');
 const ExecutionController = require('./lib/execution-controller');
