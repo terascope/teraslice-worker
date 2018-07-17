@@ -4,13 +4,25 @@ const { ExecutionController } = require('../..');
 const WorkerMessenger = require('../../lib/messenger/worker');
 const { TestContext, findPort, newId } = require('../helpers');
 
+
 describe('ExecutionController', () => {
     const testCases = [
         // message, config
         [
             'one slice',
             {
-                slicers: [() => 1, () => null],
+                newSlicer: jest.fn(() => {
+                    let firedOnce = false;
+                    return [
+                        () => {
+                            if (firedOnce) {
+                                return null;
+                            }
+                            firedOnce = true;
+                            return { example: 'howdy' };
+                        }
+                    ];
+                }),
                 count: 1,
                 lifecycle: 'once'
             }
@@ -19,14 +31,29 @@ describe('ExecutionController', () => {
         [
             'sub-slices',
             {
-                slicers: [() => [1, 2, 3], () => null],
+                newSlicer: jest.fn(() => {
+                    let firedOnce = false;
+                    return [
+                        () => {
+                            if (firedOnce) {
+                                return null;
+                            }
+                            firedOnce = true;
+                            return [
+                                { example: 'howdy' },
+                                { example: 'howdy' },
+                                { example: 'howdy' }
+                            ];
+                        }
+                    ];
+                }),
                 count: 3,
                 lifecycle: 'once'
             }
         ]
     ];
 
-    describe.each(testCases)('when processing %s', (m, { slicers, count, lifecycle }) => {
+    describe.each(testCases)('when processing %s', (m, { newSlicer, count, lifecycle }) => {
         let exController;
         let testContext;
         let workerMessenger;
@@ -39,7 +66,7 @@ describe('ExecutionController', () => {
             testContext = new TestContext('execution_controller', {
                 assignment: 'execution_controller',
                 slicerPort: port,
-                slicers,
+                newSlicer,
                 lifecycle,
             });
 
@@ -70,13 +97,16 @@ describe('ExecutionController', () => {
             await workerMessenger.ready();
 
             const startTime = Date.now();
-            const waitForSlice = workerMessenger.waitForSlice(() => {
-                const elapsed = Date.now() - startTime;
-                return elapsed > 5000;
-            });
 
-            await exController.runOnce();
-            slice = await waitForSlice;
+            await Promise.all([
+                workerMessenger.waitForSlice(() => {
+                    const elapsed = Date.now() - startTime;
+                    return elapsed > 5000;
+                }),
+                exController.run()
+            ]).spread((_slice) => {
+                slice = _slice;
+            });
         });
 
         afterEach(() => testContext.cleanup());
