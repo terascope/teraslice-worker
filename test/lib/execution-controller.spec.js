@@ -5,12 +5,28 @@ const WorkerMessenger = require('../../lib/messenger/worker');
 const { TestContext, findPort, newId } = require('../helpers');
 
 describe('ExecutionController', () => {
-    const slices = [
-        [[{ example: 'howdy' }], 1],
-        [{ example: 'howdy' }, 1]
+    const testCases = [
+        // message, config
+        [
+            'one slice',
+            {
+                slicers: [() => 1, () => null],
+                count: 1,
+                lifecycle: 'once'
+            }
+        ],
+        // message, config
+        [
+            'sub-slices',
+            {
+                slicers: [() => [1, 2, 3], () => null],
+                count: 3,
+                lifecycle: 'once'
+            }
+        ]
     ];
 
-    describe.each(slices)('when the slicer returns %j', (sliceData, count) => {
+    describe.each(testCases)('when processing %s', (m, { slicers, count, lifecycle }) => {
         let exController;
         let testContext;
         let workerMessenger;
@@ -23,9 +39,9 @@ describe('ExecutionController', () => {
             testContext = new TestContext('execution_controller', {
                 assignment: 'execution_controller',
                 slicerPort: port,
+                slicers,
+                lifecycle,
             });
-
-            testContext.exampleReader.slicer.mockResolvedValue(sliceData);
 
             exController = new ExecutionController(testContext.context, testContext.jobConfig);
             const {

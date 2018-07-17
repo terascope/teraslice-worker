@@ -44,6 +44,7 @@
     "socket.io-client": "^2.1.1",
     "terafoundation": "^0.2.1",
     "teraslice": "terascope/teraslice#ab8b064",
+    "uuid": "^3.3.2",
     "yargs": "^12.0.1"
   }
 }

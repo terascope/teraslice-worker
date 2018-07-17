@@ -6,6 +6,7 @@ const { createTempDirSync, cleanupTempDirs } = require('jest-fixtures');
 const ElasticsearchClient = require('elasticsearch').Client;
 const path = require('path');
 const fs = require('fs-extra');
+
 const {
     makeAssetStore,
     makeStateStore,
@@ -39,6 +40,7 @@ class TestContext {
             operations,
             assignment,
             assets,
+            lifecycle,
         } = options;
 
         const { exampleOp, exampleReader } = newExampleOps(options);
@@ -56,6 +58,7 @@ class TestContext {
         });
 
         this.jobConfig = newJobConfig({
+            lifecycle,
             assignment,
             slicerPort,
             analytics,
