@@ -35,7 +35,7 @@
     "bluebird": "^3.5.1",
     "bluebird-retry": "^0.11.0",
     "diehard": "^1.5.2",
-    "fs-extra": "^6.0.1",
+    "fs-extra": "^7.0.0",
     "lodash": "^4.17.10",
     "nanoid": "^1.1.0",
     "nested-error-stacks": "^2.0.1",

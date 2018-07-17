@@ -29,13 +29,6 @@ const es = new ElasticsearchClient({
     log: '' // This suppresses error logging from the ES library.
 });
 
-setInterval(() => {
-    const count = Object.keys(cleanups).length;
-    if (count > 1) {
-        console.error(`MORE THAN CONTEXT IS RUNNING ${count}`);
-    }
-}, 10).unref();
-
 class TestContext {
     constructor(testName, options = {}) {
         const {
@@ -191,6 +184,18 @@ async function cleanupAll(withEs) {
 beforeAll(async () => {
     await cleanupAll(true);
 }, Object.keys(cleanups).length * 5000);
+
+beforeEach((done) => {
+    function readyStart() {
+        const count = Object.keys(cleanups).length;
+        if (count > 1) {
+            setTimeout(readyStart, 10);
+            return;
+        }
+        done();
+    }
+    readyStart();
+});
 
 afterEach(() => cleanupAll(), Object.keys(cleanups).length * 5000);
 

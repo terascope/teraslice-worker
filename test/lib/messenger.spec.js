@@ -104,95 +104,56 @@ describe('Messenger', () => {
             it('should not throw an error', () => expect(worker.start()).resolves.toBeNil());
         });
 
+        it('should have no available workers', () => {
+            expect(exMessenger.availableWorkers()).toEqual(0);
+        });
+
         describe('when the worker is ready', () => {
-            let slicerReadyMsg;
+            let enqueuedMsg;
 
             beforeEach(async () => {
-                const workerReady = worker.ready();
-                const slicerReady = exMessenger.onWorkerReady(workerId);
-                await workerReady;
-                slicerReadyMsg = await slicerReady;
+                worker.ready();
+                enqueuedMsg = await exMessenger.onceWithTimeout(`worker:enqueue:${workerId}`);
             });
 
             it('should call worker ready on the exMessenger', () => {
-                expect(slicerReadyMsg).toEqual({ worker_id: workerId });
-                expect(exMessenger.workers).toHaveProperty(workerId);
-            });
-
-            it('should return immediately when calling onWorkerReady', () => {
-                const msg = { worker_id: workerId };
-                return expect(exMessenger.onWorkerReady(workerId)).resolves.toEqual(msg);
+                expect(enqueuedMsg).toEqual({ worker_id: workerId });
+                expect(exMessenger.availableWorkers()).toEqual(1);
             });
 
             describe('when sending worker:slice:complete', () => {
-                beforeEach(() => {
-                    worker.sliceComplete({ slice: 'worker-slice-complete', analyticsData: 'hello', error: 'hello' });
-                });
-
                 it('should emit worker:slice:complete on the exMessenger', async () => {
-                    const msg = await exMessenger.onSliceComplete(workerId);
-                    expect(msg).toEqual({
-                        slice: 'worker-slice-complete',
+                    const msg = await worker.sliceComplete({
+                        slice: {
+                            slice_id: 'worker-slice-complete'
+                        },
                         analytics: 'hello',
-                        error: 'hello',
-                        worker_id: workerId,
+                        error: 'hello'
                     });
-                });
-            });
 
-            describe('when slice complete should work when using the cache', () => {
-                beforeEach(async () => {
-                    worker.sliceComplete({ slice: 'hello-1', analyticsData: 'hello', error: 'hello' });
-                    worker.sliceComplete({ slice: 'hello-2', analyticsData: 'hello', error: 'hello' });
-                    await Promise.delay(500);
-                });
-
-                it('should emit worker:slice:complete on the exMessenger', async () => {
-                    const msg = await exMessenger.onSliceComplete(workerId);
                     expect(msg).toEqual({
-                        slice: 'hello-1',
-                        analytics: 'hello',
-                        error: 'hello',
-                        worker_id: workerId,
+                        slice_id: 'worker-slice-complete',
+                        recorded: true,
                     });
-                    const msg2 = await exMessenger.onSliceComplete(workerId);
-                    expect(msg2).toEqual({
-                        slice: 'hello-2',
-                        analytics: 'hello',
-                        error: 'hello',
-                        worker_id: workerId,
-                    });
+                    expect(exMessenger.queue.exists('worker_id', workerId)).toBeTrue();
                 });
             });
 
             describe('when receiving cluster:error:terminal', () => {
-                beforeEach(() => {
-                    exMessenger.sendToWorker(workerId, 'cluster:error:terminal', {
+                let msg;
+                beforeEach(async () => {
+                    exMessenger.send(workerId, 'cluster:error:terminal', {
                         ex_id: 'some-ex-id',
                         err: 'cluster-error-terminal'
                     });
+
+                    msg = await worker.onceWithTimeout('cluster:error:terminal');
                 });
 
-                it('should receive the message on the worker', async () => {
-                    const msg = await worker.onceWithTimeout('cluster:error:terminal');
+                it('should receive the message on the worker', () => {
                     expect(msg).toEqual({
                         ex_id: 'some-ex-id',
                         err: 'cluster-error-terminal'
-                    });
-                });
-            });
-
-            describe('when receiving slicer:slice:recorded', () => {
-                beforeEach(() => {
-                    exMessenger.sendToWorker(workerId, 'slicer:slice:recorded', {
-                        example: 'slice-recorded-message'
-                    });
-                });
-
-                it('should emit slicer:slice:recorded on the worker', async () => {
-                    const msg = await worker.onceWithTimeout('slicer:slice:recorded');
-                    expect(msg).toEqual({
-                        example: 'slice-recorded-message'
                     });
                 });
             });
