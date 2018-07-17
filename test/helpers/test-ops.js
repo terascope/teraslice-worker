@@ -6,7 +6,7 @@ const defaultOpSchema = require('../fixtures/ops/example-op').schema;
 module.exports = (options = {}) => {
     jest.doMock('../fixtures/ops/example-reader', () => {
         const {
-            slicers = [jest.fn(() => null)],
+            slicers = [() => null],
             reader = jest.fn(() => Promise.resolve(Array(10).fill('hello'))),
         } = options;
 
@@ -14,6 +14,7 @@ module.exports = (options = {}) => {
             newReader = jest.fn(() => Promise.resolve(reader)),
             newSlicer = jest.fn(() => Promise.resolve(slicers)),
         } = options;
+
         return {
             schema: jest.fn(defaultReaderSchema),
             reader,

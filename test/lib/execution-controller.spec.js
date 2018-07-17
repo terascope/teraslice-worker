@@ -1,5 +1,6 @@
 'use strict';
 
+const times = require('lodash/times');
 const { ExecutionController } = require('../..');
 const WorkerMessenger = require('../../lib/messenger/worker');
 const { TestContext, findPort, newId } = require('../helpers');
@@ -19,10 +20,11 @@ describe('ExecutionController', () => {
                                 return null;
                             }
                             firedOnce = true;
-                            return { example: 'howdy' };
+                            return { example: 'single-slice' };
                         }
                     ];
                 }),
+                body: { example: 'single-slice' },
                 count: 1,
                 lifecycle: 'once'
             }
@@ -40,33 +42,44 @@ describe('ExecutionController', () => {
                             }
                             firedOnce = true;
                             return [
-                                { example: 'howdy' },
-                                { example: 'howdy' },
-                                { example: 'howdy' }
+                                { example: 'subslice' },
+                                { example: 'subslice' },
+                                { example: 'subslice' }
                             ];
                         }
                     ];
                 }),
                 count: 3,
+                body: { example: 'subslice' },
                 lifecycle: 'once'
             }
         ]
     ];
 
-    describe.each(testCases)('when processing %s', (m, { newSlicer, count, lifecycle }) => {
+    describe.each(testCases)('when processing %s', (m, options) => {
+        const {
+            newSlicer,
+            count,
+            lifecycle,
+            body
+        } = options;
+
         let exController;
         let testContext;
         let workerMessenger;
-        let slice;
+        let slices;
 
-        beforeAll(() => TestContext.cleanupAll(true));
+        beforeAll(async () => {
+            await TestContext.cleanupAll();
+        });
+
         beforeEach(async () => {
+            slices = null;
             const port = await findPort();
 
             testContext = new TestContext('execution_controller', {
                 assignment: 'execution_controller',
                 slicerPort: port,
-                newSlicer,
                 lifecycle,
             });
 
@@ -93,26 +106,32 @@ describe('ExecutionController', () => {
 
             await exController.initialize();
 
+            exController.executionContext.slicer.newSlicer = newSlicer;
+
             await workerMessenger.start();
             await workerMessenger.ready();
 
-            const startTime = Date.now();
-
             await Promise.all([
-                workerMessenger.waitForSlice(() => {
-                    const elapsed = Date.now() - startTime;
-                    return elapsed > 5000;
-                }),
+                Promise.all(times(count, () => {
+                    const startTime = Date.now();
+                    return workerMessenger.waitForSlice(() => {
+                        const elapsed = Date.now() - startTime;
+                        return elapsed > 5000;
+                    });
+                })),
                 exController.run()
-            ]).spread((_slice) => {
-                slice = _slice;
+            ]).spread((_slices) => {
+                slices = _slices;
             });
         });
 
         afterEach(() => testContext.cleanup());
 
         it('should send the slices to the worker', () => {
-            expect(slice.request).toEqual({ example: 'howdy' });
+            times(count, (i) => {
+                const slice = slices[i];
+                expect(slice.request).toEqual(body);
+            });
 
             const { exId } = testContext;
             const { stateStore } = exController.stores;
