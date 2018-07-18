@@ -2,6 +2,7 @@
 
 const path = require('path');
 const random = require('lodash/random');
+const pickBy = require('lodash/pickBy');
 const { newId } = require('../../lib/utils');
 
 const opsPath = path.join(__dirname, '..', 'fixtures', 'ops');
@@ -24,7 +25,7 @@ const newJobConfig = (options = {}) => {
         slicerPort = 0,
         lifecycle = 'once',
         operations = [
-            {
+            pickBy({
                 _op: path.join(opsPath, 'example-reader'),
                 exampleProp: 321,
                 errorAt: options.readerErrorAt,
@@ -32,16 +33,16 @@ const newJobConfig = (options = {}) => {
                 slicerResults: options.slicerResults,
                 slicerErrorAt: options.slicerErrorAt,
                 slicerQueueLength: options.slicerQueueLength,
-            },
-            {
+            }),
+            pickBy({
                 _op: path.join(opsPath, 'example-op'),
                 exampleProp: 123,
                 errorAt: options.opErrorAt,
                 results: options.opResults,
-            }
+            })
         ],
         assets = [],
-        workers = 0
+        workers = 1
     } = options;
     return {
         assignment,

@@ -12,7 +12,10 @@ const {
     makeStateStore,
     makeAnalyticsStore,
     makeExStore,
+    makeJobStore,
+    validateJob,
 } = require('../../lib/teraslice');
+
 const { newId, generateContext } = require('../../lib/utils');
 const overrideLogger = require('./override-logger');
 const { newJobConfig, newSysConfig, newSliceConfig } = require('./configs');
@@ -100,6 +103,35 @@ class TestContext {
     async addAnalyticsStore() {
         if (this.stores.analyticsStore) return;
         this.stores.analyticsStore = await makeAnalyticsStore(this.context);
+    }
+
+    async addJobStore() {
+        if (this.stores.jobStore) return;
+        this.stores.jobStore = await makeJobStore(this.context);
+    }
+
+    async makeItARealJob() {
+        await this.addJobStore();
+        await this.addExStore();
+        const { jobStore, exStore } = this.stores;
+
+        const validJob = await validateJob(this.context, this.jobConfig.job);
+        const jobSpec = await jobStore.create(this.jobConfig.job);
+
+        const job = Object.assign({}, jobSpec, validJob);
+
+        const ex = await exStore.create(job, 'ex');
+        await exStore.setStatus(ex.ex_id, 'pending');
+
+        this.jobConfig.job = job;
+
+        this.jobConfig.job_id = ex.job_id;
+        this.jobConfig.ex_id = ex.ex_id;
+
+        this.jobId = ex.job_id;
+        this.exId = ex.ex_id;
+
+        return ex;
     }
 
     async addExStore() {

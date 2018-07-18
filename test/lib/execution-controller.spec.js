@@ -93,6 +93,8 @@ describe('ExecutionController', () => {
                 lifecycle,
             });
 
+            await testContext.makeItARealJob();
+
             exController = new ExecutionController(testContext.context, testContext.jobConfig);
             const {
                 network_latency_buffer: networkerLatencyBuffer,

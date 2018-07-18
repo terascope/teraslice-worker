@@ -5016,9 +5016,9 @@ terafoundation@^0.2.1:
     redis "^2.8.0"
     yargs "^11.0.0"
 
-teraslice@terascope/teraslice#ab8b064:
+teraslice@terascope/teraslice#e7bb479:
   version "0.37.1"
-  resolved "https://codeload.github.com/terascope/teraslice/tar.gz/ab8b0649f70f3327a45b0284e8996aa0346ba3ad"
+  resolved "https://codeload.github.com/terascope/teraslice/tar.gz/e7bb479f94f5485e9f4b42e085ae187b26be3e35"
   dependencies:
     "@terascope/elasticsearch-api" "^1.0.1"
     "@terascope/error-parser" "^1.0.0"
