@@ -122,7 +122,7 @@ describe('Messenger', () => {
 
             it('should have one client connected', () => {
                 expect(exMessenger.availableWorkers()).toEqual(1);
-                return expect(exMessenger.getClientCounts()).resolves.toEqual(1);
+                expect(exMessenger.connectedWorkers()).toEqual(1);
             });
 
             describe('when sending worker:slice:complete', () => {
