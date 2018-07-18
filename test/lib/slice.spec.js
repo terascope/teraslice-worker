@@ -56,16 +56,6 @@ describe('Slice', () => {
 
             it('should handle the slice correctly', () => {
                 // should call of the operations
-                const { reader } = testContext.exampleReader;
-                const { op } = testContext.exampleOp;
-
-                const sliceRequest = { example: 'slice-data' };
-
-                expect(reader).toHaveBeenCalledTimes(1);
-                expect(reader).toHaveBeenCalledWith(sliceRequest, slice.logger, sliceRequest);
-
-                expect(op).toHaveBeenCalledTimes(1);
-
                 expect(results).toEqual(times(10, () => 'hi'));
 
                 // should have the correct analytics data
@@ -110,17 +100,6 @@ describe('Slice', () => {
 
             it('should handle the slice correctly', () => {
                 // should call all of the operations
-                const { reader } = testContext.exampleReader;
-                const { op } = testContext.exampleOp;
-
-                const sliceRequest = { example: 'slice-data' };
-                expect(reader).toHaveBeenCalledTimes(1);
-                expect(reader).toHaveBeenCalledWith(sliceRequest, slice.logger, sliceRequest);
-
-                const readerResults = times(10, () => 'hello');
-                expect(op).toHaveBeenCalledTimes(1);
-                expect(op).toHaveBeenCalledWith(readerResults, slice.logger, sliceRequest);
-
                 expect(results).toEqual(times(10, () => 'hi'));
 
                 // should have have the analytics data
@@ -148,10 +127,11 @@ describe('Slice', () => {
             const eventMocks = {};
 
             beforeEach(async () => {
-                testContext = new TestContext('slice', { maxRetries: 3, analytics: false });
-                testContext.exampleReader.reader.mockRejectedValueOnce(new Error('Bad news bears'));
-                testContext.exampleReader.reader.mockResolvedValue(times(10, () => 'hello'));
-                testContext.exampleOp.op.mockResolvedValue(times(10, () => 'hi'));
+                testContext = new TestContext('slice', {
+                    maxRetries: 3,
+                    analytics: false,
+                    readerErrorAt: [0]
+                });
 
                 slice = await setupSlice(testContext, eventMocks);
 
@@ -163,17 +143,6 @@ describe('Slice', () => {
             });
 
             it('should handle the slice correctly', () => {
-                // should call all of the operations
-                const { reader } = testContext.exampleReader;
-                const { op } = testContext.exampleOp; const sliceRequest = { example: 'slice-data' };
-
-                expect(reader).toHaveBeenCalledTimes(2);
-                expect(reader).toHaveBeenCalledWith(sliceRequest, slice.logger, sliceRequest);
-
-                const readerResults = times(10, () => 'hello');
-                expect(op).toHaveBeenCalledTimes(1);
-                expect(op).toHaveBeenCalledWith(readerResults, slice.logger, sliceRequest);
-
                 expect(results).toEqual(times(10, () => 'hi'));
 
                 // should have have the analytics data
@@ -202,9 +171,11 @@ describe('Slice', () => {
             let err;
 
             beforeEach(async () => {
-                testContext = new TestContext('slice', { maxRetries: 5, analytics: false });
-                testContext.exampleReader.reader.mockResolvedValue(times(10, () => 'hello'));
-                testContext.exampleOp.op.mockRejectedValue(new Error('Bad news bears'));
+                testContext = new TestContext('slice', {
+                    maxRetries: 5,
+                    analytics: false,
+                    opErrorAt: times(5)
+                });
 
                 slice = await setupSlice(testContext, eventMocks);
 
@@ -223,19 +194,6 @@ describe('Slice', () => {
                 // should have reject with the error
                 expect(err).toBeDefined();
                 expect(err.toString()).toStartWith('Error: Slice failed processing, caused by Error: Bad news bears');
-
-                // should call all of the operations
-                const { reader } = testContext.exampleReader;
-                const { op } = testContext.exampleOp;
-
-                const sliceRequest = { example: 'slice-data' };
-
-                expect(reader).toHaveBeenCalledTimes(5);
-                expect(reader).toHaveBeenCalledWith(sliceRequest, slice.logger, sliceRequest);
-
-                const readerResults = times(10, () => 'hello');
-                expect(op).toHaveBeenCalledTimes(5);
-                expect(op).toHaveBeenCalledWith(readerResults, slice.logger, sliceRequest);
 
                 // should emit the events
                 expect(eventMocks['slice:retry']).toHaveBeenCalledTimes(5);
@@ -260,8 +218,6 @@ describe('Slice', () => {
 
         beforeEach(async () => {
             testContext = new TestContext('slice');
-            testContext.exampleReader.reader.mockResolvedValue(times(10, () => 'hello'));
-            testContext.exampleOp.op.mockResolvedValue(times(10, () => 'hi'));
 
             slice = await setupSlice(testContext);
 
@@ -285,8 +241,6 @@ describe('Slice', () => {
 
             beforeEach(async () => {
                 testContext = new TestContext('slice', { analytics: true });
-                testContext.exampleReader.reader.mockResolvedValue(times(10, () => 'hello'));
-                testContext.exampleOp.op.mockResolvedValue(times(10, () => 'hi'));
 
                 slice = await setupSlice(testContext);
             });
@@ -307,8 +261,6 @@ describe('Slice', () => {
 
             beforeEach(async () => {
                 testContext = new TestContext('slice', { analytics: true });
-                testContext.exampleReader.reader.mockResolvedValue(times(10, () => 'hello'));
-                testContext.exampleOp.op.mockResolvedValue(times(10, () => 'hi'));
 
                 slice = await setupSlice(testContext);
                 slice.slice = 'hello-there';

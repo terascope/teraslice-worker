@@ -26,11 +26,16 @@ const newJobConfig = (options = {}) => {
         operations = [
             {
                 _op: path.join(opsPath, 'example-reader'),
-                exampleProp: 321
+                exampleProp: 321,
+                errorAt: options.readerErrorAt,
+                results: options.readerResults,
+                slicerResults: options.slicerResults,
             },
             {
                 _op: path.join(opsPath, 'example-op'),
-                exampleProp: 123
+                exampleProp: 123,
+                errorAt: options.opErrorAt,
+                results: options.opResults,
             }
         ],
         assets = []

@@ -12,18 +12,10 @@ describe('ExecutionController', () => {
         [
             'one slice',
             {
-                newSlicer: jest.fn(() => {
-                    let firedOnce = false;
-                    return [
-                        () => {
-                            if (firedOnce) {
-                                return null;
-                            }
-                            firedOnce = true;
-                            return { example: 'single-slice' };
-                        }
-                    ];
-                }),
+                slicerResults: [
+                    { example: 'single-slice' },
+                    null
+                ],
                 body: { example: 'single-slice' },
                 count: 1,
                 lifecycle: 'once'
@@ -33,22 +25,14 @@ describe('ExecutionController', () => {
         [
             'sub-slices',
             {
-                newSlicer: jest.fn(() => {
-                    let firedOnce = false;
-                    return [
-                        () => {
-                            if (firedOnce) {
-                                return null;
-                            }
-                            firedOnce = true;
-                            return [
-                                { example: 'subslice' },
-                                { example: 'subslice' },
-                                { example: 'subslice' }
-                            ];
-                        }
-                    ];
-                }),
+                slicerResults: [
+                    [
+                        { example: 'subslice' },
+                        { example: 'subslice' },
+                        { example: 'subslice' },
+                    ],
+                    null,
+                ],
                 count: 3,
                 body: { example: 'subslice' },
                 lifecycle: 'once'
@@ -58,7 +42,7 @@ describe('ExecutionController', () => {
 
     describe.each(testCases)('when processing %s', (m, options) => {
         const {
-            newSlicer,
+            slicerResults,
             count,
             lifecycle,
             body
@@ -80,6 +64,7 @@ describe('ExecutionController', () => {
             testContext = new TestContext('execution_controller', {
                 assignment: 'execution_controller',
                 slicerPort: port,
+                slicerResults,
                 lifecycle,
             });
 
@@ -106,19 +91,19 @@ describe('ExecutionController', () => {
 
             await exController.initialize();
 
-            exController.executionContext.slicer.newSlicer = newSlicer;
-
             await workerMessenger.start();
             await workerMessenger.ready();
 
             await Promise.all([
-                Promise.all(times(count, () => {
+                Promise.mapSeries(times(count), async () => {
                     const startTime = Date.now();
-                    return workerMessenger.waitForSlice(() => {
+                    const slice = await workerMessenger.waitForSlice(() => {
                         const elapsed = Date.now() - startTime;
                         return elapsed > 5000;
                     });
-                })),
+                    workerMessenger.sliceComplete({ slice });
+                    return slice;
+                }),
                 exController.run()
             ]).spread((_slices) => {
                 slices = _slices;
@@ -128,8 +113,10 @@ describe('ExecutionController', () => {
         afterEach(() => testContext.cleanup());
 
         it('should send the slices to the worker', () => {
+            expect(slices).toBeArrayOfSize(count);
             times(count, (i) => {
                 const slice = slices[i];
+                expect(slice).toHaveProperty('request');
                 expect(slice.request).toEqual(body);
             });
 

@@ -137,21 +137,6 @@ describe('Job', () => {
                 expect(executionContext.reporter).toBeNil();
                 expect(executionContext.slicer).toBeNil();
             });
-
-            it('should load the ops', () => {
-                const { newReader } = testContext.exampleReader;
-                const { newProcessor } = testContext.exampleOp;
-                expect(newReader).toHaveBeenCalledTimes(1);
-                expect(newReader).toHaveBeenCalledWith(testContext.context, {
-                    _op: path.join(opsPath, 'example-reader'),
-                    exampleProp: 321
-                }, testContext.jobConfig.job);
-                expect(newProcessor).toHaveBeenCalledTimes(1);
-                expect(newProcessor).toHaveBeenCalledWith(testContext.context, {
-                    _op: path.join(opsPath, 'example-op'),
-                    exampleProp: 123
-                }, testContext.jobConfig.job);
-            });
         });
 
         describe('when analytics is enabled', () => {
@@ -192,21 +177,6 @@ describe('Job', () => {
                 expect(executionContext.config).toEqual(testContext.jobConfig.job);
                 expect(executionContext.reporter).toBeNil();
                 expect(executionContext.slicer).toBeNil();
-            });
-
-            it('should load the ops', () => {
-                const { newReader } = testContext.exampleReader;
-                const { newProcessor } = testContext.exampleOp;
-                expect(newReader).toHaveBeenCalledTimes(1);
-                expect(newReader).toHaveBeenCalledWith(testContext.context, {
-                    _op: path.join(opsPath, 'example-reader'),
-                    exampleProp: 321
-                }, testContext.jobConfig.job);
-                expect(newProcessor).toHaveBeenCalledTimes(1);
-                expect(newProcessor).toHaveBeenCalledWith(testContext.context, {
-                    _op: path.join(opsPath, 'example-op'),
-                    exampleProp: 123
-                }, testContext.jobConfig.job);
             });
         });
 
@@ -430,10 +400,6 @@ describe('Job', () => {
                 expect(executionContext.config).toEqual(testContext.jobConfig.job);
                 expect(executionContext.reporter).toBeNil();
                 expect(executionContext.slicer).toHaveProperty('newSlicer');
-            });
-
-            it('should not call newSlicer', () => {
-                expect(testContext.exampleReader.newSlicer).not.toHaveBeenCalled();
             });
         });
 

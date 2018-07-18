@@ -17,7 +17,6 @@ const { newId, generateContext } = require('../../lib/utils');
 const overrideLogger = require('./override-logger');
 const { newJobConfig, newSysConfig, newSliceConfig } = require('./configs');
 const zipDirectory = require('./zip-directory');
-const newExampleOps = require('./test-ops');
 
 jest.setTimeout(8000);
 
@@ -34,19 +33,7 @@ class TestContext {
     constructor(testName, options = {}) {
         const {
             clusterMasterPort,
-            slicerPort,
-            analytics,
-            maxRetries,
-            operations,
-            assignment,
-            assets,
-            lifecycle,
         } = options;
-
-        const { exampleOp, exampleReader } = newExampleOps(options);
-
-        this.exampleOp = exampleOp;
-        this.exampleReader = exampleReader;
 
         this.setupId = newId('setup', true);
         this.assetDir = createTempDirSync();
@@ -57,15 +44,7 @@ class TestContext {
             clusterMasterPort,
         });
 
-        this.jobConfig = newJobConfig({
-            lifecycle,
-            assignment,
-            slicerPort,
-            analytics,
-            maxRetries,
-            operations,
-            assets,
-        });
+        this.jobConfig = newJobConfig(options);
 
         this.exId = this.jobConfig.ex_id;
         this.jobId = this.jobConfig.job_id;
@@ -78,7 +57,6 @@ class TestContext {
         this.stores = {};
         this.clean = false;
         this._cleanupFns = [];
-
 
         cleanups[this.setupId] = () => this.cleanup();
     }
@@ -134,14 +112,6 @@ class TestContext {
 
         await Promise.map(this._cleanupFns, fn => fn());
         this._cleanupFns.length = 0;
-
-        Object.values(this.exampleReader).forEach((mock) => {
-            mock.mockClear();
-        });
-
-        Object.values(this.exampleOp).forEach((mock) => {
-            mock.mockClear();
-        });
 
         const stores = Object.values(this.stores);
         try {
