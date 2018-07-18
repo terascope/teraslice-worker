@@ -196,8 +196,12 @@ describe('ExecutionController', () => {
                     exController.stores.someStore = {
                         shutdown: () => Promise.reject(new Error('Store Error'))
                     };
+
                     exController.engine = {};
                     exController.engine.shutdown = () => Promise.reject(new Error('Engine Error'));
+
+                    exController.executionAnalytics = {};
+                    exController.executionAnalytics.shutdown = () => Promise.reject(new Error('Execution Analytics Error'));
 
                     exController.job = {};
                     exController.job.shutdown = () => Promise.reject(new Error('Job Error'));
@@ -216,6 +220,7 @@ describe('ExecutionController', () => {
                         expect(errMsg).toInclude('Slicer Finish Error');
                         expect(errMsg).toInclude('Store Error');
                         expect(errMsg).toInclude('Engine Error');
+                        expect(errMsg).toInclude('Execution Analytics Error');
                         expect(errMsg).toInclude('Job Error');
                         expect(errMsg).toInclude('Messenger Error');
                     }
