@@ -4,6 +4,7 @@ const _ = require('lodash');
 
 const defaultResults = _.times(10, () => 'hello');
 const defaultSlicerResults = ['howdy', null];
+const defaultSlicerQueueLength = '10';
 
 function schema() {
     return {
@@ -15,6 +16,11 @@ function schema() {
         results: {
             doc: 'Reader results to return',
             default: defaultResults,
+            format: 'Array'
+        },
+        slicerQueueLength: {
+            doc: 'A string for the slicer queue length, anything but QUEUE_MINIMUM_SIZE will be converted to a number',
+            default: defaultSlicerQueueLength,
             format: 'Array'
         },
         slicerErrorAt: {
@@ -48,6 +54,13 @@ module.exports = {
             return Promise.resolve(results);
         });
     }),
+    slicerQueueLength: jest.fn((executionContext) => {
+        const queueLength = _.get(executionContext, 'config.operations[0].slicerQueueLength', defaultSlicerQueueLength);
+        if (queueLength === 'QUEUE_MINIMUM_SIZE') {
+            return queueLength;
+        }
+        return _.toSafeInteger(queueLength);
+    }),
     newSlicer: jest.fn((context, executionContext) => {
         const slicerResults = _.get(executionContext, 'config.operations[0].slicerResults', defaultSlicerResults);
         const errorAt = _.get(executionContext, 'config.operations[0].slicerErrorAt', []);
@@ -60,7 +73,13 @@ module.exports = {
         }
 
         return [
-            () => slicerResults.shift(),
+            () => {
+                const result = slicerResults.shift();
+                if (_.isError(result)) {
+                    throw result;
+                }
+                return result;
+            },
         ];
     })
 };

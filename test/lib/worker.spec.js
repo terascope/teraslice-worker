@@ -291,4 +291,69 @@ describe('Worker', () => {
             }).toThrow();
         });
     });
+
+    describe('when testing shutdown', () => {
+        let testContext;
+        let worker;
+
+        beforeEach(() => {
+            testContext = new TestContext('worker');
+            worker = new Worker(testContext.context, testContext.jobConfig);
+        });
+
+        afterEach(() => testContext.cleanup());
+
+        describe('when not initialized', () => {
+            it('should resolve', () => expect(worker.shutdown()).resolves.toBeNil());
+        });
+
+        describe('when initialized', () => {
+            beforeEach(() => {
+                worker.isInitialized = true;
+            });
+
+            describe('when controller is already being shutdown', () => {
+                beforeEach(() => {
+                    worker.isShuttingDown = true;
+                });
+
+                it('should resolve', () => expect(worker.shutdown()).resolves.toBeNil());
+            });
+
+            describe('when everything errors', () => {
+                beforeEach(() => {
+                    worker._waitForSliceToFinish = () => Promise.reject(new Error('Slice Finish Error'));
+
+                    worker.stores = {};
+                    worker.stores.someStore = {
+                        shutdown: () => Promise.reject(new Error('Store Error'))
+                    };
+
+                    worker.job = {};
+                    worker.job.shutdown = () => Promise.reject(new Error('Job Error'));
+
+                    worker.slice = {};
+                    worker.slice.shutdown = () => Promise.reject(new Error('Slice Error'));
+
+                    worker.messenger = {};
+                    worker.messenger.close = () => Promise.reject(new Error('Messenger Error'));
+                });
+
+                it('should reject with all of the errors', async () => {
+                    expect.hasAssertions();
+                    try {
+                        await worker.shutdown();
+                    } catch (err) {
+                        const errMsg = err.toString();
+                        expect(errMsg).toStartWith('Error: Failed to shutdown correctly');
+                        expect(errMsg).toInclude('Slice Finish Error');
+                        expect(errMsg).toInclude('Store Error');
+                        expect(errMsg).toInclude('Job Error');
+                        expect(errMsg).toInclude('Slice Error');
+                        expect(errMsg).toInclude('Messenger Error');
+                    }
+                });
+            });
+        });
+    });
 });

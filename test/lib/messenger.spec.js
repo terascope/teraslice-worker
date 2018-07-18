@@ -118,7 +118,11 @@ describe('Messenger', () => {
 
             it('should call worker ready on the exMessenger', () => {
                 expect(enqueuedMsg).toEqual({ worker_id: workerId });
+            });
+
+            it('should have one client connected', () => {
                 expect(exMessenger.availableWorkers()).toEqual(1);
+                return expect(exMessenger.getClientCounts()).resolves.toEqual(1);
             });
 
             describe('when sending worker:slice:complete', () => {

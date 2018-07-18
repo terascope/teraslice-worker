@@ -30,6 +30,8 @@ const newJobConfig = (options = {}) => {
                 errorAt: options.readerErrorAt,
                 results: options.readerResults,
                 slicerResults: options.slicerResults,
+                slicerErrorAt: options.slicerErrorAt,
+                slicerQueueLength: options.slicerQueueLength,
             },
             {
                 _op: path.join(opsPath, 'example-op'),
@@ -38,11 +40,13 @@ const newJobConfig = (options = {}) => {
                 results: options.opResults,
             }
         ],
-        assets = []
+        assets = [],
+        workers = 0
     } = options;
     return {
         assignment,
         job: {
+            workers,
             assets,
             analytics,
             lifecycle,
