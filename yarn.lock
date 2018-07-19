@@ -978,16 +978,16 @@ convict@^4.1.0:
     validator "7.2.0"
     yargs-parser "10.0.0"
 
-convict@^4.3.1:
-  version "4.3.1"
-  resolved "https://registry.yarnpkg.com/convict/-/convict-4.3.1.tgz#aa0fd8af451bedbd232b933638b7a09e0a93929e"
+convict@^4.3.2:
+  version "4.3.2"
+  resolved "https://registry.yarnpkg.com/convict/-/convict-4.3.2.tgz#0b3ff1e96114983a7266d599d2e028bb4cdc5692"
   dependencies:
     depd "1.1.2"
     json5 "1.0.1"
     lodash.clonedeep "4.5.0"
     moment "2.22.2"
-    validator "7.2.0"
-    yargs-parser "10.0.0"
+    validator "10.4.0"
+    yargs-parser "10.1.0"
 
 cookie-signature@1.0.6:
   version "1.0.6"
@@ -5015,16 +5015,16 @@ terafoundation@^0.2.1:
     redis "^2.8.0"
     yargs "^11.0.0"
 
-teraslice@terascope/teraslice#115e69c:
+teraslice@terascope/teraslice#e2690aa:
   version "0.37.1"
-  resolved "https://codeload.github.com/terascope/teraslice/tar.gz/115e69c665328a7a7b6eef2c8b1cb0b42abd3394"
+  resolved "https://codeload.github.com/terascope/teraslice/tar.gz/e2690aae0618838f7c987f13c0430e6c1178bdbb"
   dependencies:
     "@terascope/elasticsearch-api" "^1.0.1"
     "@terascope/error-parser" "^1.0.0"
     "@terascope/queue" "^1.1.3"
     bluebird "^3.5.1"
     body-parser "^1.18.2"
-    convict "^4.3.1"
+    convict "^4.3.2"
     datemath-parser "^1.0.6"
     decompress "^4.2.0"
     easy-table "^1.1.1"
@@ -5275,6 +5275,10 @@ validate-npm-package-license@^3.0.1:
     spdx-correct "^3.0.0"
     spdx-expression-parse "^3.0.0"
 
+validator@10.4.0:
+  version "10.4.0"
+  resolved "https://registry.yarnpkg.com/validator/-/validator-10.4.0.tgz#ee99a44afb3bb5ed350a159f056ca72a204cfc3c"
+
 validator@7.2.0:
   version "7.2.0"
   resolved "https://registry.yarnpkg.com/validator/-/validator-7.2.0.tgz#a63dcbaba51d4350bf8df20988e0d5a54d711791"
@@ -5448,7 +5452,7 @@ yargs-parser@10.0.0:
   dependencies:
     camelcase "^4.1.0"
 
-yargs-parser@^10.1.0:
+yargs-parser@10.1.0, yargs-parser@^10.1.0:
   version "10.1.0"
   resolved "https://registry.yarnpkg.com/yargs-parser/-/yargs-parser-10.1.0.tgz#7202265b89f7e9e9f2e5765e0fe735a905edbaa8"
   dependencies:

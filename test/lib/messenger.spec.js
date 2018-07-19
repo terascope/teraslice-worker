@@ -2,6 +2,7 @@
 
 /* eslint-disable no-console, no-new */
 
+const { EventEmitter } = require('events');
 const { formatURL, newId } = require('../../lib/utils');
 const WorkerMessenger = require('../../lib/messenger/worker');
 const MessengerServer = require('../../lib/messenger/messenger-server');
@@ -75,7 +76,8 @@ describe('Messenger', () => {
             exMessenger = new ExecutionControllerMessenger({
                 port: slicerPort,
                 networkerLatencyBuffer: 0,
-                actionTimeout: 1000
+                actionTimeout: 1000,
+                events: new EventEmitter(),
             });
 
             await exMessenger.start();

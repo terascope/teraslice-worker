@@ -1,6 +1,7 @@
 'use strict';
 
 const times = require('lodash/times');
+const random = require('lodash/random');
 const { ExecutionController } = require('../..');
 const WorkerMessenger = require('../../lib/messenger/worker');
 const { TestContext, findPort, newId } = require('../helpers');
@@ -18,7 +19,8 @@ describe('ExecutionController', () => {
                 ],
                 body: { example: 'single-slice' },
                 count: 1,
-                lifecycle: 'once'
+                lifecycle: 'once',
+                analytics: false
             }
         ],
         [
@@ -34,7 +36,8 @@ describe('ExecutionController', () => {
                 ],
                 count: 3,
                 body: { example: 'subslice' },
-                lifecycle: 'once'
+                lifecycle: 'once',
+                analytics: true,
             }
         ],
         [
@@ -47,7 +50,8 @@ describe('ExecutionController', () => {
                 ],
                 body: { example: 'slice-failure' },
                 count: 1,
-                lifecycle: 'once'
+                lifecycle: 'once',
+                analytics: true,
             }
         ],
         [
@@ -61,7 +65,8 @@ describe('ExecutionController', () => {
                 slicerQueueLength: 'QUEUE_MINIMUM_SIZE',
                 body: { example: 'slice-dynamic' },
                 count: 1,
-                lifecycle: 'once'
+                lifecycle: 'once',
+                analytics: true,
             }
         ],
     ];
@@ -73,7 +78,8 @@ describe('ExecutionController', () => {
             count,
             lifecycle,
             body,
-            reconnect
+            reconnect,
+            analytics
         } = options;
 
         let exController;
@@ -82,7 +88,7 @@ describe('ExecutionController', () => {
         let slices;
 
         beforeEach(async () => {
-            slices = null;
+            slices = [];
             const port = await findPort();
 
             testContext = new TestContext('execution_controller', {
@@ -91,6 +97,7 @@ describe('ExecutionController', () => {
                 slicerQueueLength,
                 slicerResults,
                 lifecycle,
+                analytics,
             });
 
             await testContext.makeItARealJob();
@@ -124,24 +131,40 @@ describe('ExecutionController', () => {
             await workerMessenger.start();
             await workerMessenger.ready();
 
-            await Promise.all([
-                Promise.mapSeries(times(count), async () => {
-                    if (reconnect) {
-                        workerMessenger.manager.reconnect();
-                    }
-                    const startTime = Date.now();
-                    const slice = await workerMessenger.waitForSlice(() => {
-                        const elapsed = Date.now() - startTime;
-                        return elapsed > 5000;
+            workerMessenger.available = true;
+            workerMessenger.on('slicer:slice:new', (slice) => {
+                // if (reconnect) {
+                //     workerMessenger.manager.reconnect();
+                // }
+
+                if (analytics) {
+                    const analyticsData = {
+                        time: [
+                            random(0, 2000),
+                            random(0, 2000),
+                        ],
+                        size: [
+                            random(0, 100),
+                            random(0, 100)
+                        ],
+                        memory: [
+                            random(0, 10000),
+                            random(0, 10000)
+                        ]
+                    };
+                    workerMessenger.sliceComplete({
+                        slice,
+                        analytics: analyticsData
                     });
+                } else {
                     workerMessenger.sliceComplete({ slice });
-                    return slice;
-                }),
-                exController.run()
-            ]).spread((_slices) => {
-                slices = _slices;
+                }
+
+                slices.push(slice);
             });
-        });
+
+            await exController.run();
+        }, 15 * 1000);
 
         afterEach(() => testContext.cleanup());
 

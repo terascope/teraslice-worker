@@ -14,6 +14,7 @@ describe('Worker', () => {
         ['the new implementation', false],
         ['existing execution runner', true]
     ];
+
     describe.each(testCases)('when using the %s', (_ignore, useExecutionRunner) => {
         async function setupTest(options = {}) {
             const slicerPort = await findPort();
@@ -24,7 +25,8 @@ describe('Worker', () => {
             const exMessenger = new ExecutionControllerMessenger({
                 port: slicerPort,
                 networkerLatencyBuffer: 0,
-                actionTimeout: 1000
+                actionTimeout: 1000,
+                events: testContext.events
             });
 
             testContext.attachCleanup(() => exMessenger.shutdown());

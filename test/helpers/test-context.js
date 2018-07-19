@@ -17,7 +17,6 @@ const {
 } = require('../../lib/teraslice');
 
 const { newId, generateContext } = require('../../lib/utils');
-const overrideLogger = require('./override-logger');
 const { newJobConfig, newSysConfig, newSliceConfig } = require('./configs');
 const zipDirectory = require('./zip-directory');
 
@@ -52,8 +51,7 @@ class TestContext {
         this.exId = this.jobConfig.ex_id;
         this.jobId = this.jobConfig.job_id;
 
-        this.context = generateContext(this.sysconfig);
-        overrideLogger(this.context, testName);
+        this.context = generateContext(this.sysconfig, true);
 
         this.events = this.context.apis.foundation.getSystemEvents();
 
