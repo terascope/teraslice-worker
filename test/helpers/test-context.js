@@ -13,7 +13,7 @@ const {
     makeAnalyticsStore,
     makeExStore,
     makeJobStore,
-    validateJob,
+    initializeJob,
 } = require('../../lib/teraslice');
 
 const { newId, generateContext } = require('../../lib/utils');
@@ -113,25 +113,16 @@ class TestContext {
     async makeItARealJob() {
         await this.addJobStore();
         await this.addExStore();
-        const { jobStore, exStore } = this.stores;
 
-        const validJob = await validateJob(this.context, this.jobConfig.job);
-        const jobSpec = await jobStore.create(this.jobConfig.job);
-
-        const job = Object.assign({}, jobSpec, validJob);
-
-        const ex = await exStore.create(job, 'ex');
-        await exStore.setStatus(ex.ex_id, 'pending');
+        const { job, ex } = await initializeJob(this.context, this.jobConfig.job, this.stores);
 
         this.jobConfig.job = job;
-
         this.jobConfig.job_id = ex.job_id;
         this.jobConfig.ex_id = ex.ex_id;
 
-        this.jobId = ex.job_id;
-        this.exId = ex.ex_id;
 
-        return ex;
+        this.jobId = this.jobConfig.job_id;
+        this.exId = this.jobConfig.ex_id;
     }
 
     async addExStore() {

@@ -18,6 +18,7 @@ const newLogger = name => ({
     debug: jest.fn((...args) => {
         debug(`teraslice-worker:test:${name}:debug`)(...args);
     }),
+    streams: [],
     flush: jest.fn(() => Promise.resolve())
 });
 

@@ -1,7 +1,4 @@
 {
-    "ex_id": "4d27397d-0749-4b49-9de1-edf93024d4dc",
-    "job_id": "dc045c07-067d-49d1-bbed-7762cef0af67",
-    "slicer_port": 56023,
     "name": "Example Job",
     "lifecycle": "once",
     "workers": 1,

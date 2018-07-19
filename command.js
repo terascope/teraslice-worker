@@ -5,13 +5,13 @@
 /* eslint-disable class-methods-use-this, no-console */
 
 const path = require('path');
-const diehard = require('diehard');
 const yargs = require('yargs');
 const get = require('lodash/get');
 
 const { Worker, ExecutionController } = require('.');
 const { readSysConfig } = require('./lib/terafoundation');
 const { generateContext } = require('./lib/utils');
+const exitHandler = require('./exit-handler');
 
 class Command {
     constructor() {
@@ -19,6 +19,7 @@ class Command {
             configfile,
             assignment,
             job,
+            useDebugLogger
         } = this._parseArgs();
 
         const sysconfig = readSysConfig({ configfile });
@@ -30,7 +31,7 @@ class Command {
             slicer_port: job.slicer_port
         };
 
-        const context = generateContext(sysconfig);
+        const context = generateContext(sysconfig, useDebugLogger);
 
         if (assignment === 'worker') {
             this.worker = new Worker(context, jobConfig);
@@ -48,9 +49,11 @@ class Command {
         try {
             await this.worker.run();
         } catch (err) {
-            this.shutdown(err);
+            await this.shutdown(err);
             process.exit(1);
         }
+
+        await this.shutdown();
         process.exit(0);
     }
 
@@ -66,7 +69,6 @@ class Command {
             timeout: this.shutdownTimeout,
         });
     }
-
 
     handleErrors() {
         process.on('uncaughtException', async (err) => {
@@ -116,7 +118,9 @@ class Command {
     _parseArgs() {
         const { argv } = yargs.usage('Usage: $0 [options]')
             .scriptName('teraslice-worker')
-            .help('h')
+            .version()
+            .alias('v', 'version')
+            .help()
             .alias('h', 'help')
             .option('j', {
                 alias: 'job',
@@ -132,23 +136,34 @@ class Command {
                 },
                 default: process.env.EX,
                 demandOption: true,
-                describe: 'Job configuration in JSON stringified form, defaults to env EX.',
+                describe: `Job configuration in JSON stringified form.
+                Defaults to env EX.`,
             })
             .option('a', {
                 alias: 'assignment',
                 choices: ['worker', 'execution_controller'],
-                describe: 'Worker type assignment, defaults to env NODE_TYPE.',
+                describe: `Worker type assignment.
+                Defaults to env NODE_TYPE.`,
                 default: process.env.NODE_TYPE || 'worker',
                 demandOption: true,
             })
             .option('c', {
                 alias: 'configfile',
-                describe: 'Terafoundation configuration file to load, defaults to env TERAFOUNDATION_CONFIG.',
+                describe: `Terafoundation configuration file to load.
+                Defaults to env TERAFOUNDATION_CONFIG.`,
                 coerce: (arg) => {
                     if (!arg) return '';
                     return path.resolve(arg);
                 },
-            });
+            })
+            .option('d', {
+                alias: 'useDebugLogger',
+                describe: `Override logger with debug logger, for development use only.
+                Defaults to env USE_DEBUG_LOGGER.`,
+                default: process.env.USE_DEBUG_LOGGER === 'true',
+                boolean: true
+            })
+            .wrap(yargs.terminalWidth());
 
         return argv;
     }

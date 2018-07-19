@@ -1,52 +1,49 @@
 #!/bin/bash
 
 start_ex() {
+    set -eu -o pipefail 
     echo "* starting execution controller"
     local job="$1"
 
     node command.js \
         --assignment 'execution_controller' \
+        --useDebugLogger \
         --job "$job" &
-
-    return $!
 }
 
 start_worker() {
+    set -eu -o pipefail
     local job="$1"
 
     node command.js \
         --assignment 'worker' \
+        --useDebugLogger \
         --job "$job" &
-
-    return $!
 }
 
 main() {
-   local jobFile="$1" 
-   local job
-   local workers
-   local exPid
+    set -eu -o pipefail
+    local jobFile="$1" 
+    local job
+    local workers
 
-   job="$(jq -c -M '.' "$jobFile")"
+    job="$(node initialize-job.js "$jobFile")"
 
-   workers="$(jq '.workers' "$jobFile")"
-   workers="${workers:-1}"
+    workers="$(echo "$job" | jq '.workers // 1')"
 
-   exPid="$(start_ex "$job")"
+    echo "* Initializing 1 execution controller and ${workers} workers"
 
-   echo "* sleeping for 10 seconds"
-   sleep 10
+    start_ex "$job"
 
-   for worker in $(seq 0 "$workers"); do
-      echo "* starting worker $((worker+1))"
-      start_worker "$job"
-   done
+    echo "* sleeping for 10 seconds"
+    sleep 10
 
-   wait "$exPid"
+    for worker in $(seq 0 "$workers"); do
+        echo "* starting worker $((worker+1))"
+        start_worker "$job"
+    done
 
-   kill "$(jobs -p)"
-
-   wait "$(jobs -p)"
+    wait
 }
 
 main "$@"
