@@ -46,4 +46,6 @@ main() {
     wait
 }
 
+trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
+
 main "$@"

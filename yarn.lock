@@ -5015,9 +5015,9 @@ terafoundation@^0.2.1:
     redis "^2.8.0"
     yargs "^11.0.0"
 
-teraslice@terascope/teraslice#278ad91:
+teraslice@terascope/teraslice#115e69c:
   version "0.37.1"
-  resolved "https://codeload.github.com/terascope/teraslice/tar.gz/278ad9157d70d7a39c689db5a623a15ca319be75"
+  resolved "https://codeload.github.com/terascope/teraslice/tar.gz/115e69c665328a7a7b6eef2c8b1cb0b42abd3394"
   dependencies:
     "@terascope/elasticsearch-api" "^1.0.1"
     "@terascope/error-parser" "^1.0.0"
@@ -5034,13 +5034,14 @@ teraslice@terascope/teraslice#278ad91:
     lodash "^4.17.5"
     mocker-data-generator "^2.6.1"
     moment "^2.21.0"
+    node-cache "^4.2.0"
     request "^2.85.0"
     shortid "^2.2.12"
     socket.io "2.1.1"
     socket.io-client "2.1.1"
     terafoundation "^0.2.1"
     uuid "^3.3.2"
-    yargs "^12.0.1"
+    yargs "^11.0.0"
 
 test-exclude@^4.2.1:
   version "4.2.1"

@@ -57,31 +57,6 @@ class Command {
         process.exit(0);
     }
 
-    handleExit() {
-        diehard.register(async (signal, done) => {
-            this.logger.warn(`Exit called due to signal ${signal}, shutting down...`);
-            await this.shutdown();
-            done();
-        });
-
-        diehard.listen({
-            uncaughtException: false,
-            timeout: this.shutdownTimeout,
-        });
-    }
-
-    handleErrors() {
-        process.on('uncaughtException', async (err) => {
-            await this.shutdown(err);
-            process.exit(1);
-        });
-
-        process.on('unhandledRejection', async (err) => {
-            await this.shutdown(err);
-            process.exit(1);
-        });
-    }
-
     async shutdown(err) {
         if (err) {
             this.logError(err);
@@ -113,6 +88,19 @@ class Command {
         if (err.stack) {
             logErr(err.stack);
         }
+    }
+
+    registerExitHandler() {
+        exitHandler(
+            async (signal, err) => {
+                if (err) {
+                    await this.shutdown(`${signal} was caught, exiting... ${err.stack}`);
+                } else {
+                    await this.shutdown(`Exit called due to signal ${signal}, shutting down...`);
+                }
+            },
+            this.shutdownTimeout
+        );
     }
 
     _parseArgs() {
@@ -170,6 +158,5 @@ class Command {
 }
 
 const cmd = new Command();
-cmd.handleExit();
-cmd.handleErrors();
+cmd.registerExitHandler();
 cmd.run();
