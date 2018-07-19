@@ -115,7 +115,7 @@ describe('ExecutionController', () => {
                 }
             });
 
-            testContext.attachCleanup(() => workerMessenger.close());
+            testContext.attachCleanup(() => workerMessenger.shutdown());
 
             testContext.attachCleanup(() => exController.shutdown());
 
@@ -209,7 +209,7 @@ describe('ExecutionController', () => {
                     exController.job.shutdown = () => Promise.reject(new Error('Job Error'));
 
                     exController.messenger = {};
-                    exController.messenger.close = () => Promise.reject(new Error('Messenger Error'));
+                    exController.messenger.shutdown = () => Promise.reject(new Error('Messenger Error'));
                 });
 
                 it('should reject with all of the errors', async () => {

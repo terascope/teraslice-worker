@@ -27,7 +27,7 @@ describe('Worker', () => {
                 actionTimeout: 1000
             });
 
-            testContext.attachCleanup(() => exMessenger.close());
+            testContext.attachCleanup(() => exMessenger.shutdown());
 
             await exMessenger.start();
 
@@ -336,7 +336,7 @@ describe('Worker', () => {
                     worker.slice.shutdown = () => Promise.reject(new Error('Slice Error'));
 
                     worker.messenger = {};
-                    worker.messenger.close = () => Promise.reject(new Error('Messenger Error'));
+                    worker.messenger.shutdown = () => Promise.reject(new Error('Messenger Error'));
                 });
 
                 it('should reject with all of the errors', async () => {

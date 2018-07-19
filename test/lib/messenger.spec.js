@@ -4,7 +4,7 @@
 
 const { formatURL, newId } = require('../../lib/utils');
 const WorkerMessenger = require('../../lib/messenger/worker');
-const { closeServer } = require('../../lib/messenger/helpers');
+const MessengerServer = require('../../lib/messenger/messenger-server');
 const ExecutionControllerMessenger = require('../../lib/messenger/execution-controller');
 const { findPort } = require('../helpers');
 
@@ -31,7 +31,7 @@ describe('Messenger', () => {
         it('should throw an error', () => {
             expect(() => {
                 new ExecutionControllerMessenger(); // eslint-disable-line
-            }).toThrowError('ExecutionControllerMessenger requires a valid port');
+            }).toThrowError('MessengerServer requires a valid port');
         });
     });
 
@@ -41,7 +41,7 @@ describe('Messenger', () => {
             const exMessenger = new ExecutionControllerMessenger({ port });
             await exMessenger.start();
             await expect(exMessenger.start()).rejects.toThrowError(`Port ${port} is already in-use`);
-            await exMessenger.close();
+            await exMessenger.shutdown();
         });
     });
 
@@ -96,8 +96,8 @@ describe('Messenger', () => {
         });
 
         afterEach(async () => {
-            await exMessenger.close();
-            await worker.close();
+            await exMessenger.shutdown();
+            await worker.shutdown();
         });
 
         describe('when calling start on the worker again', () => {
@@ -259,28 +259,31 @@ describe('Messenger', () => {
     describe('when testing server close', () => {
         describe('when close errors', () => {
             it('should reject with the error', () => {
-                const server = {
+                const messenger = new MessengerServer({ port: 123 });
+                messenger.server = {
                     close: jest.fn(done => done(new Error('oh no')))
                 };
-                return expect(closeServer(server)).rejects.toThrowError('oh no');
+                return expect(messenger.close()).rejects.toThrowError('oh no');
             });
         });
 
         describe('when close errors with Not running', () => {
             it('should resolve', () => {
-                const server = {
+                const messenger = new MessengerServer({ port: 123 });
+                messenger.server = {
                     close: jest.fn(done => done(new Error('Not running')))
                 };
-                return expect(closeServer(server)).resolves.toBeNil();
+                return expect(messenger.close()).resolves.toBeNil();
             });
         });
 
         describe('when close succeeds', () => {
             it('should resolve', () => {
-                const server = {
-                    close: jest.fn(done => done()),
+                const messenger = new MessengerServer({ port: 123 });
+                messenger.server = {
+                    close: jest.fn(done => done())
                 };
-                return expect(closeServer(server)).resolves.toBeNil();
+                return expect(messenger.close()).resolves.toBeNil();
             });
         });
     });

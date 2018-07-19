@@ -1,18 +1,18 @@
 {
     "name": "Example Job",
-    "lifecycle": "persistent",
-    "workers": 1,
+    "lifecycle": "once",
+    "workers": 3,
     "operations": [
         {
             "_op": "elasticsearch_data_generator",
-            "size": 1000
+            "size": 10000
         },
         {
             "_op": "noop"
         },
         {
             "_op": "elasticsearch_index_selector",
-            "index": "teraslice-worker-test-1",
+            "index": "teraslice-worker-test-2",
             "type": "events"
         },
         {
