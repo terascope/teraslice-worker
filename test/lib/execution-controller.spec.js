@@ -58,15 +58,34 @@ describe('ExecutionController', () => {
             }
         ],
         [
+            'processing slices and it disconnects',
+            {
+                slicerResults: [
+                    { example: 'slice-disconnect' },
+                    { example: 'slice-disconnect' },
+                    { example: 'slice-disconnect' },
+                    { example: 'slice-disconnect' },
+                    null
+                ],
+                reconnect: true,
+                body: { example: 'slice-disconnect' },
+                count: 4,
+                workers: 1,
+                lifecycle: 'once',
+                analytics: true,
+            }
+        ],
+        [
             'a slice with dynamic queue length',
             {
                 slicerResults: [
+                    { example: 'slice-dynamic' },
                     { example: 'slice-dynamic' },
                     null
                 ],
                 slicerQueueLength: 'QUEUE_MINIMUM_SIZE',
                 body: { example: 'slice-dynamic' },
-                count: 1,
+                count: 2,
                 workers: 1,
                 lifecycle: 'once',
                 analytics: true,
@@ -144,6 +163,21 @@ describe('ExecutionController', () => {
             await exController.initialize();
             const doneProcessing = () => slices.length >= count;
 
+            const socketOptions = reconnect ? {
+                forceNew: true,
+                timeout: 1000,
+                reconnection: true,
+                reconnectionAttempts: 10,
+                reconnectionDelay: 500,
+                reconnectionDelayMax: 500
+            } : {
+                forceNew: true,
+                timeout: 1000,
+                reconnection: false
+            };
+
+            let firedReconnect = false;
+
             async function startWorker() {
                 const workerMessenger = new WorkerMessenger({
                     executionControllerUrl: `http://localhost:${port}`,
@@ -151,13 +185,7 @@ describe('ExecutionController', () => {
                     networkerLatencyBuffer,
                     actionTimeout,
                     events: new EventEmitter(),
-                    socketOptions: {
-                        timeout: 1000,
-                        reconnection: true,
-                        reconnectionAttempts: 2,
-                        reconnectionDelay: 10,
-                        reconnectionDelayMax: 100
-                    }
+                    socketOptions
                 });
 
                 testContext.attachCleanup(() => workerMessenger.shutdown());
@@ -165,12 +193,18 @@ describe('ExecutionController', () => {
                 await workerMessenger.start();
                 await workerMessenger.ready();
 
+                async function waitForReconnect() {
+                    if (!reconnect) return;
+                    if (firedReconnect) return;
+
+                    firedReconnect = true;
+                    workerMessenger.socket.io.engine.close();
+
+                    await exController.messenger.onceWithTimeout('worker:reconnect', 5 * 1000);
+                }
+
                 async function process() {
                     if (doneProcessing()) return;
-
-                    if (reconnect) {
-                        workerMessenger.manager.reconnect();
-                    }
 
                     const slice = await workerMessenger.waitForSlice(doneProcessing);
 
@@ -178,9 +212,7 @@ describe('ExecutionController', () => {
 
                     slices.push(slice);
 
-                    const msg = {
-                        slice,
-                    };
+                    const msg = { slice };
 
                     if (analytics) {
                         msg.analytics = {
@@ -197,8 +229,10 @@ describe('ExecutionController', () => {
                         await stateStore.updateState(slice, 'completed');
                     }
 
-
-                    await workerMessenger.sliceComplete(msg);
+                    await Promise.all([
+                        waitForReconnect(),
+                        Promise.delay().then(() => workerMessenger.sliceComplete(msg)),
+                    ]);
 
                     await process();
                 }
@@ -211,6 +245,7 @@ describe('ExecutionController', () => {
             function startWorkers() {
                 return Promise.all(times(workers, startWorker));
             }
+
 
             await Promise.all([
                 startWorkers(),

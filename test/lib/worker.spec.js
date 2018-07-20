@@ -51,7 +51,6 @@ describe('Worker', () => {
         beforeAll(() => TestContext.cleanupAll(true));
 
         describe('when a slice is sent from the execution controller', () => {
-            let msg;
             let sliceConfig;
             let worker;
             let testContext;
@@ -81,8 +80,6 @@ describe('Worker', () => {
                     sliceConfig
                 );
 
-                msg = await exMessenger.onceWithTimeout('worker:enqueue', true);
-
                 await workerStart;
             });
 
@@ -90,14 +87,12 @@ describe('Worker', () => {
                 await testContext.cleanup();
             });
 
-            it('should re-enqueue the worker after completing the slice', () => {
-                expect(msg).toMatchObject({
-                    worker_id: worker.workerId,
-                });
+            it('should complete the slice', () => {
                 expect(sliceSuccess).toMatchObject({
                     worker_id: worker.workerId,
                     slice: sliceConfig,
                 });
+
                 expect(sliceFailure).toBeNil();
             });
         });

@@ -124,7 +124,7 @@ describe('Messenger', () => {
                 expect(enqueuedMsg).toEqual({ worker_id: workerId });
             });
 
-            it('should have one client connected', () => {
+            it('should have one client connected', async () => {
                 expect(exMessenger.availableWorkers()).toEqual(1);
                 expect(exMessenger.connectedWorkers()).toEqual(1);
             });
