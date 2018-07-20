@@ -5,7 +5,7 @@ const { newId } = require('../lib/utils');
 
 const {
     ELASTICSEARCH_HOST = 'http://localhost:9200',
-    TERASLICE_CLUSTER_NAME = newId('tmp', true, 5)
+    TERASLICE_CLUSTER_NAME = newId('test-teraworker', true, 2)
 } = process.env;
 
 process.env.TERASLICE_CLUSTER_NAME = TERASLICE_CLUSTER_NAME;

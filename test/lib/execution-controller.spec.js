@@ -2,6 +2,7 @@
 
 const times = require('lodash/times');
 const random = require('lodash/random');
+const { EventEmitter } = require('events');
 const { ExecutionController } = require('../..');
 const WorkerMessenger = require('../../lib/messenger/worker');
 const { TestContext, findPort, newId } = require('../helpers');
@@ -79,6 +80,9 @@ describe('ExecutionController', () => {
     ];
 
     describe.each(testCases)('when processing %s', (m, options) => {
+        // give this test extra time
+        jest.setTimeout(15 * 1000);
+
         const {
             slicerResults,
             slicerQueueLength,
@@ -127,6 +131,7 @@ describe('ExecutionController', () => {
                     workerId: newId('worker'),
                     networkerLatencyBuffer,
                     actionTimeout,
+                    events: new EventEmitter(),
                     socketOptions: {
                         timeout: 1000,
                         reconnection: true,
@@ -154,8 +159,10 @@ describe('ExecutionController', () => {
                         workerMessenger.manager.reconnect();
                     }
 
+                    let analyticsData;
+
                     if (analytics) {
-                        const analyticsData = {
+                        analyticsData = {
                             time: [
                                 random(0, 2000),
                                 random(0, 2000),
@@ -169,13 +176,12 @@ describe('ExecutionController', () => {
                                 random(0, 10000)
                             ]
                         };
-                        await workerMessenger.sliceComplete({
-                            slice,
-                            analytics: analyticsData
-                        });
-                    } else {
-                        await workerMessenger.sliceComplete({ slice });
                     }
+
+                    workerMessenger.sliceComplete({
+                        slice,
+                        analytics: analyticsData
+                    });
 
                     await process();
                 }

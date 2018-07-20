@@ -81,7 +81,7 @@ describe('Worker', () => {
                     sliceConfig
                 );
 
-                msg = await exMessenger.onceWithTimeout('worker:enqueue');
+                msg = await exMessenger.onceWithTimeout('worker:enqueue', true);
 
                 await workerStart;
             });

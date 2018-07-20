@@ -52,6 +52,7 @@ describe('Messenger', () => {
             worker = new WorkerMessenger({
                 executionControllerUrl: 'http://idk.example.com',
                 workerId: 'hello',
+                events: new EventEmitter(),
                 socketOptions: {
                     timeout: 1000,
                     reconnection: false,
@@ -85,6 +86,7 @@ describe('Messenger', () => {
             workerId = newId('worker-id');
             worker = new WorkerMessenger({
                 workerId,
+                events: new EventEmitter(),
                 executionControllerUrl,
                 networkerLatencyBuffer: 0,
                 actionTimeout: 1000,
@@ -147,19 +149,76 @@ describe('Messenger', () => {
 
             describe('when receiving cluster:error:terminal', () => {
                 let msg;
-                beforeEach(async () => {
-                    exMessenger.send(workerId, 'cluster:error:terminal', {
+                beforeEach((done) => {
+                    exMessenger.broadcast('cluster:error:terminal', {
                         ex_id: 'some-ex-id',
                         err: 'cluster-error-terminal'
                     });
 
-                    msg = await worker.onceWithTimeout('cluster:error:terminal');
+                    const timeout = setTimeout(() => {
+                        worker.events.removeAllListeners('worker:shutdown');
+                        done();
+                    }, 1000);
+
+                    worker.events.once('worker:shutdown', (_msg) => {
+                        clearTimeout(timeout);
+                        msg = _msg;
+                        done();
+                    });
                 });
 
                 it('should receive the message on the worker', () => {
                     expect(msg).toEqual({
                         ex_id: 'some-ex-id',
                         err: 'cluster-error-terminal'
+                    });
+                });
+            });
+
+            describe('when receiving execution:error:terminal', () => {
+                let msg;
+                beforeEach((done) => {
+                    exMessenger.executionTerminal('some-ex-id');
+
+                    const timeout = setTimeout(() => {
+                        worker.events.removeAllListeners('worker:shutdown');
+                        done();
+                    }, 1000);
+
+                    worker.events.once('worker:shutdown', (_msg) => {
+                        clearTimeout(timeout);
+                        msg = _msg;
+                        done();
+                    });
+                });
+
+                it('should receive the message on the worker', () => {
+                    expect(msg).toEqual({
+                        ex_id: 'some-ex-id',
+                    });
+                });
+            });
+
+            describe('when receiving finished', () => {
+                let msg;
+                beforeEach((done) => {
+                    exMessenger.executionFinished('some-ex-id');
+
+                    const timeout = setTimeout(() => {
+                        worker.events.removeAllListeners('worker:shutdown');
+                        done();
+                    }, 1000);
+
+                    worker.events.once('worker:shutdown', (_msg) => {
+                        clearTimeout(timeout);
+                        msg = _msg;
+                        done();
+                    });
+                });
+
+                it('should receive the message on the worker', () => {
+                    expect(msg).toEqual({
+                        ex_id: 'some-ex-id',
                     });
                 });
             });
