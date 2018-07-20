@@ -108,6 +108,10 @@ class TestContext {
         this.stores.jobStore = await makeJobStore(this.context);
     }
 
+    async getExStatus() {
+        return this.stores.exStore.get(this.exId);
+    }
+
     async makeItARealJob() {
         await this.addJobStore();
         await this.addExStore();

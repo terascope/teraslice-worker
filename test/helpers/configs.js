@@ -94,7 +94,7 @@ const newSysConfig = (options = {}) => {
             node_state_interval: timeout,
             node_disconnect_timeout: timeout,
             worker_disconnect_timeout: timeout,
-            analytics_rate: 1000,
+            analytics_rate: 100,
             name: clusterName,
             master_hostname: 'localhost',
             port: clusterMasterPort,

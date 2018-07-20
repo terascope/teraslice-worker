@@ -53,7 +53,7 @@ describe('ExecutionController', () => {
                     new Error('Slice failure'),
                     null
                 ],
-                reconnect: false,
+                reconnect: true,
                 body: { example: 'slice-failure' },
                 count: 1,
                 workers: 1,
@@ -68,13 +68,29 @@ describe('ExecutionController', () => {
                     { example: 'slice-dynamic' },
                     null
                 ],
-                reconnect: false,
+                reconnect: true,
                 slicerQueueLength: 'QUEUE_MINIMUM_SIZE',
                 body: { example: 'slice-dynamic' },
                 count: 1,
                 workers: 1,
                 lifecycle: 'once',
                 analytics: true,
+            }
+        ],
+        [
+            'a slice that fails',
+            {
+                slicerResults: [
+                    { example: 'slice-fail' },
+                    null
+                ],
+                reconnect: true,
+                failSlice: true,
+                body: { example: 'slice-fail' },
+                count: 1,
+                workers: 1,
+                lifecycle: 'once',
+                analytics: false,
             }
         ],
     ];
@@ -91,12 +107,14 @@ describe('ExecutionController', () => {
             body,
             reconnect,
             analytics,
-            workers
+            workers,
+            failSlice,
         } = options;
 
         let exController;
         let testContext;
         let slices;
+        let exStatus;
 
         beforeEach(async () => {
             slices = [];
@@ -159,10 +177,12 @@ describe('ExecutionController', () => {
                         workerMessenger.manager.reconnect();
                     }
 
-                    let analyticsData;
+                    const msg = {
+                        slice,
+                    };
 
                     if (analytics) {
-                        analyticsData = {
+                        msg.analyticsData = {
                             time: [
                                 random(0, 2000),
                                 random(0, 2000),
@@ -178,10 +198,11 @@ describe('ExecutionController', () => {
                         };
                     }
 
-                    workerMessenger.sliceComplete({
-                        slice,
-                        analytics: analyticsData
-                    });
+                    if (failSlice) {
+                        msg.error = 'Oh no, slice failure';
+                    }
+
+                    workerMessenger.sliceComplete(msg);
 
                     await process();
                 }
@@ -197,11 +218,15 @@ describe('ExecutionController', () => {
                 startWorkers(),
                 exController.run(),
             ]);
+
+            exStatus = await testContext.getExStatus();
         });
 
         afterEach(() => testContext.cleanup());
 
-        it('should send the slices to the worker', () => {
+        it('should process the slices correctly', () => {
+            const { exId } = testContext;
+
             expect(slices).toBeArrayOfSize(count);
             times(count, (i) => {
                 const slice = slices[i];
@@ -209,7 +234,14 @@ describe('ExecutionController', () => {
                 expect(slice.request).toEqual(body);
             });
 
-            const { exId } = testContext;
+            if (failSlice) {
+                expect(exStatus).toHaveProperty('_failureReason', `execution: ${exId} had 1 slice failures during processing`);
+                expect(exStatus).toHaveProperty('_has_errors', true);
+                expect(exStatus).toHaveProperty('_status', 'failed');
+            } else {
+                expect(exStatus).toHaveProperty('_status', 'completed');
+            }
+
             const { stateStore } = exController.stores;
             const query = `ex_id:${exId} AND state:start`;
             return expect(stateStore.count(query, 0)).resolves.toEqual(count);
