@@ -17,8 +17,10 @@ describe('ExecutionController', () => {
                     { example: 'single-slice' },
                     null
                 ],
+                reconnect: false,
                 body: { example: 'single-slice' },
                 count: 1,
+                workers: 1,
                 lifecycle: 'once',
                 analytics: false
             }
@@ -34,7 +36,9 @@ describe('ExecutionController', () => {
                     ],
                     null,
                 ],
+                reconnect: false,
                 count: 3,
+                workers: 1,
                 body: { example: 'subslice' },
                 lifecycle: 'once',
                 analytics: true,
@@ -48,8 +52,10 @@ describe('ExecutionController', () => {
                     new Error('Slice failure'),
                     null
                 ],
+                reconnect: false,
                 body: { example: 'slice-failure' },
                 count: 1,
+                workers: 1,
                 lifecycle: 'once',
                 analytics: true,
             }
@@ -61,10 +67,11 @@ describe('ExecutionController', () => {
                     { example: 'slice-dynamic' },
                     null
                 ],
-                reconnect: true,
+                reconnect: false,
                 slicerQueueLength: 'QUEUE_MINIMUM_SIZE',
                 body: { example: 'slice-dynamic' },
                 count: 1,
+                workers: 1,
                 lifecycle: 'once',
                 analytics: true,
             }
@@ -79,12 +86,12 @@ describe('ExecutionController', () => {
             lifecycle,
             body,
             reconnect,
-            analytics
+            analytics,
+            workers
         } = options;
 
         let exController;
         let testContext;
-        let workerMessenger;
         let slices;
 
         beforeEach(async () => {
@@ -97,6 +104,7 @@ describe('ExecutionController', () => {
                 slicerQueueLength,
                 slicerResults,
                 lifecycle,
+                workers,
                 analytics,
             });
 
@@ -108,63 +116,82 @@ describe('ExecutionController', () => {
                 action_timeout: actionTimeout,
             } = testContext.context.sysconfig.teraslice;
 
-            workerMessenger = new WorkerMessenger({
-                executionControllerUrl: `http://localhost:${port}`,
-                workerId: newId('worker'),
-                networkerLatencyBuffer,
-                actionTimeout,
-                socketOptions: {
-                    timeout: 1000,
-                    reconnection: true,
-                    reconnectionAttempts: 2,
-                    reconnectionDelay: 10,
-                    reconnectionDelayMax: 100
-                }
-            });
-
-            testContext.attachCleanup(() => workerMessenger.shutdown());
-
             testContext.attachCleanup(() => exController.shutdown());
 
             await exController.initialize();
+            const doneProcessing = () => slices.length >= count;
 
-            await workerMessenger.start();
-            await workerMessenger.ready();
+            async function startWorker() {
+                const workerMessenger = new WorkerMessenger({
+                    executionControllerUrl: `http://localhost:${port}`,
+                    workerId: newId('worker'),
+                    networkerLatencyBuffer,
+                    actionTimeout,
+                    socketOptions: {
+                        timeout: 1000,
+                        reconnection: true,
+                        reconnectionAttempts: 2,
+                        reconnectionDelay: 10,
+                        reconnectionDelayMax: 100
+                    }
+                });
 
-            workerMessenger.available = true;
-            workerMessenger.on('slicer:slice:new', (slice) => {
-                // if (reconnect) {
-                //     workerMessenger.manager.reconnect();
-                // }
+                testContext.attachCleanup(() => workerMessenger.shutdown());
 
-                if (analytics) {
-                    const analyticsData = {
-                        time: [
-                            random(0, 2000),
-                            random(0, 2000),
-                        ],
-                        size: [
-                            random(0, 100),
-                            random(0, 100)
-                        ],
-                        memory: [
-                            random(0, 10000),
-                            random(0, 10000)
-                        ]
-                    };
-                    workerMessenger.sliceComplete({
-                        slice,
-                        analytics: analyticsData
-                    });
-                } else {
-                    workerMessenger.sliceComplete({ slice });
+                await workerMessenger.start();
+                await workerMessenger.ready();
+
+                async function process() {
+                    if (doneProcessing()) return;
+
+                    const slice = await workerMessenger.waitForSlice(doneProcessing);
+
+                    if (!slice) return;
+
+                    slices.push(slice);
+
+                    if (reconnect) {
+                        workerMessenger.manager.reconnect();
+                    }
+
+                    if (analytics) {
+                        const analyticsData = {
+                            time: [
+                                random(0, 2000),
+                                random(0, 2000),
+                            ],
+                            size: [
+                                random(0, 100),
+                                random(0, 100)
+                            ],
+                            memory: [
+                                random(0, 10000),
+                                random(0, 10000)
+                            ]
+                        };
+                        await workerMessenger.sliceComplete({
+                            slice,
+                            analytics: analyticsData
+                        });
+                    } else {
+                        await workerMessenger.sliceComplete({ slice });
+                    }
+
+                    await process();
                 }
 
-                slices.push(slice);
-            });
+                await process();
+            }
 
-            await exController.run();
-        }, 15 * 1000);
+            function startWorkers() {
+                return Promise.all(times(workers, startWorker));
+            }
+
+            await Promise.all([
+                startWorkers(),
+                exController.run(),
+            ]);
+        });
 
         afterEach(() => testContext.cleanup());
 
@@ -215,6 +242,7 @@ describe('ExecutionController', () => {
 
             describe('when everything errors', () => {
                 beforeEach(() => {
+                    exController.isDone = () => false;
                     exController._doneProcessing = () => Promise.reject(new Error('Slicer Finish Error'));
 
                     exController.stores = {};

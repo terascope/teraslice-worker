@@ -2,6 +2,7 @@
 
 /* eslint-disable no-console */
 
+const { EventEmitter } = require('events');
 const { Worker } = require('../..');
 const ExecutionControllerMessenger = require('../../lib/messenger/execution-controller');
 const {
@@ -26,10 +27,13 @@ describe('Worker', () => {
                 port: slicerPort,
                 networkerLatencyBuffer: 0,
                 actionTimeout: 1000,
-                events: testContext.events
+                events: new EventEmitter()
             });
 
-            testContext.attachCleanup(() => exMessenger.shutdown());
+            testContext.attachCleanup(() => {
+                exMessenger.events.removeAllListeners();
+                return exMessenger.shutdown();
+            });
 
             await exMessenger.start();
 
@@ -64,13 +68,14 @@ describe('Worker', () => {
 
                 sliceConfig = await testContext.newSlice();
 
-                exMessenger.once('slice:success', (_msg) => {
+                exMessenger.events.once('slice:success', (_msg) => {
                     sliceSuccess = _msg;
                 });
 
-                exMessenger.once('slice:failure', (_msg) => {
+                exMessenger.events.once('slice:failure', (_msg) => {
                     sliceFailure = _msg;
                 });
+
                 await exMessenger.sendNewSlice(
                     worker.workerId,
                     sliceConfig
@@ -91,7 +96,7 @@ describe('Worker', () => {
                 });
                 expect(sliceSuccess).toMatchObject({
                     worker_id: worker.workerId,
-                    slice: sliceConfig
+                    slice: sliceConfig,
                 });
                 expect(sliceFailure).toBeNil();
             });
@@ -111,11 +116,11 @@ describe('Worker', () => {
                 await worker.initialize();
 
 
-                exMessenger.once('slice:success', (_msg) => {
+                exMessenger.events.once('slice:success', (_msg) => {
                     sliceSuccess = _msg;
                 });
 
-                exMessenger.once('slice:failure', (_msg) => {
+                exMessenger.events.once('slice:failure', (_msg) => {
                     sliceFailure = _msg;
                 });
 
@@ -148,7 +153,7 @@ describe('Worker', () => {
                 });
                 expect(sliceSuccess).toMatchObject({
                     worker_id: worker.workerId,
-                    slice: sliceConfig
+                    slice: sliceConfig,
                 });
                 expect(sliceFailure).toBeNil();
             });
@@ -159,6 +164,7 @@ describe('Worker', () => {
             let testContext;
             let exMessenger;
             let sliceFailure;
+            let sliceSuccess;
             let msg;
 
             beforeEach(async () => {
@@ -168,7 +174,11 @@ describe('Worker', () => {
 
                 worker.executionContext.queue[1] = jest.fn().mockRejectedValue(new Error('Bad news bears'));
 
-                exMessenger.once('slice:failure', (_msg) => {
+                exMessenger.events.once('slice:success', (_msg) => {
+                    sliceSuccess = _msg;
+                });
+
+                exMessenger.events.once('slice:failure', (_msg) => {
                     sliceFailure = _msg;
                 });
 
@@ -193,8 +203,10 @@ describe('Worker', () => {
             afterEach(() => testContext.cleanup());
 
             it('should return send a slice completed message with an error', () => {
+                expect(sliceSuccess).not.toBeObject();
+
                 const errMsg = 'Error: Slice failed processing, caused by Error: Bad news bears';
-                expect(sliceFailure).not.toBeNil();
+                expect(sliceFailure).toBeObject();
                 expect(sliceFailure.error).toStartWith(errMsg);
 
                 expect(msg).not.toBeNil();
