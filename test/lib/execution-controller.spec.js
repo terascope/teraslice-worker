@@ -7,7 +7,6 @@ const { ExecutionController } = require('../..');
 const WorkerMessenger = require('../../lib/messenger/worker');
 const { TestContext, findPort, newId } = require('../helpers');
 
-
 describe('ExecutionController', () => {
     // [ message, config ]
     const testCases = [
@@ -18,7 +17,6 @@ describe('ExecutionController', () => {
                     { example: 'single-slice' },
                     null
                 ],
-                reconnect: false,
                 body: { example: 'single-slice' },
                 count: 1,
                 workers: 1,
@@ -37,7 +35,6 @@ describe('ExecutionController', () => {
                     ],
                     null,
                 ],
-                reconnect: false,
                 count: 3,
                 workers: 1,
                 body: { example: 'subslice' },
@@ -53,7 +50,6 @@ describe('ExecutionController', () => {
                     new Error('Slice failure'),
                     null
                 ],
-                reconnect: true,
                 body: { example: 'slice-failure' },
                 count: 1,
                 workers: 1,
@@ -68,7 +64,6 @@ describe('ExecutionController', () => {
                     { example: 'slice-dynamic' },
                     null
                 ],
-                reconnect: true,
                 slicerQueueLength: 'QUEUE_MINIMUM_SIZE',
                 body: { example: 'slice-dynamic' },
                 count: 1,
@@ -84,8 +79,7 @@ describe('ExecutionController', () => {
                     { example: 'slice-fail' },
                     null
                 ],
-                reconnect: true,
-                failSlice: true,
+                sliceFailed: true,
                 body: { example: 'slice-fail' },
                 count: 1,
                 workers: 1,
@@ -108,13 +102,14 @@ describe('ExecutionController', () => {
             reconnect,
             analytics,
             workers,
-            failSlice,
+            sliceFailed,
         } = options;
 
         let exController;
         let testContext;
         let slices;
-        let exStatus;
+        let exStore;
+        let stateStore;
 
         beforeEach(async () => {
             slices = [];
@@ -139,6 +134,12 @@ describe('ExecutionController', () => {
             } = testContext.context.sysconfig.teraslice;
 
             testContext.attachCleanup(() => exController.shutdown());
+
+            await testContext.addStateStore();
+            await testContext.addExStore();
+            ({ stateStore, exStore } = testContext.stores);
+
+            const opCount = testContext.jobConfig.job.operations.length;
 
             await exController.initialize();
             const doneProcessing = () => slices.length >= count;
@@ -167,47 +168,44 @@ describe('ExecutionController', () => {
                 async function process() {
                     if (doneProcessing()) return;
 
+                    if (reconnect) {
+                        workerMessenger.manager.reconnect();
+                    }
+
                     const slice = await workerMessenger.waitForSlice(doneProcessing);
 
                     if (!slice) return;
 
                     slices.push(slice);
 
-                    if (reconnect) {
-                        workerMessenger.manager.reconnect();
-                    }
-
                     const msg = {
                         slice,
                     };
 
                     if (analytics) {
-                        msg.analyticsData = {
-                            time: [
-                                random(0, 2000),
-                                random(0, 2000),
-                            ],
-                            size: [
-                                random(0, 100),
-                                random(0, 100)
-                            ],
-                            memory: [
-                                random(0, 10000),
-                                random(0, 10000)
-                            ]
+                        msg.analytics = {
+                            time: times(opCount, () => random(0, 2000)),
+                            size: times(opCount, () => random(0, 100)),
+                            memory: times(opCount, () => random(0, 10000)),
                         };
                     }
 
-                    if (failSlice) {
+                    if (sliceFailed) {
                         msg.error = 'Oh no, slice failure';
+                        await stateStore.updateState(slice, 'error', msg.error);
+                    } else {
+                        await stateStore.updateState(slice, 'completed');
                     }
 
-                    workerMessenger.sliceComplete(msg);
+
+                    await workerMessenger.sliceComplete(msg);
 
                     await process();
                 }
 
                 await process();
+
+                await workerMessenger.shutdown();
             }
 
             function startWorkers() {
@@ -218,13 +216,11 @@ describe('ExecutionController', () => {
                 startWorkers(),
                 exController.run(),
             ]);
-
-            exStatus = await testContext.getExStatus();
         });
 
         afterEach(() => testContext.cleanup());
 
-        it('should process the slices correctly', () => {
+        it('should process the execution correctly correctly', async () => {
             const { exId } = testContext;
 
             expect(slices).toBeArrayOfSize(count);
@@ -234,17 +230,32 @@ describe('ExecutionController', () => {
                 expect(slice.request).toEqual(body);
             });
 
-            if (failSlice) {
+            const exStatus = await exStore.get(exId);
+            expect(exStatus).toBeObject();
+            expect(exStatus).toHaveProperty('_slicer_stats');
+
+            if (sliceFailed) {
                 expect(exStatus).toHaveProperty('_failureReason', `execution: ${exId} had 1 slice failures during processing`);
+                expect(exStatus._slicer_stats.failed).toBeGreaterThan(0);
                 expect(exStatus).toHaveProperty('_has_errors', true);
                 expect(exStatus).toHaveProperty('_status', 'failed');
+
+                const query = `ex_id:${exId} AND state:error`;
+                const actualCount = await stateStore.count(query, 0);
+                expect(actualCount).toEqual(count);
             } else {
                 expect(exStatus).toHaveProperty('_status', 'completed');
+                expect(exStatus).toHaveProperty('_has_errors', false);
+                expect(exStatus._slicer_stats.processed).toBeGreaterThan(0);
+
+                const query = `ex_id:${exId} AND state:completed`;
+                const actualCount = await stateStore.count(query, 0);
+                expect(actualCount).toEqual(count);
             }
 
-            const { stateStore } = exController.stores;
-            const query = `ex_id:${exId} AND state:start`;
-            return expect(stateStore.count(query, 0)).resolves.toEqual(count);
+            if (reconnect) {
+                expect(exStatus._slicer_stats.workers_reconnected).toBeGreaterThan(0);
+            }
         });
     });
 
