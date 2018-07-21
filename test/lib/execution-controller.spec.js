@@ -81,15 +81,17 @@ describe('ExecutionController', () => {
                 slicerResults: [
                     { example: 'slice-dynamic' },
                     { example: 'slice-dynamic' },
+                    { example: 'slice-dynamic' },
+                    { example: 'slice-dynamic' },
                     null
                 ],
-                reconnect: true,
+                reconnect: false,
                 slicerQueueLength: 'QUEUE_MINIMUM_SIZE',
                 body: { example: 'slice-dynamic' },
-                count: 2,
-                workers: 1,
+                count: 4,
+                workers: 2,
                 lifecycle: 'once',
-                analytics: true,
+                analytics: false,
             }
         ],
         [
@@ -133,6 +135,9 @@ describe('ExecutionController', () => {
 
         beforeEach(async () => {
             slices = [];
+
+            await TestContext.cleanupAll();
+
             const port = await findPort();
 
             testContext = new TestContext('execution_controller', {
@@ -197,9 +202,10 @@ describe('ExecutionController', () => {
                     if (firedReconnect) return;
 
                     firedReconnect = true;
-                    workerMessenger.socket.io.engine.close();
-
-                    await exController.messenger.onceWithTimeout('worker:reconnect', 5 * 1000);
+                    await Promise.all([
+                        workerMessenger.forceReconnect(),
+                        exController.messenger.onceWithTimeout('worker:reconnect', 5 * 1000)
+                    ]);
                 }
 
                 async function process() {

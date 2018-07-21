@@ -50,6 +50,55 @@ describe('Worker', () => {
 
         beforeAll(() => TestContext.cleanupAll(true));
 
+        describe('when running forever', () => {
+            let sliceConfig;
+            let worker;
+            let testContext;
+            let exMessenger;
+            let sliceSuccess;
+            let sliceFailure;
+
+            beforeEach(async () => {
+                ({ worker, testContext, exMessenger } = await setupTest());
+
+                await worker.initialize();
+
+                const workerStart = worker.run();
+
+                sliceConfig = await testContext.newSlice();
+
+                exMessenger.events.once('slice:success', (_msg) => {
+                    sliceSuccess = _msg;
+                    worker.events.emit('worker:shutdown');
+                });
+
+                exMessenger.events.once('slice:failure', (_msg) => {
+                    sliceFailure = _msg;
+                    worker.events.emit('worker:shutdown');
+                });
+
+                await exMessenger.sendNewSlice(
+                    worker.workerId,
+                    sliceConfig
+                );
+
+                await workerStart;
+            });
+
+            afterEach(async () => {
+                await testContext.cleanup();
+            });
+
+            it('should complete the slice', () => {
+                expect(sliceSuccess).toMatchObject({
+                    worker_id: worker.workerId,
+                    slice: sliceConfig,
+                });
+
+                expect(sliceFailure).toBeNil();
+            });
+        });
+
         describe('when a slice is sent from the execution controller', () => {
             let sliceConfig;
             let worker;
