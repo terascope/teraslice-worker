@@ -58,7 +58,7 @@ describe('ExecutionController', () => {
             }
         ],
         [
-            'processing slices and it disconnects',
+            'slices with multiple workers and one reconnects',
             {
                 slicerResults: [
                     { example: 'slice-disconnect' },
@@ -83,6 +83,7 @@ describe('ExecutionController', () => {
                     { example: 'slice-dynamic' },
                     null
                 ],
+                reconnect: true,
                 slicerQueueLength: 'QUEUE_MINIMUM_SIZE',
                 body: { example: 'slice-dynamic' },
                 count: 2,
@@ -164,14 +165,12 @@ describe('ExecutionController', () => {
             const doneProcessing = () => slices.length >= count;
 
             const socketOptions = reconnect ? {
-                forceNew: true,
                 timeout: 1000,
                 reconnection: true,
                 reconnectionAttempts: 10,
                 reconnectionDelay: 500,
                 reconnectionDelayMax: 500
             } : {
-                forceNew: true,
                 timeout: 1000,
                 reconnection: false
             };
@@ -245,7 +244,6 @@ describe('ExecutionController', () => {
             function startWorkers() {
                 return Promise.all(times(workers, startWorker));
             }
-
 
             await Promise.all([
                 startWorkers(),
