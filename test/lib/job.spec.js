@@ -371,16 +371,6 @@ describe('Job', () => {
             beforeEach(async () => {
                 testContext = new TestContext('worker-job', {
                     assignment: 'execution_controller',
-                    operations: [
-                        {
-                            _op: path.join(opsPath, 'example-reader'),
-                            exampleProp: 321
-                        },
-                        {
-                            _op: path.join(opsPath, 'example-op'),
-                            exampleProp: 123
-                        }
-                    ],
                 });
 
                 job = new Job(testContext.context, testContext.jobConfig);
@@ -400,6 +390,41 @@ describe('Job', () => {
                 expect(executionContext.config).toEqual(testContext.jobConfig.job);
                 expect(executionContext.reporter).toBeNil();
                 expect(executionContext.slicer).toHaveProperty('newSlicer');
+                expect(executionContext).toHaveProperty('queueLength', 10);
+                expect(executionContext).toHaveProperty('dynamicQueueLength', false);
+            });
+        });
+
+        describe('when using a dynamic queue length', () => {
+            let job;
+            let testContext;
+            let executionContext;
+
+            beforeEach(async () => {
+                testContext = new TestContext('worker-job', {
+                    assignment: 'execution_controller',
+                    slicerQueueLength: 'QUEUE_MINIMUM_SIZE'
+                });
+
+                job = new Job(testContext.context, testContext.jobConfig);
+
+                testContext.attachCleanup(() => job.shutdown());
+
+                executionContext = await job.initialize();
+            });
+
+            afterEach(async () => {
+                await testContext.cleanup();
+            });
+
+            it('should resolve an execution api', () => {
+                expect(executionContext.queue).toBeArrayOfSize(0);
+                expect(executionContext.reader).toBeNil();
+                expect(executionContext.config).toEqual(testContext.jobConfig.job);
+                expect(executionContext.reporter).toBeNil();
+                expect(executionContext.slicer).toHaveProperty('newSlicer');
+                expect(executionContext).toHaveProperty('queueLength', 1);
+                expect(executionContext).toHaveProperty('dynamicQueueLength', true);
             });
         });
 
@@ -441,6 +466,8 @@ describe('Job', () => {
                 expect(executionContext.config).toEqual(testContext.jobConfig.job);
                 expect(executionContext.reporter).toBeNil();
                 expect(executionContext.slicer).toHaveProperty('newSlicer');
+                expect(executionContext).toHaveProperty('queueLength', 10000);
+                expect(executionContext).toHaveProperty('dynamicQueueLength', false);
             });
 
             it('should be able to run the slicer', async () => {
@@ -488,6 +515,8 @@ describe('Job', () => {
                 expect(executionContext.config).toEqual(testContext.jobConfig.job);
                 expect(executionContext.reporter).toBeNil();
                 expect(executionContext.slicer).toHaveProperty('newSlicer');
+                expect(executionContext).toHaveProperty('queueLength', 10000);
+                expect(executionContext).toHaveProperty('dynamicQueueLength', false);
             });
 
             it('should be able to run the slicer', async () => {
@@ -543,6 +572,7 @@ describe('Job', () => {
                         }
                     ]
                 });
+
                 await testContext.saveAsset(path.join(opsPath, 'failing-asset'));
                 job = new Job(testContext.context, testContext.jobConfig);
 

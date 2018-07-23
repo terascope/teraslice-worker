@@ -21,7 +21,7 @@ function schema() {
         slicerQueueLength: {
             doc: 'A string for the slicer queue length, anything but QUEUE_MINIMUM_SIZE will be converted to a number',
             default: defaultSlicerQueueLength,
-            format: 'Array'
+            format: 'String'
         },
         slicerErrorAt: {
             doc: 'An array of indexes to error at when newSlicer is invoked',

@@ -85,7 +85,7 @@ describe('ExecutionController', () => {
                     { example: 'slice-dynamic' },
                     null
                 ],
-                reconnect: false,
+                reconnect: true,
                 slicerQueueLength: 'QUEUE_MINIMUM_SIZE',
                 body: { example: 'slice-dynamic' },
                 count: 4,
@@ -195,7 +195,6 @@ describe('ExecutionController', () => {
                 testContext.attachCleanup(() => workerMessenger.shutdown());
 
                 await workerMessenger.start();
-                await workerMessenger.ready();
 
                 async function waitForReconnect() {
                     if (!reconnect) return;
@@ -292,7 +291,7 @@ describe('ExecutionController', () => {
                 expect(actualCount).toEqual(count);
             }
 
-            if (reconnect) {
+            if (reconnect && slicerQueueLength !== 'QUEUE_MINIMUM_SIZE') {
                 expect(exStatus._slicer_stats.workers_reconnected).toBeGreaterThan(0);
             }
         });
