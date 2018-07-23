@@ -5,7 +5,7 @@
     "operations": [
         {
             "_op": "elasticsearch_data_generator",
-            "size": 10000
+            "size": 1000000
         },
         {
             "_op": "noop"
