@@ -1,7 +1,6 @@
 'use strict';
 
-const times = require('lodash/times');
-const random = require('lodash/random');
+const _ = require('lodash');
 const { EventEmitter } = require('events');
 const { ExecutionController } = require('../../..');
 const WorkerMessenger = require('../../../lib/worker/messenger');
@@ -19,9 +18,6 @@ describe('ExecutionController', () => {
                 ],
                 body: { example: 'single-slice' },
                 count: 1,
-                workers: 1,
-                lifecycle: 'once',
-                analytics: false
             }
         ],
         [
@@ -36,9 +32,7 @@ describe('ExecutionController', () => {
                     null,
                 ],
                 count: 3,
-                workers: 1,
                 body: { example: 'subslice' },
-                lifecycle: 'once',
                 analytics: true,
             }
         ],
@@ -52,8 +46,6 @@ describe('ExecutionController', () => {
                 ],
                 body: { example: 'slice-failure' },
                 count: 1,
-                workers: 1,
-                lifecycle: 'once',
                 analytics: true,
             }
         ],
@@ -70,8 +62,6 @@ describe('ExecutionController', () => {
                 reconnect: true,
                 body: { example: 'slice-disconnect' },
                 count: 4,
-                workers: 1,
-                lifecycle: 'once',
                 analytics: true,
             }
         ],
@@ -90,8 +80,6 @@ describe('ExecutionController', () => {
                 body: { example: 'slice-dynamic' },
                 count: 4,
                 workers: 2,
-                lifecycle: 'once',
-                analytics: false,
             }
         ],
         [
@@ -104,9 +92,23 @@ describe('ExecutionController', () => {
                 sliceFailed: true,
                 body: { example: 'slice-fail' },
                 count: 1,
-                workers: 1,
-                lifecycle: 'once',
-                analytics: false,
+            }
+        ],
+        [
+            'a slicer that emits a "slicer:execution:update" event',
+            {
+                slicerResults: [
+                    { example: 'slice-execution-update' },
+                    null
+                ],
+                emitsExecutionUpdate: [
+                    {
+                        _op: 'some-example',
+                        newData: true
+                    }
+                ],
+                body: { example: 'slice-execution-update' },
+                count: 1,
             }
         ],
     ];
@@ -119,12 +121,13 @@ describe('ExecutionController', () => {
             slicerResults,
             slicerQueueLength,
             count,
-            lifecycle,
+            lifecycle = 'once',
             body,
-            reconnect,
-            analytics,
-            workers,
-            sliceFailed,
+            reconnect = false,
+            analytics = false,
+            workers = 1,
+            sliceFailed = false,
+            emitsExecutionUpdate
         } = options;
 
         let exController;
@@ -220,9 +223,9 @@ describe('ExecutionController', () => {
 
                     if (analytics) {
                         msg.analytics = {
-                            time: times(opCount, () => random(0, 2000)),
-                            size: times(opCount, () => random(0, 100)),
-                            memory: times(opCount, () => random(0, 10000)),
+                            time: _.times(opCount, () => _.random(0, 2000)),
+                            size: _.times(opCount, () => _.random(0, 100)),
+                            memory: _.times(opCount, () => _.random(0, 10000)),
                         };
                     }
 
@@ -247,7 +250,17 @@ describe('ExecutionController', () => {
             }
 
             function startWorkers() {
-                return Promise.all(times(workers, startWorker));
+                return Promise.all(_.times(workers, startWorker));
+            }
+
+            if (!_.isEmpty(emitsExecutionUpdate)) {
+                setImmediate(() => {
+                    if (!exController) return;
+
+                    exController.events.emit('slicer:execution:update', {
+                        update: emitsExecutionUpdate
+                    });
+                });
             }
 
             await Promise.all([
@@ -262,7 +275,7 @@ describe('ExecutionController', () => {
             const { exId } = testContext;
 
             expect(slices).toBeArrayOfSize(count);
-            times(count, (i) => {
+            _.times(count, (i) => {
                 const slice = slices[i];
                 expect(slice).toHaveProperty('request');
                 expect(slice.request).toEqual(body);
@@ -293,6 +306,10 @@ describe('ExecutionController', () => {
 
             if (reconnect && slicerQueueLength !== 'QUEUE_MINIMUM_SIZE') {
                 expect(exStatus._slicer_stats.workers_reconnected).toBeGreaterThan(0);
+            }
+
+            if (!_.isEmpty(emitsExecutionUpdate)) {
+                expect(exStatus).toHaveProperty('operations', emitsExecutionUpdate);
             }
         });
     });
