@@ -3,12 +3,12 @@
 /* eslint-disable no-console */
 
 const { EventEmitter } = require('events');
-const { Worker } = require('../..');
-const ExecutionControllerMessenger = require('../../lib/messenger/execution-controller');
+const { Worker } = require('../../..');
+const ExecutionControllerMessenger = require('../../../lib/execution-controller/messenger');
 const {
     TestContext,
     findPort,
-} = require('../helpers');
+} = require('../../helpers');
 
 describe('Worker', () => {
     const testCases = [

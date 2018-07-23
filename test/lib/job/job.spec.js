@@ -2,8 +2,8 @@
 
 const path = require('path');
 const get = require('lodash/get');
-const Job = require('../../lib/job');
-const { TestContext, opsPath } = require('../helpers');
+const makeJob = require('../../../lib/job');
+const { TestContext, opsPath } = require('../../helpers');
 
 const exampleAssetDir = path.join(opsPath, 'example-asset');
 
@@ -25,7 +25,7 @@ describe('Job', () => {
                 ],
             });
             testContext.config.job.example = true;
-            job = new Job(testContext.context, testContext.config);
+            job = makeJob(testContext.context, testContext.config);
         });
 
         afterEach(() => testContext.cleanup());
@@ -33,7 +33,7 @@ describe('Job', () => {
         it('should throw an error if reporters are specified', () => {
             testContext.context.sysconfig.teraslice.reporter = true;
             expect(() => {
-                new Job(testContext.context, { hello: true }); // eslint-disable-line no-new
+                makeJob(testContext.context, { hello: true }); // eslint-disable-line no-new
             }).toThrowError('reporters are not functional at this time, please do not set one in the configuration');
         });
 
@@ -84,7 +84,7 @@ describe('Job', () => {
                         }
                     ]
                 });
-                job = new Job(testContext.context, testContext.config);
+                job = makeJob(testContext.context, testContext.config);
             });
 
             afterEach(async () => {
@@ -118,7 +118,7 @@ describe('Job', () => {
                     ],
                 });
 
-                job = new Job(testContext.context, testContext.config);
+                job = makeJob(testContext.context, testContext.config);
 
                 executionContext = await job.initialize();
             });
@@ -160,7 +160,7 @@ describe('Job', () => {
                     ]
                 });
 
-                job = new Job(testContext.context, testContext.config);
+                job = makeJob(testContext.context, testContext.config);
                 executionContext = await job.initialize();
             });
 
@@ -201,7 +201,7 @@ describe('Job', () => {
 
                 await testContext.saveAsset(exampleAssetDir);
 
-                job = new Job(testContext.context, testContext.config);
+                job = makeJob(testContext.context, testContext.config);
 
                 executionContext = await job.initialize();
             });
@@ -249,7 +249,7 @@ describe('Job', () => {
 
                 await testContext.saveAsset(exampleAssetDir, true);
 
-                job = new Job(testContext.context, testContext.config);
+                job = makeJob(testContext.context, testContext.config);
                 executionContext = await job.initialize();
             });
 
@@ -292,7 +292,7 @@ describe('Job', () => {
                         }
                     ]
                 });
-                job = new Job(testContext.context, testContext.config);
+                job = makeJob(testContext.context, testContext.config);
             });
 
             afterEach(async () => {
@@ -321,7 +321,7 @@ describe('Job', () => {
                     ]
                 });
                 await testContext.saveAsset(path.join(opsPath, 'failing-asset'));
-                job = new Job(testContext.context, testContext.config);
+                job = makeJob(testContext.context, testContext.config);
             });
 
             afterEach(async () => {
@@ -349,7 +349,7 @@ describe('Job', () => {
                         }
                     ]
                 });
-                job = new Job(testContext.context, testContext.config);
+                job = makeJob(testContext.context, testContext.config);
             });
 
             afterEach(async () => {
@@ -373,7 +373,7 @@ describe('Job', () => {
                     assignment: 'execution_controller',
                 });
 
-                job = new Job(testContext.context, testContext.config);
+                job = makeJob(testContext.context, testContext.config);
 
                 testContext.attachCleanup(() => job.shutdown());
 
@@ -406,7 +406,7 @@ describe('Job', () => {
                     slicerQueueLength: 'QUEUE_MINIMUM_SIZE'
                 });
 
-                job = new Job(testContext.context, testContext.config);
+                job = makeJob(testContext.context, testContext.config);
 
                 testContext.attachCleanup(() => job.shutdown());
 
@@ -449,7 +449,7 @@ describe('Job', () => {
 
                 await testContext.saveAsset(exampleAssetDir);
 
-                job = new Job(testContext.context, testContext.config);
+                job = makeJob(testContext.context, testContext.config);
 
                 testContext.attachCleanup(() => job.shutdown());
 
@@ -498,7 +498,7 @@ describe('Job', () => {
 
                 await testContext.saveAsset(exampleAssetDir, true);
 
-                job = new Job(testContext.context, testContext.config);
+                job = makeJob(testContext.context, testContext.config);
 
                 testContext.attachCleanup(() => job.shutdown());
 
@@ -543,7 +543,7 @@ describe('Job', () => {
                         }
                     ]
                 });
-                job = new Job(testContext.context, testContext.config);
+                job = makeJob(testContext.context, testContext.config);
 
                 testContext.attachCleanup(() => job.shutdown());
             });
@@ -574,7 +574,7 @@ describe('Job', () => {
                 });
 
                 await testContext.saveAsset(path.join(opsPath, 'failing-asset'));
-                job = new Job(testContext.context, testContext.config);
+                job = makeJob(testContext.context, testContext.config);
 
                 testContext.attachCleanup(() => job.shutdown());
             });

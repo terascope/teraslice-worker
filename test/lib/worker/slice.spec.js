@@ -1,13 +1,13 @@
 'use strict';
 
 const times = require('lodash/times');
-const Slice = require('../../lib/slice');
-const Job = require('../../lib/job');
-const { TestContext } = require('../helpers');
+const Slice = require('../../../lib/worker/slice');
+const makeJob = require('../../../lib/job');
+const { TestContext } = require('../../helpers');
 
 describe('Slice', () => {
     async function setupSlice(testContext, eventMocks = {}) {
-        const job = new Job(testContext.context, testContext.config);
+        const job = makeJob(testContext.context, testContext.config);
         testContext.attachCleanup(() => job.shutdown());
         const executionContext = await job.initialize();
 

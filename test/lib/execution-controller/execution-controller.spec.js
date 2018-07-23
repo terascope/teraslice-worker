@@ -3,9 +3,9 @@
 const times = require('lodash/times');
 const random = require('lodash/random');
 const { EventEmitter } = require('events');
-const { ExecutionController } = require('../..');
-const WorkerMessenger = require('../../lib/messenger/worker');
-const { TestContext, findPort, newId } = require('../helpers');
+const { ExecutionController } = require('../../..');
+const WorkerMessenger = require('../../../lib/worker/messenger');
+const { TestContext, findPort, newId } = require('../../helpers');
 
 describe('ExecutionController', () => {
     // [ message, config ]

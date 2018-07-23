@@ -3,11 +3,11 @@
 /* eslint-disable no-console, no-new */
 
 const { EventEmitter } = require('events');
-const { formatURL, newId } = require('../../lib/utils');
-const WorkerMessenger = require('../../lib/messenger/worker');
-const MessengerServer = require('../../lib/messenger/messenger-server');
-const ExecutionControllerMessenger = require('../../lib/messenger/execution-controller');
-const { findPort } = require('../helpers');
+const { formatURL, newId } = require('../../../lib/utils');
+const { findPort } = require('../../helpers');
+const MessengerServer = require('../../../lib/messenger/server');
+const WorkerMessenger = require('../../../lib/worker/messenger');
+const ExecutionControllerMessenger = require('../../../lib/execution-controller/messenger');
 
 describe('Messenger', () => {
     describe('when worker is constructed without a executionControllerUrl', () => {
