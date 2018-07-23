@@ -26,6 +26,18 @@ describe('ExecutionController', () => {
                 }
             ],
             [
+                'a slicer requests a specific worker',
+                {
+                    slicerResults: [
+                        { request_worker: 'specific-worker-1', example: 'specific-worker' },
+                        null
+                    ],
+                    workerIds: ['specific-worker-1'],
+                    body: { request_worker: 'specific-worker-1', example: 'specific-worker' },
+                    count: 1,
+                }
+            ],
+            [
                 'sub-slices',
                 {
                     slicerResults: [
@@ -148,6 +160,7 @@ describe('ExecutionController', () => {
                 emitsExecutionUpdate,
                 emitSlicerRecursion = false,
                 emitSlicerRangeExpansion = false,
+                workerIds = [],
             } = options;
 
             let exController;
@@ -210,10 +223,11 @@ describe('ExecutionController', () => {
 
                 let firedReconnect = false;
 
-                async function startWorker() {
+                async function startWorker(n) {
+                    const workerId = workerIds[n] || newId('worker');
                     const workerMessenger = new WorkerMessenger({
                         executionControllerUrl: `http://localhost:${port}`,
-                        workerId: newId('worker'),
+                        workerId,
                         networkerLatencyBuffer,
                         actionTimeout,
                         events: new EventEmitter(),
