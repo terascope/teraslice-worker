@@ -39,7 +39,8 @@ class Command {
 
         try {
             const { job, ex } = await initializeJob(this.context, this.jobFile);
-            Object.assign(config, job, {
+            Object.assign(config, {
+                job,
                 ex_id: ex.ex_id,
                 job_id: ex.job_id,
             });

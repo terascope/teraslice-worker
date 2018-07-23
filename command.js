@@ -18,13 +18,11 @@ class Command {
     constructor() {
         const {
             configfile,
-            assignment,
-            job,
+            executionContext,
             useDebugLogger
         } = this._parseArgs();
 
-        this.assignment = assignment;
-        this.job = job;
+        this.executionContext = executionContext;
 
         const sysconfig = readSysConfig({ configfile });
 
@@ -35,24 +33,12 @@ class Command {
     }
 
     async initialize() {
-        const {
-            assignment,
-            job,
-            context,
-        } = this;
+        this.executionContext = await makeExecutionContext(this.context, this.executionContext);
 
-        const executionContext = makeExecutionContext(this.context, {
-            assignment,
-            job,
-            ex_id: job.ex_id,
-            job_id: job.job_id,
-            slicer_port: job.slicer_port
-        });
-
-        if (assignment === 'worker') {
-            this.worker = new Worker(context, executionContext);
-        } else if (assignment === 'execution_controller') {
-            this.worker = new ExecutionController(context, executionContext);
+        if (this.executionContext.assignment === 'worker') {
+            this.worker = new Worker(this.context, this.executionContext);
+        } else if (this.executionContext.assignment === 'execution_controller') {
+            this.worker = new ExecutionController(this.context, this.executionContext);
         }
 
         await this.worker.initialize();
@@ -123,30 +109,22 @@ class Command {
             .alias('v', 'version')
             .help()
             .alias('h', 'help')
-            .option('j', {
-                alias: 'job',
+            .option('e', {
+                alias: 'executionContext',
                 coerce: (arg) => {
                     if (!arg) {
-                        throw new Error('Job configuration must not be not be empty');
+                        throw new Error('Execution context must not be not be empty');
                     }
                     try {
                         return JSON.parse(arg);
                     } catch (err) {
-                        throw new Error('Job configuration be a valid JSON');
+                        throw new Error('Execution context be a valid JSON');
                     }
                 },
-                default: process.env.JOB_CONFIGURATION,
+                default: process.env.EXECUTION_CONTEXT,
                 demandOption: true,
-                describe: `Job configuration in JSON stringified form.
-                Defaults to env JOB_CONFIGURATION.`,
-            })
-            .option('a', {
-                alias: 'assignment',
-                choices: ['worker', 'execution_controller'],
-                describe: `Worker type assignment.
-                Defaults to env ASSIGNMENT.`,
-                default: process.env.ASSIGNMENT || 'worker',
-                demandOption: true,
+                describe: `Execution context in JSON stringified form.
+                Defaults to env EXECUTION_CONTEXT.`,
             })
             .option('c', {
                 alias: 'configfile',
@@ -170,7 +148,11 @@ class Command {
     }
 }
 
-const cmd = new Command();
-cmd.registerExitHandler();
-cmd.initialize();
-cmd.run();
+async function runCommand() {
+    const cmd = new Command();
+    await cmd.registerExitHandler();
+    await cmd.initialize();
+    await cmd.run();
+}
+
+runCommand();

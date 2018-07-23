@@ -3,22 +3,22 @@
 start_ex() {
     set -eu -o pipefail 
     echo "* starting execution controller"
-    local job="$1"
+    local ex;
+    ex="$(echo "$1" | jq -c -M '.assignment = "execution_controller"')"
 
     node command.js \
-        --assignment 'execution_controller' \
         --useDebugLogger \
-        --job "$job" &
+        --executionContext "$ex" &
 }
 
 start_worker() {
     set -eu -o pipefail
-    local job="$1"
+    local ex;
+    ex="$(echo "$1" | jq -c -M '.assignment = "worker"')"
 
     node command.js \
-        --assignment 'worker' \
         --useDebugLogger \
-        --job "$job" &
+        --executionContext "$ex" &
 }
 
 main() {
