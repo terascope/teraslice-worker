@@ -19,10 +19,12 @@ class Command {
         const {
             configfile,
             executionContext,
+            nodeType,
             useDebugLogger
         } = this._parseArgs();
 
         this.executionContext = executionContext;
+        this.executionContext.assignment = nodeType;
 
         const sysconfig = readSysConfig({ configfile });
 
@@ -121,10 +123,18 @@ class Command {
                         throw new Error('Execution context be a valid JSON');
                     }
                 },
-                default: process.env.EXECUTION_CONTEXT,
+                default: process.env.EX,
                 demandOption: true,
                 describe: `Execution context in JSON stringified form.
-                Defaults to env EXECUTION_CONTEXT.`,
+                Defaults to env EX.`,
+            })
+            .option('n', {
+                alias: 'nodeType',
+                default: process.env.NODE_TYPE,
+                demandOption: true,
+                choices: ['execution_controller', 'worker'],
+                describe: `Node Type assignment of worker.
+                Defaults to env NODE_TYPE`,
             })
             .option('c', {
                 alias: 'configfile',
