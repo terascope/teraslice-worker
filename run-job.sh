@@ -27,7 +27,7 @@ main() {
     local job
     local workers
 
-    job="$(node initialize-job.js "$jobFile")"
+    job="$(node job-to-execution-context.js "$jobFile")"
 
     workers="$(echo "$job" | jq '.workers // 1')"
 

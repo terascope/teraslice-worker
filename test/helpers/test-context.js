@@ -16,6 +16,7 @@ const {
     initializeJob,
 } = require('../../lib/teraslice');
 
+const makeExecutionContext = require('../../lib/execution-context');
 const { newId, generateContext } = require('../../lib/utils');
 const { newConfig, newSysConfig, newSliceConfig } = require('./configs');
 const zipDirectory = require('./zip-directory');
@@ -32,9 +33,10 @@ const es = new ElasticsearchClient({
 });
 
 class TestContext {
-    constructor(testName, options = {}) {
+    constructor(options = {}) {
         const {
             clusterMasterPort,
+            useExecutionRunner,
         } = options;
 
         this.setupId = newId('setup', true);
@@ -46,10 +48,8 @@ class TestContext {
             clusterMasterPort,
         });
 
+        this.useExecutionRunner = useExecutionRunner;
         this.config = newConfig(options);
-
-        this.exId = this.config.ex_id;
-        this.jobId = this.config.job_id;
 
         this.context = generateContext(this.sysconfig, true);
 
@@ -60,6 +60,28 @@ class TestContext {
         this._cleanupFns = [];
 
         cleanups[this.setupId] = () => this.cleanup();
+    }
+
+    async initialize(makeItReal = false) {
+        if (makeItReal) {
+            await this.addJobStore();
+            await this.addExStore();
+
+            const { job, ex } = await initializeJob(this.context, this.config.job, this.stores);
+
+            this.config.job = job;
+            this.config.job_id = ex.job_id;
+            this.config.ex_id = ex.ex_id;
+        }
+
+        this.executionContext = await makeExecutionContext(
+            this.context,
+            this.config,
+            this.useExecutionRunner
+        );
+
+        this.exId = this.executionContext.ex_id;
+        this.jobId = this.executionContext.job_id;
     }
 
     attachCleanup(fn) {
@@ -106,21 +128,6 @@ class TestContext {
     async addJobStore() {
         if (this.stores.jobStore) return;
         this.stores.jobStore = await makeJobStore(this.context);
-    }
-
-    async makeItARealJob() {
-        await this.addJobStore();
-        await this.addExStore();
-
-        const { job, ex } = await initializeJob(this.context, this.config.job, this.stores);
-
-        this.config.job = job;
-        this.config.job_id = ex.job_id;
-        this.config.ex_id = ex.ex_id;
-
-
-        this.jobId = this.config.job_id;
-        this.exId = this.config.ex_id;
     }
 
     async addExStore() {

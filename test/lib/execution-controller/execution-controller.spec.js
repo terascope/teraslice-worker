@@ -176,7 +176,7 @@ describe('ExecutionController', () => {
 
                 const port = await findPort();
 
-                testContext = new TestContext('execution_controller', {
+                testContext = new TestContext({
                     assignment: 'execution_controller',
                     slicerPort: port,
                     slicerQueueLength,
@@ -184,14 +184,14 @@ describe('ExecutionController', () => {
                     lifecycle,
                     workers,
                     analytics,
+                    useExecutionRunner,
                 });
 
-                await testContext.makeItARealJob();
+                await testContext.initialize(true);
 
                 exController = new ExecutionController(
                     testContext.context,
-                    testContext.config,
-                    useExecutionRunner
+                    testContext.executionContext,
                 );
 
                 const {
@@ -205,7 +205,7 @@ describe('ExecutionController', () => {
                 await testContext.addExStore();
                 ({ stateStore, exStore } = testContext.stores);
 
-                const opCount = testContext.config.job.operations.length;
+                const opCount = testContext.executionContext.config.operations.length;
 
                 await exController.initialize();
                 const doneProcessing = () => slices.length >= count;
@@ -325,7 +325,7 @@ describe('ExecutionController', () => {
             afterEach(() => testContext.cleanup());
 
             it('should process the execution correctly correctly', async () => {
-                const { exId } = testContext;
+                const { ex_id: exId } = testContext.executionContext;
 
                 expect(slices).toBeArrayOfSize(count);
                 _.times(count, (i) => {
@@ -380,11 +380,17 @@ describe('ExecutionController', () => {
         let testContext;
         let exController;
 
-        beforeEach(() => {
-            testContext = new TestContext('execution_controller', {
+        beforeEach(async () => {
+            testContext = new TestContext({
                 assignment: 'execution_controller',
             });
-            exController = new ExecutionController(testContext.context, testContext.config);
+
+            await testContext.initialize();
+
+            exController = new ExecutionController(
+                testContext.context,
+                testContext.executionContext
+            );
         });
 
         afterEach(() => testContext.cleanup());
@@ -419,9 +425,6 @@ describe('ExecutionController', () => {
                     exController.executionAnalytics = {};
                     exController.executionAnalytics.shutdown = () => Promise.reject(new Error('Execution Analytics Error'));
 
-                    exController.job = {};
-                    exController.job.shutdown = () => Promise.reject(new Error('Job Error'));
-
                     exController.messenger = {};
                     exController.messenger.shutdown = () => Promise.reject(new Error('Messenger Error'));
                 });
@@ -436,7 +439,6 @@ describe('ExecutionController', () => {
                         expect(errMsg).toInclude('Slicer Finish Error');
                         expect(errMsg).toInclude('Store Error');
                         expect(errMsg).toInclude('Execution Analytics Error');
-                        expect(errMsg).toInclude('Job Error');
                         expect(errMsg).toInclude('Messenger Error');
                     }
                 });

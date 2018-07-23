@@ -21,7 +21,10 @@ describe('Worker', () => {
             const slicerPort = await findPort();
             options.slicerPort = slicerPort;
 
-            const testContext = new TestContext('worker', options);
+            options.useExecutionRunner = useExecutionRunner;
+
+            const testContext = new TestContext(options);
+            await testContext.initialize();
 
             const exMessenger = new ExecutionControllerMessenger({
                 port: slicerPort,
@@ -39,8 +42,7 @@ describe('Worker', () => {
 
             const worker = new Worker(
                 testContext.context,
-                testContext.config,
-                useExecutionRunner
+                testContext.executionContext,
             );
 
             testContext.attachCleanup(() => worker.shutdown());
@@ -354,9 +356,12 @@ describe('Worker', () => {
         let testContext;
         let worker;
 
-        beforeEach(() => {
-            testContext = new TestContext('worker');
-            worker = new Worker(testContext.context, testContext.config);
+        beforeEach(async () => {
+            testContext = new TestContext();
+
+            await testContext.initialize();
+
+            worker = new Worker(testContext.context, testContext.executionContext);
         });
 
         afterEach(() => testContext.cleanup());
@@ -387,9 +392,6 @@ describe('Worker', () => {
                         shutdown: () => Promise.reject(new Error('Store Error'))
                     };
 
-                    worker.job = {};
-                    worker.job.shutdown = () => Promise.reject(new Error('Job Error'));
-
                     worker.slice = {};
                     worker.slice.shutdown = () => Promise.reject(new Error('Slice Error'));
 
@@ -406,7 +408,6 @@ describe('Worker', () => {
                         expect(errMsg).toStartWith('Error: Failed to shutdown correctly');
                         expect(errMsg).toInclude('Slice Finish Error');
                         expect(errMsg).toInclude('Store Error');
-                        expect(errMsg).toInclude('Job Error');
                         expect(errMsg).toInclude('Slice Error');
                         expect(errMsg).toInclude('Messenger Error');
                     }

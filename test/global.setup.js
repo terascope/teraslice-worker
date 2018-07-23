@@ -17,5 +17,5 @@ const es = new ElasticsearchClient({
 });
 
 module.exports = async () => {
-    await es.indices.delete({ index: 'tmp-*' });
+    await es.indices.delete({ index: 'test-teraworker-*' });
 };

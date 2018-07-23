@@ -84,7 +84,7 @@ class Command {
     _parseArgs() {
         const { argv } = yargs.usage(
             '$0 [options] <jobFile>',
-            'Development tool for creating a standalone job.',
+            'Development tool for creating a standalone execution context from a job.',
             (_yargs) => {
                 _yargs.positional('jobFile', {
                     describe: 'Teraslice job file in json format.',
@@ -99,7 +99,7 @@ class Command {
                     },
                 });
             }
-        ).scriptName('initialize-job')
+        ).scriptName('job-to-execution-context')
             .version()
             .alias('v', 'version')
             .help()

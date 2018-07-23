@@ -2,16 +2,13 @@
 
 const times = require('lodash/times');
 const Slice = require('../../../lib/worker/slice');
-const makeJob = require('../../../lib/job');
 const { TestContext } = require('../../helpers');
 
 describe('Slice', () => {
     async function setupSlice(testContext, eventMocks = {}) {
-        const job = makeJob(testContext.context, testContext.config);
-        testContext.attachCleanup(() => job.shutdown());
-        const executionContext = await job.initialize();
+        await testContext.initialize();
 
-        const slice = new Slice(testContext.context, testContext.config);
+        const slice = new Slice(testContext.context, testContext.executionContext);
         testContext.attachCleanup(() => slice.shutdown());
 
         await Promise.all([
@@ -21,7 +18,7 @@ describe('Slice', () => {
 
         const sliceConfig = await testContext.newSlice();
 
-        await slice.initialize(executionContext, sliceConfig, testContext.stores);
+        await slice.initialize(sliceConfig, testContext.stores);
 
         eventMocks['slice:success'] = jest.fn();
         eventMocks['slice:finalize'] = jest.fn();
@@ -44,7 +41,7 @@ describe('Slice', () => {
             const eventMocks = {};
 
             beforeEach(async () => {
-                testContext = new TestContext('slice', { analytics: true });
+                testContext = new TestContext({ analytics: true });
                 slice = await setupSlice(testContext, eventMocks);
 
                 results = await slice.run();
@@ -73,7 +70,7 @@ describe('Slice', () => {
                 expect(eventMocks['slice:retry']).not.toHaveBeenCalled();
 
                 // should have the correct state storage
-                const { ex_id: exId } = slice.config;
+                const { ex_id: exId } = slice.executionContext;
                 const query = `ex_id:${exId} AND state:completed`;
                 return expect(slice.stateStore.count(query)).resolves.toEqual(1);
             });
@@ -88,7 +85,7 @@ describe('Slice', () => {
             const eventMocks = {};
 
             beforeEach(async () => {
-                testContext = new TestContext('slice', { analytics: false });
+                testContext = new TestContext({ analytics: false });
                 slice = await setupSlice(testContext, eventMocks);
 
                 results = await slice.run();
@@ -114,7 +111,7 @@ describe('Slice', () => {
                 expect(eventMocks['slice:failure']).not.toHaveBeenCalled();
 
                 // should have the correct state storage
-                const { ex_id: exId } = slice.config;
+                const { ex_id: exId } = slice.executionContext;
                 const query = `ex_id:${exId} AND state:completed`;
                 return expect(slice.stateStore.count(query, 0)).resolves.toEqual(1);
             });
@@ -127,7 +124,7 @@ describe('Slice', () => {
             const eventMocks = {};
 
             beforeEach(async () => {
-                testContext = new TestContext('slice', {
+                testContext = new TestContext({
                     maxRetries: 3,
                     analytics: false,
                     readerErrorAt: [0]
@@ -158,7 +155,7 @@ describe('Slice', () => {
                 expect(eventMocks['slice:failure']).not.toHaveBeenCalled();
 
                 // should have the correct state storage
-                const { ex_id: exId } = slice.config;
+                const { ex_id: exId } = slice.executionContext;
                 const query = `ex_id:${exId} AND state:completed`;
                 return expect(slice.stateStore.count(query, 0)).resolves.toEqual(1);
             });
@@ -171,7 +168,7 @@ describe('Slice', () => {
             let err;
 
             beforeEach(async () => {
-                testContext = new TestContext('slice', {
+                testContext = new TestContext({
                     maxRetries: 5,
                     analytics: false,
                     opErrorAt: times(5)
@@ -205,7 +202,7 @@ describe('Slice', () => {
                 expect(eventMocks['slice:finalize']).toHaveBeenCalledWith(slice.slice);
 
                 // should have the correct state storage
-                const { ex_id: exId } = slice.config;
+                const { ex_id: exId } = slice.executionContext;
                 const query = `ex_id:${exId} AND state:error`;
                 return expect(slice.stateStore.count(query, 0)).resolves.toEqual(1);
             });
@@ -217,7 +214,7 @@ describe('Slice', () => {
         let testContext;
 
         beforeEach(async () => {
-            testContext = new TestContext('slice');
+            testContext = new TestContext();
 
             slice = await setupSlice(testContext);
 
@@ -240,7 +237,7 @@ describe('Slice', () => {
             let slice;
 
             beforeEach(async () => {
-                testContext = new TestContext('slice', { analytics: true });
+                testContext = new TestContext({ analytics: true });
 
                 slice = await setupSlice(testContext);
             });
@@ -260,7 +257,7 @@ describe('Slice', () => {
             let slice;
 
             beforeEach(async () => {
-                testContext = new TestContext('slice', { analytics: true });
+                testContext = new TestContext({ analytics: true });
 
                 slice = await setupSlice(testContext);
                 slice.slice = 'hello-there';
@@ -281,7 +278,7 @@ describe('Slice', () => {
         let slice;
 
         beforeEach(async () => {
-            testContext = new TestContext('slice');
+            testContext = new TestContext();
             slice = await setupSlice(testContext);
 
             slice.slice = { should: 'break' };

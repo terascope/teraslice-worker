@@ -1,19 +1,21 @@
 'use strict';
 
+/* eslint-disable no-new */
+
 const path = require('path');
 const get = require('lodash/get');
-const makeJob = require('../../../lib/job');
+const ExecutionContext = require('../../../lib/execution-context/execution-context');
 const { TestContext, opsPath } = require('../../helpers');
 
 const exampleAssetDir = path.join(opsPath, 'example-asset');
 
-describe('Job', () => {
+describe('Execution Context', () => {
     describe('when constructed', () => {
-        let job;
+        let executionContext;
         let testContext;
 
         beforeEach(() => {
-            testContext = new TestContext('worker-job', {
+            testContext = new TestContext({
                 assignment: 'worker',
                 operations: [
                     {
@@ -24,8 +26,8 @@ describe('Job', () => {
                     }
                 ],
             });
-            testContext.config.job.example = true;
-            job = makeJob(testContext.context, testContext.config);
+
+            executionContext = new ExecutionContext(testContext.context, testContext.config);
         });
 
         afterEach(() => testContext.cleanup());
@@ -33,50 +35,50 @@ describe('Job', () => {
         it('should throw an error if reporters are specified', () => {
             testContext.context.sysconfig.teraslice.reporter = true;
             expect(() => {
-                makeJob(testContext.context, { hello: true }); // eslint-disable-line no-new
+                new ExecutionContext(
+                    testContext.context,
+                    { hello: true }
+                );
             }).toThrowError('reporters are not functional at this time, please do not set one in the configuration');
         });
 
         it('should have a method initialize', () => {
-            expect(job.initialize).toBeFunction();
+            expect(executionContext.initialize).toBeFunction();
         });
 
         it('should register the api job_runner', () => {
-            const jobRunnerApis = get(job, 'context.apis.job_runner');
+            const jobRunnerApis = get(testContext, 'context.apis.job_runner');
+
             expect(jobRunnerApis).toHaveProperty('getOpConfig');
             expect(jobRunnerApis.getOpConfig).toBeFunction();
         });
 
         it('getOpConfig should return the matching op', () => {
-            expect(job.getOpConfig('example-op-one')).toEqual({
+            expect(executionContext._getOpConfig('example-op-one')).toEqual({
                 _op: 'example-op-one',
             });
 
-            const getOpConfig = get(job, 'context.apis.job_runner.getOpConfig');
+            const getOpConfig = get(testContext, 'context.apis.job_runner.getOpConfig');
             expect(getOpConfig('example-op-one')).toEqual({
                 _op: 'example-op-one',
             });
         });
 
         it('getOpConfig should return nothing if none found', () => {
-            expect(job.getOpConfig('this-op-does-not-exist')).toBeNil();
+            expect(executionContext._getOpConfig('this-op-does-not-exist')).toBeNil();
 
-            const getOpConfig = get(job, 'context.apis.job_runner.getOpConfig');
+            const getOpConfig = get(testContext, 'context.apis.job_runner.getOpConfig');
             expect(getOpConfig('this-op-does-not-exist')).toBeNil();
-        });
-
-        it('should create an opRunner', () => {
-            expect(job).toHaveProperty('opRunner');
-            expect(job.opRunner.findOp).toBeFunction();
         });
     });
 
     describe('when using assignment "worker"', () => {
         describe('when op name is not a string', () => {
-            let job;
+            let executionContext;
             let testContext;
+
             beforeEach(() => {
-                testContext = new TestContext('worker-job:fail', {
+                testContext = new TestContext({
                     assignment: 'worker',
                     operations: [
                         {
@@ -84,27 +86,24 @@ describe('Job', () => {
                         }
                     ]
                 });
-                job = makeJob(testContext.context, testContext.config);
+                executionContext = new ExecutionContext(testContext.context, testContext.config);
             });
 
             afterEach(async () => {
-                await job.shutdown();
                 await testContext.cleanup();
             });
 
             it('should reject with an error', () => {
                 const errMsg = 'please verify that ops_directory in config and _op for each job operations are strings';
-                return expect(job.initialize()).rejects.toThrow(errMsg);
+                return expect(executionContext.initialize()).rejects.toThrow(errMsg);
             });
         });
 
         describe('when analytics is not enabled', () => {
-            let job;
             let testContext;
-            let executionContext;
 
             beforeEach(async () => {
-                testContext = new TestContext('worker-job', {
+                testContext = new TestContext({
                     assignment: 'worker',
                     operations: [
                         {
@@ -118,17 +117,16 @@ describe('Job', () => {
                     ],
                 });
 
-                job = makeJob(testContext.context, testContext.config);
-
-                executionContext = await job.initialize();
+                await testContext.initialize();
             });
 
             afterEach(async () => {
-                await job.shutdown();
                 await testContext.cleanup();
             });
 
             it('should resolve an execution api', () => {
+                const { executionContext } = testContext;
+
                 expect(executionContext.queue).toBeArrayOfSize(2);
                 expect(executionContext.queue[0]).toBeFunction();
                 expect(executionContext.queue[1]).toBeFunction();
@@ -140,12 +138,10 @@ describe('Job', () => {
         });
 
         describe('when analytics is enabled', () => {
-            let job;
             let testContext;
-            let executionContext;
 
             beforeEach(async () => {
-                testContext = new TestContext('worker-job:analytics', {
+                testContext = new TestContext({
                     assignment: 'worker',
                     analytics: true,
                     operations: [
@@ -160,16 +156,16 @@ describe('Job', () => {
                     ]
                 });
 
-                job = makeJob(testContext.context, testContext.config);
-                executionContext = await job.initialize();
+                await testContext.initialize();
             });
 
             afterEach(async () => {
-                await job.shutdown();
                 await testContext.cleanup();
             });
 
             it('should resolve an execution api', () => {
+                const { executionContext } = testContext;
+
                 expect(executionContext.queue).toBeArrayOfSize(2);
                 expect(executionContext.queue[0]).toBeFunction();
                 expect(executionContext.queue[1]).toBeFunction();
@@ -181,12 +177,10 @@ describe('Job', () => {
         });
 
         describe('when using assets', () => {
-            let job;
             let testContext;
-            let executionContext;
 
             beforeEach(async () => {
-                testContext = new TestContext('worker-job:assets', {
+                testContext = new TestContext({
                     assignment: 'worker',
                     operations: [
                         {
@@ -201,17 +195,16 @@ describe('Job', () => {
 
                 await testContext.saveAsset(exampleAssetDir);
 
-                job = makeJob(testContext.context, testContext.config);
-
-                executionContext = await job.initialize();
+                await testContext.initialize();
             });
 
             afterEach(async () => {
-                await job.shutdown();
                 await testContext.cleanup();
             });
 
             it('should resolve an execution api', () => {
+                const { executionContext } = testContext;
+
                 expect(executionContext.queue).toBeArrayOfSize(2);
                 expect(executionContext.reader).toBeFunction();
                 expect(executionContext.queue[1]).toBeFunction();
@@ -221,6 +214,8 @@ describe('Job', () => {
             });
 
             it('should load the ops', async () => {
+                const { executionContext } = testContext;
+
                 const readerResults = await executionContext.reader();
                 expect(readerResults).toBeArrayOfSize(100);
                 const opResults = await executionContext.queue[1](readerResults);
@@ -229,12 +224,10 @@ describe('Job', () => {
         });
 
         describe('when using assets that have not been downloaded', () => {
-            let job;
             let testContext;
-            let executionContext;
 
             beforeEach(async () => {
-                testContext = new TestContext('worker-job:assets-download', {
+                testContext = new TestContext({
                     assignment: 'worker',
                     assets: ['example-asset'],
                     operations: [
@@ -249,16 +242,16 @@ describe('Job', () => {
 
                 await testContext.saveAsset(exampleAssetDir, true);
 
-                job = makeJob(testContext.context, testContext.config);
-                executionContext = await job.initialize();
+                await testContext.initialize();
             });
 
             afterEach(async () => {
-                await job.shutdown();
                 await testContext.cleanup();
             });
 
             it('should resolve an execution api', () => {
+                const { executionContext } = testContext;
+
                 expect(executionContext.queue).toBeArrayOfSize(2);
                 expect(executionContext.reader).toBeFunction();
                 expect(executionContext.queue[1]).toBeFunction();
@@ -268,6 +261,8 @@ describe('Job', () => {
             });
 
             it('should load the ops', async () => {
+                const { executionContext } = testContext;
+
                 const readerResults = await executionContext.reader();
                 expect(readerResults).toBeArrayOfSize(100);
                 const opResults = await executionContext.queue[1](readerResults);
@@ -276,11 +271,11 @@ describe('Job', () => {
         });
 
         describe('when using assets and they do not exist', () => {
-            let job;
+            let executionContext;
             let testContext;
 
             beforeEach(async () => {
-                testContext = new TestContext('worker-job:assets-fail', {
+                testContext = new TestContext({
                     assignment: 'worker',
                     assets: ['missing-assets'],
                     operations: [
@@ -292,26 +287,26 @@ describe('Job', () => {
                         }
                     ]
                 });
-                job = makeJob(testContext.context, testContext.config);
+
+                executionContext = new ExecutionContext(testContext.context, testContext.config);
             });
 
             afterEach(async () => {
-                await job.shutdown();
                 await testContext.cleanup();
             });
 
             it('should reject with a error', () => {
                 const errMsg = 'asset: missing-assets was not found';
-                return expect(job.initialize()).rejects.toThrowError(errMsg);
+                return expect(executionContext.initialize()).rejects.toThrowError(errMsg);
             });
         });
 
         describe('when using assets and the fail on require', () => {
-            let job;
+            let executionContext;
             let testContext;
 
             beforeEach(async () => {
-                testContext = new TestContext('worker-job:failing-asset', {
+                testContext = new TestContext({
                     assignment: 'worker',
                     assets: ['failing-asset'],
                     operations: [
@@ -321,27 +316,27 @@ describe('Job', () => {
                     ]
                 });
                 await testContext.saveAsset(path.join(opsPath, 'failing-asset'));
-                job = makeJob(testContext.context, testContext.config);
+
+                executionContext = new ExecutionContext(testContext.context, testContext.config);
             });
 
             afterEach(async () => {
-                await job.shutdown();
                 await testContext.cleanup();
             });
 
             it('should reject with a error', () => {
                 const errMsg = new RegExp('Could not retrieve code for: failing-asset-reader');
-                return expect(job.initialize()).rejects.toThrowError(errMsg);
+                return expect(executionContext.initialize()).rejects.toThrowError(errMsg);
             });
         });
     });
 
     describe('when using assignment "execution_controller"', () => {
         describe('when op name is not a string', () => {
-            let job;
+            let executionContext;
             let testContext;
             beforeEach(() => {
-                testContext = new TestContext('worker-job:fail', {
+                testContext = new TestContext({
                     assignment: 'execution_controller',
                     operations: [
                         {
@@ -349,35 +344,28 @@ describe('Job', () => {
                         }
                     ]
                 });
-                job = makeJob(testContext.context, testContext.config);
+                executionContext = new ExecutionContext(testContext.context, testContext.config);
             });
 
             afterEach(async () => {
-                await job.shutdown();
                 await testContext.cleanup();
             });
 
             it('should reject with an error', () => {
                 const errMsg = 'please verify that ops_directory in config and _op for each job operations are strings';
-                return expect(job.initialize()).rejects.toThrow(errMsg);
+                return expect(executionContext.initialize()).rejects.toThrow(errMsg);
             });
         });
 
         describe('when using a valid job configuration', () => {
-            let job;
             let testContext;
-            let executionContext;
 
             beforeEach(async () => {
-                testContext = new TestContext('worker-job', {
+                testContext = new TestContext({
                     assignment: 'execution_controller',
                 });
 
-                job = makeJob(testContext.context, testContext.config);
-
-                testContext.attachCleanup(() => job.shutdown());
-
-                executionContext = await job.initialize();
+                await testContext.initialize();
             });
 
             afterEach(async () => {
@@ -385,6 +373,8 @@ describe('Job', () => {
             });
 
             it('should resolve an execution api', () => {
+                const { executionContext } = testContext;
+
                 expect(executionContext.queue).toBeArrayOfSize(0);
                 expect(executionContext.reader).toBeNil();
                 expect(executionContext.config).toEqual(testContext.config.job);
@@ -396,21 +386,15 @@ describe('Job', () => {
         });
 
         describe('when using a dynamic queue length', () => {
-            let job;
             let testContext;
-            let executionContext;
 
             beforeEach(async () => {
-                testContext = new TestContext('worker-job', {
+                testContext = new TestContext({
                     assignment: 'execution_controller',
                     slicerQueueLength: 'QUEUE_MINIMUM_SIZE'
                 });
 
-                job = makeJob(testContext.context, testContext.config);
-
-                testContext.attachCleanup(() => job.shutdown());
-
-                executionContext = await job.initialize();
+                await testContext.initialize();
             });
 
             afterEach(async () => {
@@ -418,6 +402,8 @@ describe('Job', () => {
             });
 
             it('should resolve an execution api', () => {
+                const { executionContext } = testContext;
+
                 expect(executionContext.queue).toBeArrayOfSize(0);
                 expect(executionContext.reader).toBeNil();
                 expect(executionContext.config).toEqual(testContext.config.job);
@@ -429,12 +415,10 @@ describe('Job', () => {
         });
 
         describe('when using assets', () => {
-            let job;
             let testContext;
-            let executionContext;
 
             beforeEach(async () => {
-                testContext = new TestContext('worker-job:assets', {
+                testContext = new TestContext({
                     assignment: 'execution_controller',
                     operations: [
                         {
@@ -449,11 +433,7 @@ describe('Job', () => {
 
                 await testContext.saveAsset(exampleAssetDir);
 
-                job = makeJob(testContext.context, testContext.config);
-
-                testContext.attachCleanup(() => job.shutdown());
-
-                executionContext = await job.initialize();
+                await testContext.initialize();
             });
 
             afterEach(async () => {
@@ -461,6 +441,8 @@ describe('Job', () => {
             });
 
             it('should resolve an execution api', () => {
+                const { executionContext } = testContext;
+
                 expect(executionContext.queue).toBeArrayOfSize(0);
                 expect(executionContext.reader).toBeNil();
                 expect(executionContext.config).toEqual(testContext.config.job);
@@ -471,6 +453,8 @@ describe('Job', () => {
             });
 
             it('should be able to run the slicer', async () => {
+                const { executionContext } = testContext;
+
                 const slicer = await executionContext.slicer.newSlicer();
                 const results = await slicer();
                 expect(results).toBeArrayOfSize(100);
@@ -478,12 +462,10 @@ describe('Job', () => {
         });
 
         describe('when using assets that have not been downloaded', () => {
-            let job;
             let testContext;
-            let executionContext;
 
             beforeEach(async () => {
-                testContext = new TestContext('worker-job:assets-download', {
+                testContext = new TestContext({
                     assignment: 'execution_controller',
                     assets: ['example-asset'],
                     operations: [
@@ -498,11 +480,7 @@ describe('Job', () => {
 
                 await testContext.saveAsset(exampleAssetDir, true);
 
-                job = makeJob(testContext.context, testContext.config);
-
-                testContext.attachCleanup(() => job.shutdown());
-
-                executionContext = await job.initialize();
+                await testContext.initialize();
             });
 
             afterEach(async () => {
@@ -510,6 +488,8 @@ describe('Job', () => {
             });
 
             it('should resolve an execution api', () => {
+                const { executionContext } = testContext;
+
                 expect(executionContext.queue).toBeArrayOfSize(0);
                 expect(executionContext.reader).toBeNil();
                 expect(executionContext.config).toEqual(testContext.config.job);
@@ -520,6 +500,8 @@ describe('Job', () => {
             });
 
             it('should be able to run the slicer', async () => {
+                const { executionContext } = testContext;
+
                 const slicer = await executionContext.slicer.newSlicer();
                 const results = await slicer();
                 expect(results).toBeArrayOfSize(100);
@@ -527,11 +509,11 @@ describe('Job', () => {
         });
 
         describe('when using assets and they do not exist', () => {
-            let job;
+            let executionContext;
             let testContext;
 
             beforeEach(async () => {
-                testContext = new TestContext('worker-job:assets-fail', {
+                testContext = new TestContext({
                     assignment: 'execution_controller',
                     assets: ['missing-assets'],
                     operations: [
@@ -543,9 +525,8 @@ describe('Job', () => {
                         }
                     ]
                 });
-                job = makeJob(testContext.context, testContext.config);
 
-                testContext.attachCleanup(() => job.shutdown());
+                executionContext = new ExecutionContext(testContext.context, testContext.config);
             });
 
             afterEach(async () => {
@@ -554,16 +535,16 @@ describe('Job', () => {
 
             it('should reject with a error', () => {
                 const errMsg = 'asset: missing-assets was not found';
-                return expect(job.initialize()).rejects.toThrowError(errMsg);
+                return expect(executionContext.initialize()).rejects.toThrowError(errMsg);
             });
         });
 
         describe('when using assets and the fail on require', () => {
-            let job;
+            let executionContext;
             let testContext;
 
             beforeEach(async () => {
-                testContext = new TestContext('worker-job:failing-asset', {
+                testContext = new TestContext({
                     assignment: 'execution_controller',
                     assets: ['failing-asset'],
                     operations: [
@@ -574,9 +555,8 @@ describe('Job', () => {
                 });
 
                 await testContext.saveAsset(path.join(opsPath, 'failing-asset'));
-                job = makeJob(testContext.context, testContext.config);
 
-                testContext.attachCleanup(() => job.shutdown());
+                executionContext = new ExecutionContext(testContext.context, testContext.config);
             });
 
             afterEach(async () => {
@@ -585,7 +565,7 @@ describe('Job', () => {
 
             it('should reject with a error', () => {
                 const errMsg = new RegExp('Could not retrieve code for: failing-asset-reader');
-                return expect(job.initialize()).rejects.toThrowError(errMsg);
+                return expect(executionContext.initialize()).rejects.toThrowError(errMsg);
             });
         });
     });

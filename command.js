@@ -9,6 +9,7 @@ const yargs = require('yargs');
 const get = require('lodash/get');
 
 const { Worker, ExecutionController } = require('.');
+const makeExecutionContext = require('./lib/execution-context');
 const { readSysConfig } = require('./lib/terafoundation');
 const { generateContext } = require('./lib/utils');
 const exitHandler = require('./exit-handler');
@@ -22,30 +23,42 @@ class Command {
             useDebugLogger
         } = this._parseArgs();
 
+        this.assignment = assignment;
+        this.job = job;
+
         const sysconfig = readSysConfig({ configfile });
-        const config = {
+
+        this.context = generateContext(sysconfig, useDebugLogger);
+
+        this.logger = this.context.logger;
+        this.shutdownTimeout = get(this.context, 'sysconfig.teraslice.shutdown_timeout', 60 * 1000);
+    }
+
+    async initialize() {
+        const {
+            assignment,
+            job,
+            context,
+        } = this;
+
+        const executionContext = makeExecutionContext(this.context, {
             assignment,
             job,
             ex_id: job.ex_id,
             job_id: job.job_id,
             slicer_port: job.slicer_port
-        };
-
-        const context = generateContext(sysconfig, useDebugLogger);
+        });
 
         if (assignment === 'worker') {
-            this.worker = new Worker(context, config);
+            this.worker = new Worker(context, executionContext);
         } else if (assignment === 'execution_controller') {
-            this.worker = new ExecutionController(context, config);
+            this.worker = new ExecutionController(context, executionContext);
         }
 
-        this.logger = context.logger;
-        this.shutdownTimeout = get(context, 'sysconfig.teraslice.shutdown_timeout', 60 * 1000);
+        await this.worker.initialize();
     }
 
     async run() {
-        await this.worker.initialize();
-
         try {
             await this.worker.run();
         } catch (err) {
@@ -122,17 +135,17 @@ class Command {
                         throw new Error('Job configuration be a valid JSON');
                     }
                 },
-                default: process.env.EX,
+                default: process.env.JOB_CONFIGURATION,
                 demandOption: true,
                 describe: `Job configuration in JSON stringified form.
-                Defaults to env EX.`,
+                Defaults to env JOB_CONFIGURATION.`,
             })
             .option('a', {
                 alias: 'assignment',
                 choices: ['worker', 'execution_controller'],
                 describe: `Worker type assignment.
-                Defaults to env NODE_TYPE.`,
-                default: process.env.NODE_TYPE || 'worker',
+                Defaults to env ASSIGNMENT.`,
+                default: process.env.ASSIGNMENT || 'worker',
                 demandOption: true,
             })
             .option('c', {
@@ -159,4 +172,5 @@ class Command {
 
 const cmd = new Command();
 cmd.registerExitHandler();
+cmd.initialize();
 cmd.run();
