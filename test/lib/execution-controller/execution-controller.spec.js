@@ -31,6 +31,7 @@ describe('ExecutionController', () => {
                     ],
                     null,
                 ],
+                emitSlicerRecursion: true,
                 count: 3,
                 body: { example: 'subslice' },
                 analytics: true,
@@ -111,6 +112,18 @@ describe('ExecutionController', () => {
                 count: 1,
             }
         ],
+        [
+            'a slicer that emits a "slicer:slice:range_expansion" event',
+            {
+                slicerResults: [
+                    { example: 'slicer-slice-range-expansion' },
+                    null
+                ],
+                emitSlicerRangeExpansion: true,
+                body: { example: 'slicer-slice-range-expansion' },
+                count: 1,
+            }
+        ],
     ];
 
     describe.each(testCases)('when processing %s', (m, options) => {
@@ -127,7 +140,9 @@ describe('ExecutionController', () => {
             analytics = false,
             workers = 1,
             sliceFailed = false,
-            emitsExecutionUpdate
+            emitsExecutionUpdate,
+            emitSlicerRecursion = false,
+            emitSlicerRangeExpansion = false,
         } = options;
 
         let exController;
@@ -263,6 +278,20 @@ describe('ExecutionController', () => {
                 });
             }
 
+            if (emitSlicerRangeExpansion) {
+                setImmediate(() => {
+                    if (!exController) return;
+                    exController.events.emit('slicer:slice:range_expansion');
+                });
+            }
+
+            if (emitSlicerRecursion) {
+                setImmediate(() => {
+                    if (!exController) return;
+                    exController.events.emit('slicer:slice:recursion');
+                });
+            }
+
             await Promise.all([
                 startWorkers(),
                 exController.run(),
@@ -310,6 +339,14 @@ describe('ExecutionController', () => {
 
             if (!_.isEmpty(emitsExecutionUpdate)) {
                 expect(exStatus).toHaveProperty('operations', emitsExecutionUpdate);
+            }
+
+            if (emitSlicerRangeExpansion) {
+                expect(exStatus._slicer_stats).toHaveProperty('slice_range_expansion', 1);
+            }
+
+            if (emitSlicerRecursion) {
+                expect(exStatus._slicer_stats).toHaveProperty('subslices', 1);
             }
         });
     });
