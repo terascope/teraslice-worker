@@ -152,7 +152,7 @@ describe('ExecutionController', () => {
 
             await testContext.makeItARealJob();
 
-            exController = new ExecutionController(testContext.context, testContext.jobConfig);
+            exController = new ExecutionController(testContext.context, testContext.config);
             const {
                 network_latency_buffer: networkerLatencyBuffer,
                 action_timeout: actionTimeout,
@@ -164,7 +164,7 @@ describe('ExecutionController', () => {
             await testContext.addExStore();
             ({ stateStore, exStore } = testContext.stores);
 
-            const opCount = testContext.jobConfig.job.operations.length;
+            const opCount = testContext.config.job.operations.length;
 
             await exController.initialize();
             const doneProcessing = () => slices.length >= count;
@@ -305,7 +305,7 @@ describe('ExecutionController', () => {
             testContext = new TestContext('execution_controller', {
                 assignment: 'execution_controller',
             });
-            exController = new ExecutionController(testContext.context, testContext.jobConfig);
+            exController = new ExecutionController(testContext.context, testContext.config);
         });
 
         afterEach(() => testContext.cleanup());

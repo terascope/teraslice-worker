@@ -23,7 +23,7 @@ class Command {
         } = this._parseArgs();
 
         const sysconfig = readSysConfig({ configfile });
-        const jobConfig = {
+        const config = {
             assignment,
             job,
             ex_id: job.ex_id,
@@ -34,9 +34,9 @@ class Command {
         const context = generateContext(sysconfig, useDebugLogger);
 
         if (assignment === 'worker') {
-            this.worker = new Worker(context, jobConfig);
+            this.worker = new Worker(context, config);
         } else if (assignment === 'execution_controller') {
-            this.worker = new ExecutionController(context, jobConfig);
+            this.worker = new ExecutionController(context, config);
         }
 
         this.logger = context.logger;

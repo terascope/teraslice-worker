@@ -7,11 +7,11 @@ const { TestContext } = require('../helpers');
 
 describe('Slice', () => {
     async function setupSlice(testContext, eventMocks = {}) {
-        const job = new Job(testContext.context, testContext.jobConfig);
+        const job = new Job(testContext.context, testContext.config);
         testContext.attachCleanup(() => job.shutdown());
         const executionContext = await job.initialize();
 
-        const slice = new Slice(testContext.context, testContext.jobConfig);
+        const slice = new Slice(testContext.context, testContext.config);
         testContext.attachCleanup(() => slice.shutdown());
 
         await Promise.all([
@@ -73,7 +73,7 @@ describe('Slice', () => {
                 expect(eventMocks['slice:retry']).not.toHaveBeenCalled();
 
                 // should have the correct state storage
-                const { ex_id: exId } = slice.jobConfig;
+                const { ex_id: exId } = slice.config;
                 const query = `ex_id:${exId} AND state:completed`;
                 return expect(slice.stateStore.count(query)).resolves.toEqual(1);
             });
@@ -114,7 +114,7 @@ describe('Slice', () => {
                 expect(eventMocks['slice:failure']).not.toHaveBeenCalled();
 
                 // should have the correct state storage
-                const { ex_id: exId } = slice.jobConfig;
+                const { ex_id: exId } = slice.config;
                 const query = `ex_id:${exId} AND state:completed`;
                 return expect(slice.stateStore.count(query, 0)).resolves.toEqual(1);
             });
@@ -158,7 +158,7 @@ describe('Slice', () => {
                 expect(eventMocks['slice:failure']).not.toHaveBeenCalled();
 
                 // should have the correct state storage
-                const { ex_id: exId } = slice.jobConfig;
+                const { ex_id: exId } = slice.config;
                 const query = `ex_id:${exId} AND state:completed`;
                 return expect(slice.stateStore.count(query, 0)).resolves.toEqual(1);
             });
@@ -205,7 +205,7 @@ describe('Slice', () => {
                 expect(eventMocks['slice:finalize']).toHaveBeenCalledWith(slice.slice);
 
                 // should have the correct state storage
-                const { ex_id: exId } = slice.jobConfig;
+                const { ex_id: exId } = slice.config;
                 const query = `ex_id:${exId} AND state:error`;
                 return expect(slice.stateStore.count(query, 0)).resolves.toEqual(1);
             });

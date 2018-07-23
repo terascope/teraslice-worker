@@ -17,7 +17,7 @@ const {
 } = require('../../lib/teraslice');
 
 const { newId, generateContext } = require('../../lib/utils');
-const { newJobConfig, newSysConfig, newSliceConfig } = require('./configs');
+const { newConfig, newSysConfig, newSliceConfig } = require('./configs');
 const zipDirectory = require('./zip-directory');
 
 jest.setTimeout(8000);
@@ -46,10 +46,10 @@ class TestContext {
             clusterMasterPort,
         });
 
-        this.jobConfig = newJobConfig(options);
+        this.config = newConfig(options);
 
-        this.exId = this.jobConfig.ex_id;
-        this.jobId = this.jobConfig.job_id;
+        this.exId = this.config.ex_id;
+        this.jobId = this.config.job_id;
 
         this.context = generateContext(this.sysconfig, true);
 
@@ -112,15 +112,15 @@ class TestContext {
         await this.addJobStore();
         await this.addExStore();
 
-        const { job, ex } = await initializeJob(this.context, this.jobConfig.job, this.stores);
+        const { job, ex } = await initializeJob(this.context, this.config.job, this.stores);
 
-        this.jobConfig.job = job;
-        this.jobConfig.job_id = ex.job_id;
-        this.jobConfig.ex_id = ex.ex_id;
+        this.config.job = job;
+        this.config.job_id = ex.job_id;
+        this.config.ex_id = ex.ex_id;
 
 
-        this.jobId = this.jobConfig.job_id;
-        this.exId = this.jobConfig.ex_id;
+        this.jobId = this.config.job_id;
+        this.exId = this.config.ex_id;
     }
 
     async addExStore() {

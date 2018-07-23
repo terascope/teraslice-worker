@@ -33,13 +33,13 @@ class Command {
     async run() {
         await this.generatePort();
 
-        const jobConfig = {
+        const config = {
             slicer_port: this.slicerPort,
         };
 
         try {
             const { job, ex } = await initializeJob(this.context, this.jobFile);
-            Object.assign(jobConfig, job, {
+            Object.assign(config, job, {
                 ex_id: ex.ex_id,
                 job_id: ex.job_id,
             });
@@ -48,7 +48,7 @@ class Command {
             process.exit(1);
         }
 
-        console.log(JSON.stringify(jobConfig));
+        console.log(JSON.stringify(config));
         process.exit(0);
     }
 

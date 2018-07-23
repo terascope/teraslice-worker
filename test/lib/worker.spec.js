@@ -39,7 +39,7 @@ describe('Worker', () => {
 
             const worker = new Worker(
                 testContext.context,
-                testContext.jobConfig,
+                testContext.config,
                 useExecutionRunner
             );
 
@@ -356,7 +356,7 @@ describe('Worker', () => {
 
         beforeEach(() => {
             testContext = new TestContext('worker');
-            worker = new Worker(testContext.context, testContext.jobConfig);
+            worker = new Worker(testContext.context, testContext.config);
         });
 
         afterEach(() => testContext.cleanup());

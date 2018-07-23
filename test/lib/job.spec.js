@@ -24,8 +24,8 @@ describe('Job', () => {
                     }
                 ],
             });
-            testContext.jobConfig.job.example = true;
-            job = new Job(testContext.context, testContext.jobConfig);
+            testContext.config.job.example = true;
+            job = new Job(testContext.context, testContext.config);
         });
 
         afterEach(() => testContext.cleanup());
@@ -84,7 +84,7 @@ describe('Job', () => {
                         }
                     ]
                 });
-                job = new Job(testContext.context, testContext.jobConfig);
+                job = new Job(testContext.context, testContext.config);
             });
 
             afterEach(async () => {
@@ -118,7 +118,7 @@ describe('Job', () => {
                     ],
                 });
 
-                job = new Job(testContext.context, testContext.jobConfig);
+                job = new Job(testContext.context, testContext.config);
 
                 executionContext = await job.initialize();
             });
@@ -133,7 +133,7 @@ describe('Job', () => {
                 expect(executionContext.queue[0]).toBeFunction();
                 expect(executionContext.queue[1]).toBeFunction();
                 expect(executionContext.reader).toEqual(executionContext.queue[0]);
-                expect(executionContext.config).toEqual(testContext.jobConfig.job);
+                expect(executionContext.config).toEqual(testContext.config.job);
                 expect(executionContext.reporter).toBeNil();
                 expect(executionContext.slicer).toBeNil();
             });
@@ -160,7 +160,7 @@ describe('Job', () => {
                     ]
                 });
 
-                job = new Job(testContext.context, testContext.jobConfig);
+                job = new Job(testContext.context, testContext.config);
                 executionContext = await job.initialize();
             });
 
@@ -174,7 +174,7 @@ describe('Job', () => {
                 expect(executionContext.queue[0]).toBeFunction();
                 expect(executionContext.queue[1]).toBeFunction();
                 expect(executionContext.reader).toEqual(executionContext.queue[0]);
-                expect(executionContext.config).toEqual(testContext.jobConfig.job);
+                expect(executionContext.config).toEqual(testContext.config.job);
                 expect(executionContext.reporter).toBeNil();
                 expect(executionContext.slicer).toBeNil();
             });
@@ -201,7 +201,7 @@ describe('Job', () => {
 
                 await testContext.saveAsset(exampleAssetDir);
 
-                job = new Job(testContext.context, testContext.jobConfig);
+                job = new Job(testContext.context, testContext.config);
 
                 executionContext = await job.initialize();
             });
@@ -215,7 +215,7 @@ describe('Job', () => {
                 expect(executionContext.queue).toBeArrayOfSize(2);
                 expect(executionContext.reader).toBeFunction();
                 expect(executionContext.queue[1]).toBeFunction();
-                expect(executionContext.config).toEqual(testContext.jobConfig.job);
+                expect(executionContext.config).toEqual(testContext.config.job);
                 expect(executionContext.reporter).toBeNil();
                 expect(executionContext.slicer).toBeNil();
             });
@@ -249,7 +249,7 @@ describe('Job', () => {
 
                 await testContext.saveAsset(exampleAssetDir, true);
 
-                job = new Job(testContext.context, testContext.jobConfig);
+                job = new Job(testContext.context, testContext.config);
                 executionContext = await job.initialize();
             });
 
@@ -262,7 +262,7 @@ describe('Job', () => {
                 expect(executionContext.queue).toBeArrayOfSize(2);
                 expect(executionContext.reader).toBeFunction();
                 expect(executionContext.queue[1]).toBeFunction();
-                expect(executionContext.config).toEqual(testContext.jobConfig.job);
+                expect(executionContext.config).toEqual(testContext.config.job);
                 expect(executionContext.reporter).toBeNil();
                 expect(executionContext.slicer).toBeNil();
             });
@@ -292,7 +292,7 @@ describe('Job', () => {
                         }
                     ]
                 });
-                job = new Job(testContext.context, testContext.jobConfig);
+                job = new Job(testContext.context, testContext.config);
             });
 
             afterEach(async () => {
@@ -321,7 +321,7 @@ describe('Job', () => {
                     ]
                 });
                 await testContext.saveAsset(path.join(opsPath, 'failing-asset'));
-                job = new Job(testContext.context, testContext.jobConfig);
+                job = new Job(testContext.context, testContext.config);
             });
 
             afterEach(async () => {
@@ -349,7 +349,7 @@ describe('Job', () => {
                         }
                     ]
                 });
-                job = new Job(testContext.context, testContext.jobConfig);
+                job = new Job(testContext.context, testContext.config);
             });
 
             afterEach(async () => {
@@ -373,7 +373,7 @@ describe('Job', () => {
                     assignment: 'execution_controller',
                 });
 
-                job = new Job(testContext.context, testContext.jobConfig);
+                job = new Job(testContext.context, testContext.config);
 
                 testContext.attachCleanup(() => job.shutdown());
 
@@ -387,7 +387,7 @@ describe('Job', () => {
             it('should resolve an execution api', () => {
                 expect(executionContext.queue).toBeArrayOfSize(0);
                 expect(executionContext.reader).toBeNil();
-                expect(executionContext.config).toEqual(testContext.jobConfig.job);
+                expect(executionContext.config).toEqual(testContext.config.job);
                 expect(executionContext.reporter).toBeNil();
                 expect(executionContext.slicer).toHaveProperty('newSlicer');
                 expect(executionContext).toHaveProperty('queueLength', 10);
@@ -406,7 +406,7 @@ describe('Job', () => {
                     slicerQueueLength: 'QUEUE_MINIMUM_SIZE'
                 });
 
-                job = new Job(testContext.context, testContext.jobConfig);
+                job = new Job(testContext.context, testContext.config);
 
                 testContext.attachCleanup(() => job.shutdown());
 
@@ -420,7 +420,7 @@ describe('Job', () => {
             it('should resolve an execution api', () => {
                 expect(executionContext.queue).toBeArrayOfSize(0);
                 expect(executionContext.reader).toBeNil();
-                expect(executionContext.config).toEqual(testContext.jobConfig.job);
+                expect(executionContext.config).toEqual(testContext.config.job);
                 expect(executionContext.reporter).toBeNil();
                 expect(executionContext.slicer).toHaveProperty('newSlicer');
                 expect(executionContext).toHaveProperty('queueLength', 1);
@@ -449,7 +449,7 @@ describe('Job', () => {
 
                 await testContext.saveAsset(exampleAssetDir);
 
-                job = new Job(testContext.context, testContext.jobConfig);
+                job = new Job(testContext.context, testContext.config);
 
                 testContext.attachCleanup(() => job.shutdown());
 
@@ -463,7 +463,7 @@ describe('Job', () => {
             it('should resolve an execution api', () => {
                 expect(executionContext.queue).toBeArrayOfSize(0);
                 expect(executionContext.reader).toBeNil();
-                expect(executionContext.config).toEqual(testContext.jobConfig.job);
+                expect(executionContext.config).toEqual(testContext.config.job);
                 expect(executionContext.reporter).toBeNil();
                 expect(executionContext.slicer).toHaveProperty('newSlicer');
                 expect(executionContext).toHaveProperty('queueLength', 10000);
@@ -498,7 +498,7 @@ describe('Job', () => {
 
                 await testContext.saveAsset(exampleAssetDir, true);
 
-                job = new Job(testContext.context, testContext.jobConfig);
+                job = new Job(testContext.context, testContext.config);
 
                 testContext.attachCleanup(() => job.shutdown());
 
@@ -512,7 +512,7 @@ describe('Job', () => {
             it('should resolve an execution api', () => {
                 expect(executionContext.queue).toBeArrayOfSize(0);
                 expect(executionContext.reader).toBeNil();
-                expect(executionContext.config).toEqual(testContext.jobConfig.job);
+                expect(executionContext.config).toEqual(testContext.config.job);
                 expect(executionContext.reporter).toBeNil();
                 expect(executionContext.slicer).toHaveProperty('newSlicer');
                 expect(executionContext).toHaveProperty('queueLength', 10000);
@@ -543,7 +543,7 @@ describe('Job', () => {
                         }
                     ]
                 });
-                job = new Job(testContext.context, testContext.jobConfig);
+                job = new Job(testContext.context, testContext.config);
 
                 testContext.attachCleanup(() => job.shutdown());
             });
@@ -574,7 +574,7 @@ describe('Job', () => {
                 });
 
                 await testContext.saveAsset(path.join(opsPath, 'failing-asset'));
-                job = new Job(testContext.context, testContext.jobConfig);
+                job = new Job(testContext.context, testContext.config);
 
                 testContext.attachCleanup(() => job.shutdown());
             });

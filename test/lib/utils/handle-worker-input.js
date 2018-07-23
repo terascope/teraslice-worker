@@ -2,12 +2,12 @@
 
 const { EventEmitter } = require('events');
 const { handleWorkerInput } = require('../../../lib/utils');
-const { newJobConfig } = require('../../helpers');
+const { newConfig } = require('../../helpers');
 
 describe('HandleWorkerInput', () => {
     let worker;
     beforeEach(() => {
-        const config = {
+        const sysconfig = {
             terafoundation: {
                 environment: 'development',
                 connectors: {
@@ -23,8 +23,8 @@ describe('HandleWorkerInput', () => {
                 master_hostname: 'localhost'
             }
         };
-        const jobConfig = newJobConfig();
-        worker = handleWorkerInput(jobConfig, config);
+        const config = newConfig();
+        worker = handleWorkerInput(config, sysconfig);
     });
 
     it('should create a logger', () => {

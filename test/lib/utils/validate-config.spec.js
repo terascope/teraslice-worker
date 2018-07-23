@@ -1,23 +1,23 @@
 'use strict';
 
-const { validateJobConfig } = require('../../../lib/utils');
+const { validateConfig } = require('../../../lib/utils');
 
 describe('Worker Config Validation', () => {
     describe('when constructed nothing', () => {
         it('should throw an error', () => {
-            expect(() => validateJobConfig()).toThrow('Worker requires a valid job configuration');
+            expect(() => validateConfig()).toThrow('TerasliceWorker requires a valid configuration');
         });
     });
 
     describe('when constructed without a assignment', () => {
         it('should throw an error', () => {
-            expect(() => validateJobConfig({ example: true })).toThrow('Job configuration requires a valid assignment');
+            expect(() => validateConfig({ example: true })).toThrow('Job configuration requires a valid assignment');
         });
     });
 
     describe('when constructed with a invalid assignment', () => {
         it('should throw an error', () => {
-            expect(() => validateJobConfig({ assignment: 'invalid' })).toThrow('Job configuration requires assignment to worker, or execution_controller');
+            expect(() => validateConfig({ assignment: 'invalid' })).toThrow('Job configuration requires assignment to worker, or execution_controller');
         });
     });
 
@@ -26,7 +26,7 @@ describe('Worker Config Validation', () => {
             const config = {
                 assignment: 'worker',
             };
-            expect(() => validateJobConfig(config)).toThrow('Job configuration requires a valid job');
+            expect(() => validateConfig(config)).toThrow('Job configuration requires a valid job');
         });
     });
 
@@ -36,7 +36,7 @@ describe('Worker Config Validation', () => {
                 assignment: 'worker',
                 job: 'this-should-fail'
             };
-            expect(() => validateJobConfig(config)).toThrow('Job configuration requires a valid');
+            expect(() => validateConfig(config)).toThrow('Job configuration requires a valid');
         });
     });
 
@@ -47,7 +47,7 @@ describe('Worker Config Validation', () => {
                 job: { hello: true },
                 ex_id: null
             };
-            expect(() => validateJobConfig(config)).toThrow('Job configuration requires a valid ex_id');
+            expect(() => validateConfig(config)).toThrow('Job configuration requires a valid ex_id');
         });
     });
 
@@ -59,7 +59,7 @@ describe('Worker Config Validation', () => {
                 ex_id: 'example',
                 job_id: null
             };
-            expect(() => validateJobConfig(config)).toThrow('Job configuration requires a valid job_id');
+            expect(() => validateConfig(config)).toThrow('Job configuration requires a valid job_id');
         });
     });
 
@@ -72,7 +72,7 @@ describe('Worker Config Validation', () => {
                 job_id: 'example',
                 slicer_port: null
             };
-            expect(() => validateJobConfig(config)).toThrow('Job configuration requires a valid slicer_port');
+            expect(() => validateConfig(config)).toThrow('Job configuration requires a valid slicer_port');
         });
     });
 
@@ -85,7 +85,7 @@ describe('Worker Config Validation', () => {
                 job_id: 'example',
                 slicer_port: 1234
             };
-            expect(() => validateJobConfig(config)).not.toThrow();
+            expect(() => validateConfig(config)).not.toThrow();
         });
     });
 });

@@ -17,7 +17,7 @@ const newSliceConfig = (request = { example: 'slice-data' }) => ({
     _created: new Date().toISOString()
 });
 
-const newJobConfig = (options = {}) => {
+const newConfig = (options = {}) => {
     const {
         analytics = false,
         assignment = 'worker',
@@ -105,7 +105,7 @@ const newSysConfig = (options = {}) => {
 module.exports = {
     newId,
     opsPath,
-    newJobConfig,
+    newConfig,
     newSliceConfig,
     newSysConfig
 };

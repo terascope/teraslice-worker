@@ -5,7 +5,7 @@ const random = require('lodash/random');
 const TestContext = require('./test-context');
 const {
     newSliceConfig,
-    newJobConfig,
+    newConfig,
     newSysConfig,
     opsPath,
     newId,
@@ -30,7 +30,7 @@ async function findPort() {
 
 module.exports = {
     findPort,
-    newJobConfig,
+    newConfig,
     newSliceConfig,
     opsPath,
     newId,
