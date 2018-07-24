@@ -19,17 +19,30 @@ class Command {
     constructor() {
         const {
             configfile,
-            executionContext,
+            executionContext: ex,
             nodeType,
             useDebugLogger
         } = this._parseArgs();
 
-        this.executionContext = executionContext;
-        this.executionContext.assignment = nodeType;
-
         const sysconfig = readSysConfig({ configfile });
 
         this.context = generateContext(sysconfig, useDebugLogger);
+
+        this.executionContext = {
+            assignment: nodeType,
+            job: _.omit(ex, [
+                'node_id',
+                'ex_id',
+                'job_id',
+                'slicer_port',
+                'slicer_hostname',
+            ]),
+            node_id: this.context.sysconfig._nodeName,
+            ex_id: ex.ex_id,
+            job_id: ex.job_id,
+            slicer_port: ex.slicer_port,
+            slicer_hostname: ex.slicer_hostname,
+        };
 
         this.logger = this.context.logger;
         this.shutdownTimeout = get(this.context, 'sysconfig.teraslice.shutdown_timeout', 60 * 1000);
