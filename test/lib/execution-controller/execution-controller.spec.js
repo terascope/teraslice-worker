@@ -141,6 +141,18 @@ describe('ExecutionController', () => {
                     count: 1,
                 }
             ],
+            [
+                'a slice and the execution is paused and resumed',
+                {
+                    slicerResults: [
+                        { example: 'slice-pause-and-resume' },
+                        null
+                    ],
+                    pauseAndResume: true,
+                    body: { example: 'slice-pause-and-resume' },
+                    count: 1,
+                }
+            ],
         ];
 
         describe.each(testCases)('when processing %s', (m, options) => {
@@ -156,6 +168,7 @@ describe('ExecutionController', () => {
                 reconnect = false,
                 analytics = false,
                 workers = 1,
+                pauseAndResume = false,
                 sliceFailed = false,
                 emitsExecutionUpdate,
                 emitSlicerRecursion = false,
@@ -191,7 +204,9 @@ describe('ExecutionController', () => {
                 await testContext.addClusterMaster();
 
                 await testContext.initialize(true);
-                defaultClusterAnalytics = testContext.clusterMaster.getClusterAnalytics();
+
+                const { clusterMaster, exId, nodeId } = testContext;
+                defaultClusterAnalytics = clusterMaster.getClusterAnalytics();
 
                 exController = new ExecutionController(
                     testContext.context,
@@ -226,6 +241,7 @@ describe('ExecutionController', () => {
                 };
 
                 let firedReconnect = false;
+
 
                 async function startWorker(n) {
                     const workerId = workerIds[n] || newId('worker');
@@ -279,9 +295,24 @@ describe('ExecutionController', () => {
                             await stateStore.updateState(slice, 'completed');
                         }
 
+                        async function completeSlice() {
+                            if (!pauseAndResume) {
+                                await Promise.delay(0);
+                                await workerMessenger.sliceComplete(msg);
+                                return;
+                            }
+
+                            await Promise.all([
+                                clusterMaster.pauseExecution(nodeId, exId),
+                                workerMessenger.sliceComplete(msg),
+                            ]);
+
+                            await clusterMaster.resumeExecution(nodeId, exId);
+                        }
+
                         await Promise.all([
                             waitForReconnect(),
-                            Promise.delay().then(() => workerMessenger.sliceComplete(msg)),
+                            completeSlice(),
                         ]);
 
                         await process();
@@ -322,7 +353,7 @@ describe('ExecutionController', () => {
 
                 const requestAnayltics = setTimeout(async () => {
                     try {
-                        await testContext.clusterMaster.requestAnalytics(testContext.nodeId, testContext.exId);
+                        await clusterMaster.requestAnalytics(nodeId, exId);
                     } catch (err) {
                         // it shouldn't matter
                     }

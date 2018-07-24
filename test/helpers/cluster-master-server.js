@@ -30,7 +30,7 @@ class ClusterMasterServer extends MessengerServer {
 
         this.server.use((socket, next) => {
             const {
-                node_id: nodeId
+                node_id: nodeId,
             } = socket.handshake.query;
 
             socket.nodeId = nodeId;
@@ -81,16 +81,12 @@ class ClusterMasterServer extends MessengerServer {
         return this._sendWithResponse(message, timeoutMs);
     }
 
-    stopExectuion(exId) {
-        return this.broadcast('cluster:execution:stop', { ex_id: exId });
+    pauseExecution(nodeId, exId) {
+        return this.sendWithResponse(nodeId, 'cluster:execution:pause', { ex_id: exId });
     }
 
-    pauseExecution(exId) {
-        return this.broadcast('cluster:execution:pause', { ex_id: exId });
-    }
-
-    resumeExecution(exId) {
-        return this.broadcast('cluster:execution:resume', { ex_id: exId });
+    resumeExecution(nodeId, exId) {
+        return this.sendWithResponse(nodeId, 'cluster:execution:resume', { ex_id: exId });
     }
 
     requestAnalytics(nodeId, exId) {
