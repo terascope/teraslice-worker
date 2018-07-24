@@ -61,6 +61,16 @@ class ClusterMasterServer extends MessengerServer {
         return this._broadcast(message);
     }
 
+    async send(nodeId, eventName, payload) {
+        const message = {
+            __source: this.source,
+            message: eventName,
+            address: nodeId,
+            payload,
+        };
+        return this._send(message);
+    }
+
     async sendWithResponse(nodeId, eventName, payload, timeoutMs) {
         const message = {
             __source: this.source,
@@ -83,11 +93,15 @@ class ClusterMasterServer extends MessengerServer {
         return this.broadcast('cluster:execution:resume', { ex_id: exId });
     }
 
+    requestAnalytics(nodeId, exId) {
+        return this.sendWithResponse(nodeId, 'cluster:slicer:analytics', { ex_id: exId });
+    }
+
     connectedNodes() {
         return this.server.eio.clientsCount;
     }
 
-    getClusterAnayltics() {
+    getClusterAnalytics() {
         return _.cloneDeep(this.clusterAnalytics);
     }
 

@@ -168,6 +168,7 @@ describe('ExecutionController', () => {
             let slices;
             let exStore;
             let stateStore;
+            let defaultClusterAnalytics;
 
             beforeEach(async () => {
                 slices = [];
@@ -188,7 +189,9 @@ describe('ExecutionController', () => {
                 });
 
                 await testContext.addClusterMaster();
+
                 await testContext.initialize(true);
+                defaultClusterAnalytics = testContext.clusterMaster.getClusterAnalytics();
 
                 exController = new ExecutionController(
                     testContext.context,
@@ -317,16 +320,30 @@ describe('ExecutionController', () => {
                     });
                 }
 
+                const requestAnayltics = setTimeout(async () => {
+                    try {
+                        await testContext.clusterMaster.requestAnalytics(testContext.nodeId, testContext.exId);
+                    } catch (err) {
+                        // it shouldn't matter
+                    }
+                }, 100);
+
+                testContext.attachCleanup(() => clearTimeout(requestAnayltics));
+
                 await Promise.all([
                     startWorkers(),
                     exController.run(),
                 ]);
+
+                clearTimeout(requestAnayltics);
             });
 
             afterEach(() => testContext.cleanup());
 
             it('should process the execution correctly correctly', async () => {
                 const { ex_id: exId } = testContext.executionContext;
+                const clusterAnalytics = testContext.clusterMaster.getClusterAnalytics();
+                expect(clusterAnalytics).not.toEqual(defaultClusterAnalytics);
 
                 expect(slices).toBeArrayOfSize(count);
                 _.times(count, (i) => {

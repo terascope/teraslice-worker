@@ -82,6 +82,7 @@ class TestContext {
             this.useExecutionRunner
         );
 
+        this.nodeId = this.executionContext.node_id;
         this.exId = this.executionContext.ex_id;
         this.jobId = this.executionContext.job_id;
     }
