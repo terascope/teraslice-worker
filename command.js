@@ -37,7 +37,6 @@ class Command {
                 'slicer_port',
                 'slicer_hostname',
             ]),
-            node_id: this.context.sysconfig._nodeName,
             ex_id: ex.ex_id,
             job_id: ex.job_id,
             slicer_port: ex.slicer_port,
