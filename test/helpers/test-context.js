@@ -20,6 +20,8 @@ const makeExecutionContext = require('../../lib/execution-context');
 const { newId, generateContext } = require('../../lib/utils');
 const { newConfig, newSysConfig, newSliceConfig } = require('./configs');
 const zipDirectory = require('./zip-directory');
+const findPort = require('./find-port');
+const ClusterMasterServer = require('./cluster-master-server');
 
 jest.setTimeout(8000);
 
@@ -82,6 +84,19 @@ class TestContext {
 
         this.exId = this.executionContext.ex_id;
         this.jobId = this.executionContext.job_id;
+    }
+
+    async addClusterMaster() {
+        if (this.clusterMaster) return;
+        const port = await findPort();
+        this.clusterMaster = new ClusterMasterServer({
+            port,
+        });
+
+        await this.clusterMaster.start();
+
+        this.context.sysconfig.teraslice.port = port;
+        this.attachCleanup(() => this.clusterMaster.shutdown());
     }
 
     attachCleanup(fn) {

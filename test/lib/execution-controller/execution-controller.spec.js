@@ -187,6 +187,7 @@ describe('ExecutionController', () => {
                     useExecutionRunner,
                 });
 
+                await testContext.addClusterMaster();
                 await testContext.initialize(true);
 
                 exController = new ExecutionController(
@@ -425,6 +426,9 @@ describe('ExecutionController', () => {
                     exController.executionAnalytics = {};
                     exController.executionAnalytics.shutdown = () => Promise.reject(new Error('Execution Analytics Error'));
 
+                    exController.clusterMasterClient = {};
+                    exController.clusterMasterClient.shutdown = () => Promise.reject(new Error('Cluster Master Client Error'));
+
                     exController.messenger = {};
                     exController.messenger.shutdown = () => Promise.reject(new Error('Messenger Error'));
                 });
@@ -439,6 +443,7 @@ describe('ExecutionController', () => {
                         expect(errMsg).toInclude('Slicer Finish Error');
                         expect(errMsg).toInclude('Store Error');
                         expect(errMsg).toInclude('Execution Analytics Error');
+                        expect(errMsg).toInclude('Cluster Master Client Error');
                         expect(errMsg).toInclude('Messenger Error');
                     }
                 });
