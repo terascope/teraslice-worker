@@ -4,6 +4,7 @@
 
 /* eslint-disable class-methods-use-this, no-console */
 
+const _ = require('lodash');
 const path = require('path');
 const yargs = require('yargs');
 const get = require('lodash/get');
@@ -12,7 +13,7 @@ const { Worker, ExecutionController } = require('.');
 const makeExecutionContext = require('./lib/execution-context');
 const { readSysConfig } = require('./lib/terafoundation');
 const { generateContext } = require('./lib/utils');
-const exitHandler = require('./exit-handler');
+const processHandler = require('./process-handler');
 
 class Command {
     constructor() {
@@ -38,17 +39,17 @@ class Command {
         this.executionContext = await makeExecutionContext(this.context, this.executionContext);
 
         if (this.executionContext.assignment === 'worker') {
-            this.worker = new Worker(this.context, this.executionContext);
+            this.instance = new Worker(this.context, this.executionContext);
         } else if (this.executionContext.assignment === 'execution_controller') {
-            this.worker = new ExecutionController(this.context, this.executionContext);
+            this.instance = new ExecutionController(this.context, this.executionContext);
         }
 
-        await this.worker.initialize();
+        await this.instance.initialize();
     }
 
     async run() {
         try {
-            await this.worker.run();
+            await this.instance.run();
         } catch (err) {
             await this.shutdown(err);
             process.exit(1);
@@ -64,7 +65,7 @@ class Command {
         }
 
         try {
-            await this.worker.shutdown();
+            await this.instance.shutdown();
         } catch (shutdowErr) {
             this.logError(shutdowErr);
         }
@@ -79,24 +80,36 @@ class Command {
     }
 
     logError(err) {
-        const logErr = this.logger ? this.logger.error.bind(this.logger) : console.error;
         if (err.message) {
-            logErr(err.message);
+            this.log('error', err.message);
         } else {
-            logErr(err);
+            this.log('error', err);
         }
 
         if (err.stack) {
-            logErr(err.stack);
+            this.log('error', err.stack);
+        }
+    }
+
+    log(level = 'info', ...args) {
+        if (_.isFunction(this.logger[level])) {
+            this.logger[level](...args);
+        } else if (console[level]) {
+            console[level](...args);
+        } else {
+            console.error(...args);
         }
     }
 
     registerExitHandler() {
-        exitHandler(
+        processHandler(
             async (signal, err) => {
                 if (err) {
                     await this.shutdown(`${signal} was caught, exiting... ${err.stack}`);
-                } else {
+                    return;
+                }
+
+                if (signal === 'SIGTERM' || signal === 'SIGINT') {
                     await this.shutdown(`Exit called due to signal ${signal}, shutting down...`);
                 }
             },

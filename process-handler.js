@@ -13,7 +13,7 @@ module.exports = (fn, timeout = 20 * 1000) => {
         }
 
         const startTime = Date.now();
-        return Promise.race([
+        Promise.race([
             fn(signal, err),
             Promise.delay(timeout)
         ]).then(() => {
