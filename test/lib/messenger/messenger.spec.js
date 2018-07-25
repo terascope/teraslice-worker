@@ -8,9 +8,10 @@ const { findPort } = require('../../helpers');
 const MessengerServer = require('../../../lib/messenger/server');
 const WorkerMessenger = require('../../../lib/worker/messenger');
 const ExecutionControllerMessenger = require('../../../lib/execution-controller/messenger');
+const ClusterMasterClient = require('../../../lib/execution-controller/cluster-master-client');
 
 describe('Messenger', () => {
-    describe('when worker is constructed without a executionControllerUrl', () => {
+    describe('when WorkerMessenger is constructed without a executionControllerUrl', () => {
         it('should throw an error', () => {
             expect(() => {
                 new WorkerMessenger(); // eslint-disable-line
@@ -28,10 +29,30 @@ describe('Messenger', () => {
         });
     });
 
+    describe('when ClusterMasterClient is constructed without a clusterMasterUrl', () => {
+        it('should throw an error', () => {
+            expect(() => {
+                new ClusterMasterClient(); // eslint-disable-line
+            }).toThrowError('ClusterMasterClient requires a valid clusterMasterUrl');
+        });
+    });
+
+    describe('when ClusterMasterClient is constructed without a workerId', () => {
+        it('should throw an error', () => {
+            expect(() => {
+                new ClusterMasterClient({
+                    clusterMasterUrl: 'example.com'
+                });
+            }).toThrowError('ClusterMasterClient requires a valid nodeId');
+        });
+    });
+
     describe('when ExecutionControllerMessenger is constructed without a port', () => {
         it('should throw an error', () => {
             expect(() => {
-                new ExecutionControllerMessenger(); // eslint-disable-line
+                new ExecutionControllerMessenger({
+                    actionTimeout: 1000,
+                }); // eslint-disable-line
             }).toThrowError('MessengerServer requires a valid port');
         });
     });
@@ -39,20 +60,24 @@ describe('Messenger', () => {
     describe('when ExecutionControllerMessenger started twice', () => {
         it('should throw an error', async () => {
             const port = await findPort();
-            const exMessenger = new ExecutionControllerMessenger({ port });
+            const exMessenger = new ExecutionControllerMessenger({
+                port,
+                actionTimeout: 1000,
+            });
             await exMessenger.start();
             await expect(exMessenger.start()).rejects.toThrowError(`Port ${port} is already in-use`);
             await exMessenger.shutdown();
         });
     });
 
-    describe('when constructed with an invalid executionControllerUrl', () => {
+    describe('when WorkerMessenger constructed with an invalid executionControllerUrl', () => {
         let worker;
         beforeEach(() => {
             worker = new WorkerMessenger({
                 executionControllerUrl: 'http://idk.example.com',
                 workerId: 'hello',
                 events: new EventEmitter(),
+                actionTimeout: 1000,
                 socketOptions: {
                     timeout: 1000,
                     reconnection: false,
@@ -66,6 +91,26 @@ describe('Messenger', () => {
         });
     });
 
+    describe('when ClusterMasterClient constructed with an invalid clusterMasterUrl', () => {
+        let clusterMaster;
+        beforeEach(() => {
+            clusterMaster = new ClusterMasterClient({
+                clusterMasterUrl: 'http://idk.example.com',
+                nodeId: 'hello',
+                actionTimeout: 1000,
+                socketOptions: {
+                    timeout: 1000,
+                    reconnection: false,
+                }
+            });
+        });
+
+        it('start should throw an error', () => {
+            const errMsg = /^Unable to connect to cluster master/;
+            return expect(clusterMaster.start()).rejects.toThrowError(errMsg);
+        });
+    });
+
     describe('when constructed with an valid host', () => {
         let worker;
         let exMessenger;
@@ -76,7 +121,7 @@ describe('Messenger', () => {
             const executionControllerUrl = formatURL('localhost', slicerPort);
             exMessenger = new ExecutionControllerMessenger({
                 port: slicerPort,
-                networkerLatencyBuffer: 0,
+                networkLatencyBuffer: 0,
                 actionTimeout: 1000,
                 events: new EventEmitter(),
             });
@@ -88,7 +133,7 @@ describe('Messenger', () => {
                 workerId,
                 events: new EventEmitter(),
                 executionControllerUrl,
-                networkerLatencyBuffer: 0,
+                networkLatencyBuffer: 0,
                 actionTimeout: 1000,
                 socketOptions: {
                     timeout: 1000,
@@ -320,7 +365,10 @@ describe('Messenger', () => {
     describe('when testing server close', () => {
         describe('when close errors', () => {
             it('should reject with the error', () => {
-                const messenger = new MessengerServer({ port: 123 });
+                const messenger = new MessengerServer({
+                    port: 123,
+                    actionTimeout: 1000
+                });
                 messenger.server = {
                     close: jest.fn(done => done(new Error('oh no')))
                 };
@@ -330,7 +378,10 @@ describe('Messenger', () => {
 
         describe('when close errors with Not running', () => {
             it('should resolve', () => {
-                const messenger = new MessengerServer({ port: 123 });
+                const messenger = new MessengerServer({
+                    port: 123,
+                    actionTimeout: 1000
+                });
                 messenger.server = {
                     close: jest.fn(done => done(new Error('Not running')))
                 };
@@ -340,7 +391,10 @@ describe('Messenger', () => {
 
         describe('when close succeeds', () => {
             it('should resolve', () => {
-                const messenger = new MessengerServer({ port: 123 });
+                const messenger = new MessengerServer({
+                    port: 123,
+                    actionTimeout: 1000
+                });
                 messenger.server = {
                     close: jest.fn(done => done())
                 };

@@ -91,12 +91,12 @@ class TestContext {
     async addClusterMaster() {
         if (this.clusterMaster) return;
         const port = await findPort();
-        const networkerLatencyBuffer = _.get(this.context, 'sysconfig.teraslice.network_latency_buffer');
+        const networkLatencyBuffer = _.get(this.context, 'sysconfig.teraslice.network_latency_buffer');
         const actionTimeout = _.get(this.context, 'sysconfig.teraslice.action_timeout');
 
         this.clusterMaster = new ClusterMasterServer({
             port,
-            networkerLatencyBuffer,
+            networkLatencyBuffer,
             actionTimeout,
         });
 

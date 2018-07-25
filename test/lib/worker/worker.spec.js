@@ -28,7 +28,7 @@ describe('Worker', () => {
 
             const exMessenger = new ExecutionControllerMessenger({
                 port: slicerPort,
-                networkerLatencyBuffer: 0,
+                networkLatencyBuffer: 0,
                 actionTimeout: 1000,
                 events: new EventEmitter()
             });

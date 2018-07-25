@@ -215,7 +215,7 @@ describe('ExecutionController', () => {
                 );
 
                 const {
-                    network_latency_buffer: networkerLatencyBuffer,
+                    network_latency_buffer: networkLatencyBuffer,
                     action_timeout: actionTimeout,
                 } = testContext.context.sysconfig.teraslice;
 
@@ -249,7 +249,7 @@ describe('ExecutionController', () => {
                     const workerMessenger = new WorkerMessenger({
                         executionControllerUrl: `http://localhost:${port}`,
                         workerId,
-                        networkerLatencyBuffer,
+                        networkLatencyBuffer,
                         actionTimeout,
                         events: new EventEmitter(),
                         socketOptions
@@ -306,8 +306,7 @@ describe('ExecutionController', () => {
                             await Promise.all([
                                 clusterMaster.pauseExecution(nodeId, exId)
                                     .then(() => clusterMaster.resumeExecution(nodeId, exId)),
-                                Promise.delay(100)
-                                    .then(() => workerMessenger.sliceComplete(msg)),
+                                workerMessenger.sliceComplete(msg),
                             ]);
                         }
 
