@@ -58,6 +58,7 @@ class ClusterMasterServer extends MessengerServer {
             address: '*',
             payload,
         };
+
         return this._broadcast(message);
     }
 
@@ -66,6 +67,7 @@ class ClusterMasterServer extends MessengerServer {
             __source: this.source,
             message: eventName,
             address: nodeId,
+            node_id: nodeId,
             payload,
         };
         return this._send(message);
@@ -76,8 +78,10 @@ class ClusterMasterServer extends MessengerServer {
             __source: this.source,
             message: eventName,
             address: nodeId,
+            node_id: nodeId,
             payload
         };
+
         return this._sendWithResponse(message, timeoutMs);
     }
 

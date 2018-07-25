@@ -155,6 +155,7 @@ describe('ExecutionController', () => {
             ],
         ];
 
+        // fdescribe.each([testCases[testCases.length - 1]])('when processing %s', (m, options) => {
         describe.each(testCases)('when processing %s', (m, options) => {
         // give this test extra time
             jest.setTimeout(15 * 1000);
@@ -303,11 +304,11 @@ describe('ExecutionController', () => {
                             }
 
                             await Promise.all([
-                                clusterMaster.pauseExecution(nodeId, exId),
-                                workerMessenger.sliceComplete(msg),
+                                clusterMaster.pauseExecution(nodeId, exId)
+                                    .then(() => clusterMaster.resumeExecution(nodeId, exId)),
+                                Promise.delay(100)
+                                    .then(() => workerMessenger.sliceComplete(msg)),
                             ]);
-
-                            await clusterMaster.resumeExecution(nodeId, exId);
                         }
 
                         await Promise.all([

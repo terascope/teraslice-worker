@@ -1,6 +1,7 @@
 'use strict';
 
 const path = require('path');
+const Chance = require('chance');
 const random = require('lodash/random');
 const pickBy = require('lodash/pickBy');
 const { newId } = require('../../lib/utils');
@@ -8,6 +9,8 @@ const { newId } = require('../../lib/utils');
 const opsPath = path.join(__dirname, '..', 'fixtures', 'ops');
 
 const { ELASTICSEARCH_HOST } = process.env;
+
+const chance = new Chance();
 
 const newSliceConfig = (request = { example: 'slice-data' }) => ({
     slice_id: newId('slice-id', true),
@@ -47,6 +50,7 @@ const newConfig = (options = {}) => {
     return {
         assignment,
         job: {
+            name: chance.name({ middle: true }),
             workers,
             assets,
             analytics,
@@ -56,6 +60,7 @@ const newConfig = (options = {}) => {
         },
         ex_id: newId('ex-id', true),
         job_id: newId('job-id', true),
+        node_id: newId('node-id', true),
         slicer_port: slicerPort,
         slicer_hostname: 'localhost'
     };
@@ -88,7 +93,7 @@ const newSysConfig = (options = {}) => {
             assets_directory: assetDir,
             shutdown_timeout: timeout,
             action_timeout: actionTimeout,
-            network_latency_buffer: 0,
+            network_latency_buffer: 100,
             slicer_timeout: timeout,
             slicer_allocation_attempts: 3,
             node_state_interval: timeout,
