@@ -333,7 +333,11 @@ describe('Messenger', () => {
                         });
                     });
                     try {
-                        responseMsg = await exMessenger.sendWithResponse(workerId, 'some:message', { hello: true });
+                        responseMsg = await exMessenger.sendWithResponse({
+                            address: workerId,
+                            message: 'some:message',
+                            payload: { hello: true }
+                        });
                     } catch (err) {
                         responseErr = err;
                     }
@@ -351,7 +355,11 @@ describe('Messenger', () => {
 
                 beforeEach(async () => {
                     try {
-                        responseMsg = await exMessenger.sendWithResponse(workerId, 'some:message', { hello: true });
+                        responseMsg = await exMessenger.sendWithResponse({
+                            address: workerId,
+                            message: 'some:message',
+                            payload: { hello: true }
+                        });
                     } catch (err) {
                         responseErr = err;
                     }

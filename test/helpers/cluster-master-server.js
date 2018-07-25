@@ -5,10 +5,21 @@ const MessengerServer = require('../../lib/messenger/server');
 
 class ClusterMasterServer extends MessengerServer {
     constructor(opts = {}) {
-        super(opts);
+        const {
+            port,
+            actionTimeout,
+            networkLatencyBuffer
+        } = opts;
+
+        super({
+            port,
+            actionTimeout,
+            networkLatencyBuffer,
+            source: 'cluster_master',
+            to: 'execution_controller'
+        });
 
         this.events = opts.events;
-        this.source = 'cluster_master';
 
         this.clusterAnalytics = {
             slicer: {
@@ -51,50 +62,34 @@ class ClusterMasterServer extends MessengerServer {
         await this.close();
     }
 
-    async broadcast(eventName, payload) {
-        const message = {
-            __source: this.source,
-            message: eventName,
-            address: '*',
-            payload,
-        };
-
-        return this._broadcast(message);
-    }
-
-    async send(nodeId, eventName, payload) {
-        const message = {
-            __source: this.source,
-            message: eventName,
+    pauseExecution(nodeId, exId, timeoutMs) {
+        return this.sendWithResponse({
             address: nodeId,
-            node_id: nodeId,
-            payload,
-        };
-        return this._send(message);
+            message: 'cluster:execution:pause',
+            payload: {
+                ex_id: exId
+            }
+        }, { timeoutMs });
     }
 
-    async sendWithResponse(nodeId, eventName, payload, timeoutMs) {
-        const message = {
-            __source: this.source,
-            message: eventName,
+    resumeExecution(nodeId, exId, timeoutMs) {
+        return this.sendWithResponse({
             address: nodeId,
-            node_id: nodeId,
-            payload
-        };
-
-        return this._sendWithResponse(message, timeoutMs);
+            message: 'cluster:execution:resume',
+            payload: {
+                ex_id: exId
+            }
+        }, { timeoutMs });
     }
 
-    pauseExecution(nodeId, exId) {
-        return this.sendWithResponse(nodeId, 'cluster:execution:pause', { ex_id: exId });
-    }
-
-    resumeExecution(nodeId, exId) {
-        return this.sendWithResponse(nodeId, 'cluster:execution:resume', { ex_id: exId });
-    }
-
-    requestAnalytics(nodeId, exId) {
-        return this.sendWithResponse(nodeId, 'cluster:slicer:analytics', { ex_id: exId });
+    resumerequestAnalyticsExecution(nodeId, exId, timeoutMs) {
+        return this.sendWithResponse({
+            address: nodeId,
+            message: 'cluster:slicer:analytics',
+            payload: {
+                ex_id: exId
+            }
+        }, { timeoutMs });
     }
 
     connectedNodes() {

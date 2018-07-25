@@ -182,7 +182,6 @@ describe('ExecutionController', () => {
             let slices;
             let exStore;
             let stateStore;
-            let defaultClusterAnalytics;
 
             beforeEach(async () => {
                 slices = [];
@@ -207,7 +206,6 @@ describe('ExecutionController', () => {
                 await testContext.initialize(true);
 
                 const { clusterMaster, exId, nodeId } = testContext;
-                defaultClusterAnalytics = clusterMaster.getClusterAnalytics();
 
                 exController = new ExecutionController(
                     testContext.context,
@@ -373,8 +371,6 @@ describe('ExecutionController', () => {
 
             it('should process the execution correctly correctly', async () => {
                 const { ex_id: exId } = testContext.executionContext;
-                const clusterAnalytics = testContext.clusterMaster.getClusterAnalytics();
-                expect(clusterAnalytics).not.toEqual(defaultClusterAnalytics);
 
                 expect(slices).toBeArrayOfSize(count);
                 _.times(count, (i) => {
