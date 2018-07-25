@@ -4,7 +4,7 @@ const path = require('path');
 const Chance = require('chance');
 const random = require('lodash/random');
 const pickBy = require('lodash/pickBy');
-const { newId } = require('../../lib/utils');
+const newId = require('../../lib/utils/new-id');
 
 const opsPath = path.join(__dirname, '..', 'fixtures', 'ops');
 

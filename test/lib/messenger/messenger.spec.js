@@ -3,7 +3,8 @@
 /* eslint-disable no-console, no-new */
 
 const { EventEmitter } = require('events');
-const { formatURL, newId } = require('../../../lib/utils');
+const newId = require('../../../lib/utils/new-id');
+const { formatURL } = require('../../../lib/utils');
 const { findPort } = require('../../helpers');
 const MessengerServer = require('../../../lib/messenger/server');
 const WorkerMessenger = require('../../../lib/worker/messenger');

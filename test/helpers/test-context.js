@@ -18,7 +18,8 @@ const {
 } = require('../../lib/teraslice');
 
 const makeExecutionContext = require('../../lib/execution-context');
-const { newId, generateContext } = require('../../lib/utils');
+const newId = require('../../lib/utils/new-id');
+const { generateContext } = require('../../lib/utils/context');
 const { newConfig, newSysConfig, newSliceConfig } = require('./configs');
 const zipDirectory = require('./zip-directory');
 const findPort = require('./find-port');

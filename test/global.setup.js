@@ -1,7 +1,7 @@
 'use strict';
 
 const ElasticsearchClient = require('elasticsearch').Client;
-const { newId } = require('../lib/utils');
+const newId = require('../lib/utils/new-id');
 
 const {
     ELASTICSEARCH_HOST = 'http://localhost:9200',

@@ -3,7 +3,7 @@
 const times = require('lodash/times');
 const map = require('lodash/map');
 const mean = require('lodash/mean');
-const { analyzeOp, getMemoryUsage } = require('../../../lib/utils');
+const { analyzeOp, getMemoryUsage } = require('../../../lib/utils/ops');
 
 const GB = 1024 * 1024 * 1024;
 const MEM_DIFF = GB;

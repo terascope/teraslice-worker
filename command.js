@@ -12,7 +12,7 @@ const get = require('lodash/get');
 const { Worker, ExecutionController } = require('.');
 const makeExecutionContext = require('./lib/execution-context');
 const { readSysConfig } = require('./lib/terafoundation');
-const { generateContext } = require('./lib/utils');
+const { generateContext } = require('./lib/utils/context');
 const processHandler = require('./process-handler');
 
 class Command {

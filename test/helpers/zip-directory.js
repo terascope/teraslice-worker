@@ -4,7 +4,7 @@ const path = require('path');
 const random = require('lodash/random');
 const BufferStreams = require('bufferstreams');
 const archiver = require('archiver');
-const { newId } = require('../../lib/utils');
+const newId = require('../../lib/utils/new-id');
 
 function zipDirectory(dir) {
     return new Promise((resolve, reject) => {

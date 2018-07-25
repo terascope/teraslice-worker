@@ -1,6 +1,6 @@
 'use strict';
 
-const { generateContext } = require('../../../lib/utils');
+const { generateContext } = require('../../../lib/utils/context');
 const { newSysConfig } = require('../../helpers');
 
 describe('Terafoundation Context', () => {

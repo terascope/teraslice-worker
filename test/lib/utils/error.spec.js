@@ -1,7 +1,7 @@
 'use strict';
 
 
-const { WrapError } = require('../../../lib/utils');
+const WrapError = require('../../../lib/utils/wrap-error');
 
 describe('WrapError', () => {
     describe('when constructed just an string', () => {
