@@ -43,7 +43,7 @@ describe('Messenger', () => {
                 new ClusterMasterClient({
                     clusterMasterUrl: 'example.com'
                 });
-            }).toThrowError('ClusterMasterClient requires a valid nodeId');
+            }).toThrowError('ClusterMasterClient requires a valid executionContext');
         });
     });
 
@@ -96,7 +96,9 @@ describe('Messenger', () => {
         beforeEach(() => {
             clusterMaster = new ClusterMasterClient({
                 clusterMasterUrl: 'http://idk.example.com',
-                nodeId: 'hello',
+                executionContext: {
+                    nodeId: 'hello',
+                },
                 actionTimeout: 1000,
                 socketOptions: {
                     timeout: 1000,
