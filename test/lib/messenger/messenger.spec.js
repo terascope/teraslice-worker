@@ -7,15 +7,59 @@ const newId = require('../../../lib/utils/new-id');
 const { formatURL } = require('../../../lib/utils');
 const { findPort } = require('../../helpers');
 const MessengerServer = require('../../../lib/messenger/server');
+const MessengerCore = require('../../../lib/messenger/core');
+const MessengerClient = require('../../../lib/messenger/client');
 const WorkerMessenger = require('../../../lib/worker/messenger');
 const ExecutionControllerMessenger = require('../../../lib/execution-controller/messenger');
 const ClusterMasterClient = require('../../../lib/execution-controller/cluster-master-client');
 
 describe('Messenger', () => {
+    describe('when Messenger is constructed without a valid actionTimeout', () => {
+        it('should throw an error', () => {
+            expect(() => {
+                new MessengerCore({});
+            }).toThrowError('Messenger requires a valid actionTimeout');
+        });
+    });
+
+    describe('when Messenger is constructed without a valid networkLatencyBuffer', () => {
+        it('should throw an error', () => {
+            expect(() => {
+                new MessengerCore({
+                    actionTimeout: 10,
+                    networkLatencyBuffer: 'abc'
+                });
+            }).toThrowError('Messenger requires a valid networkLatencyBuffer');
+        });
+    });
+
+    describe('when MessengerClient is constructed without a valid hostUrl', () => {
+        it('should throw an error', () => {
+            expect(() => {
+                new MessengerClient({
+                    actionTimeout: 1,
+                    networkLatencyBuffer: 0
+                });
+            }).toThrowError('MessengerClient requires a valid hostUrl');
+        });
+    });
+
+    describe('when MessengerClient is constructed without a valid socketOptions', () => {
+        it('should throw an error', () => {
+            expect(() => {
+                new MessengerClient({
+                    hostUrl: '',
+                    actionTimeout: 1,
+                    networkLatencyBuffer: 0
+                });
+            }).toThrowError('MessengerClient requires a valid socketOptions');
+        });
+    });
+
     describe('when WorkerMessenger is constructed without a executionControllerUrl', () => {
         it('should throw an error', () => {
             expect(() => {
-                new WorkerMessenger(); // eslint-disable-line
+                new WorkerMessenger();
             }).toThrowError('WorkerMessenger requires a valid executionControllerUrl');
         });
     });
@@ -33,7 +77,7 @@ describe('Messenger', () => {
     describe('when ClusterMasterClient is constructed without a clusterMasterUrl', () => {
         it('should throw an error', () => {
             expect(() => {
-                new ClusterMasterClient(); // eslint-disable-line
+                new ClusterMasterClient();
             }).toThrowError('ClusterMasterClient requires a valid clusterMasterUrl');
         });
     });
@@ -53,7 +97,7 @@ describe('Messenger', () => {
             expect(() => {
                 new ExecutionControllerMessenger({
                     actionTimeout: 1000,
-                }); // eslint-disable-line
+                });
             }).toThrowError('MessengerServer requires a valid port');
         });
     });
