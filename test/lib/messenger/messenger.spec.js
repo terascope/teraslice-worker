@@ -195,58 +195,6 @@ describe('Messenger', () => {
                 });
             });
 
-            describe('when receiving cluster:error:terminal', () => {
-                let msg;
-                beforeEach((done) => {
-                    exMessenger.broadcast('cluster:error:terminal', {
-                        ex_id: 'some-ex-id',
-                        err: 'cluster-error-terminal'
-                    });
-
-                    const timeout = setTimeout(() => {
-                        worker.events.removeAllListeners('worker:shutdown');
-                        done();
-                    }, 1000);
-
-                    worker.events.once('worker:shutdown', (_msg) => {
-                        clearTimeout(timeout);
-                        msg = _msg;
-                        done();
-                    });
-                });
-
-                it('should receive the message on the worker', () => {
-                    expect(msg).toEqual({
-                        ex_id: 'some-ex-id',
-                        err: 'cluster-error-terminal'
-                    });
-                });
-            });
-
-            describe('when receiving execution:error:terminal', () => {
-                let msg;
-                beforeEach((done) => {
-                    exMessenger.executionTerminal('some-ex-id');
-
-                    const timeout = setTimeout(() => {
-                        worker.events.removeAllListeners('worker:shutdown');
-                        done();
-                    }, 1000);
-
-                    worker.events.once('worker:shutdown', (_msg) => {
-                        clearTimeout(timeout);
-                        msg = _msg;
-                        done();
-                    });
-                });
-
-                it('should receive the message on the worker', () => {
-                    expect(msg).toEqual({
-                        ex_id: 'some-ex-id',
-                    });
-                });
-            });
-
             describe('when receiving finished', () => {
                 let msg;
                 beforeEach((done) => {

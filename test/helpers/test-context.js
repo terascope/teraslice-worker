@@ -25,8 +25,6 @@ const zipDirectory = require('./zip-directory');
 const findPort = require('./find-port');
 const ClusterMasterServer = require('./cluster-master-server');
 
-jest.setTimeout(8000);
-
 const { TERASLICE_CLUSTER_NAME, ELASTICSEARCH_HOST } = process.env;
 
 const cleanups = {};

@@ -45,14 +45,7 @@ class ClusterMasterServer extends MessengerServer {
             } = socket.handshake.query;
 
             socket.nodeId = nodeId;
-            socket.join(nodeId, (err) => {
-                if (err) {
-                    next(err);
-                    return;
-                }
-
-                next();
-            });
+            socket.join(nodeId, next);
         });
 
         this.server.on('connection', this._onConnection);
