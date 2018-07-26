@@ -171,9 +171,6 @@ describe('ExecutionController', () => {
 
         // fdescribe.each([testCases[testCases.length - 1]])('when processing %s', (m, options) => {
     describe.each(testCases)('when processing %s', (m, options) => {
-        // give this test extra time
-        jest.setTimeout(15 * 1000);
-
         const {
             slicerResults,
             slicerQueueLength,
@@ -201,8 +198,6 @@ describe('ExecutionController', () => {
 
         beforeEach(async () => {
             slices = [];
-
-            await TestContext.cleanupAll();
 
             const port = await findPort();
 
@@ -443,6 +438,66 @@ describe('ExecutionController', () => {
             if (emitSlicerRecursion) {
                 expect(exStatus._slicer_stats).toHaveProperty('subslices', 1);
             }
+        });
+    });
+
+    describe('when the execution context is invalid', () => {
+        let testContext;
+        let exController;
+        let exStore;
+
+        beforeEach(async () => {
+            const port = await findPort();
+
+            testContext = new TestContext({
+                assignment: 'execution_controller',
+                slicerPort: port,
+            });
+
+            await testContext.initialize(true);
+
+            exController = new ExecutionController(
+                testContext.context,
+                testContext.executionContext,
+            );
+
+            await testContext.addExStore();
+            ({ exStore } = testContext.stores);
+
+            testContext.attachCleanup(() => exController.shutdown()
+                .catch(() => { /* ignore-error */ }));
+        });
+
+        afterEach(() => testContext.cleanup());
+
+        describe('when the execution does not exist', () => {
+            beforeEach(async () => {
+                await exStore.remove(testContext.exId);
+            });
+
+            it('should throw an error on initialize', async () => {
+                expect.hasAssertions();
+                try {
+                    await exController.initialize();
+                } catch (err) {
+                    expect(err.message).toEqual(`No active execution context was found for execution: ${testContext.exId}`);
+                }
+            });
+        });
+
+        describe('when the execution is in a terminal state', () => {
+            beforeEach(async () => {
+                await exStore.setStatus(testContext.exId, 'completed');
+            });
+
+            it('should throw an error on initialize', async () => {
+                expect.hasAssertions();
+                try {
+                    await exController.initialize();
+                } catch (err) {
+                    expect(err.message).toEqual(`No active execution context was found for execution: ${testContext.exId}`);
+                }
+            });
         });
     });
 
