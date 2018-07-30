@@ -375,7 +375,7 @@ describe('Messenger', () => {
                 messenger.server = {
                     close: jest.fn(done => done(new Error('oh no')))
                 };
-                return expect(messenger.close()).rejects.toThrowError('oh no');
+                return expect(messenger.shutdown()).rejects.toThrowError('oh no');
             });
         });
 
@@ -388,7 +388,7 @@ describe('Messenger', () => {
                 messenger.server = {
                     close: jest.fn(done => done(new Error('Not running')))
                 };
-                return expect(messenger.close()).resolves.toBeNil();
+                return expect(messenger.shutdown()).resolves.toBeNil();
             });
         });
 
@@ -401,7 +401,7 @@ describe('Messenger', () => {
                 messenger.server = {
                     close: jest.fn(done => done())
                 };
-                return expect(messenger.close()).resolves.toBeNil();
+                return expect(messenger.shutdown()).resolves.toBeNil();
             });
         });
     });

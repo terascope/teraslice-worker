@@ -44,7 +44,7 @@ describe('Slice', () => {
                 testContext = new TestContext({ analytics: true });
                 slice = await setupSlice(testContext, eventMocks);
 
-                results = await slice.run();
+                results = await slice.start();
             });
 
             afterEach(async () => {
@@ -88,7 +88,7 @@ describe('Slice', () => {
                 testContext = new TestContext({ analytics: false });
                 slice = await setupSlice(testContext, eventMocks);
 
-                results = await slice.run();
+                results = await slice.start();
             });
 
             afterEach(async () => {
@@ -132,7 +132,7 @@ describe('Slice', () => {
 
                 slice = await setupSlice(testContext, eventMocks);
 
-                results = await slice.run();
+                results = await slice.start();
             });
 
             afterEach(async () => {
@@ -177,7 +177,7 @@ describe('Slice', () => {
                 slice = await setupSlice(testContext, eventMocks);
 
                 try {
-                    await slice.run();
+                    await slice.start();
                 } catch (_err) {
                     err = _err;
                 }
@@ -227,7 +227,7 @@ describe('Slice', () => {
 
         it('should throw an error when calling run', () => {
             const errMsg = `Slice ${slice.slice.slice_id} has already been processed`;
-            return expect(slice.run()).rejects.toThrowError(errMsg);
+            return expect(slice.start()).rejects.toThrowError(errMsg);
         });
     });
 

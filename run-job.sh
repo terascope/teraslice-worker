@@ -5,8 +5,7 @@ start_ex() {
     echo "* starting execution controller"
     local ex="$1"
 
-    node command.js \
-        --nodeType "execution_controller" \
+    env NODE_TYPE='execution_controller' node command.js \
         --useDebugLogger \
         --executionContext "$ex" &
 }
@@ -15,8 +14,7 @@ start_worker() {
     set -eu -o pipefail
     local ex="$1";
 
-    node command.js \
-        --nodeType "worker" \
+    env NODE_TYPE='worker' node command.js \
         --useDebugLogger \
         --executionContext "$ex" &
 }

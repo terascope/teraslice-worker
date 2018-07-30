@@ -61,7 +61,7 @@ class Command {
 
     async run() {
         try {
-            await this.instance.run();
+            await this.instance.start();
         } catch (err) {
             await this.shutdown(err);
             process.exit(1);

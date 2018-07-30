@@ -51,10 +51,6 @@ class ClusterMasterServer extends MessengerServer {
         this.server.on('connection', this._onConnection);
     }
 
-    async shutdown() {
-        await this.close();
-    }
-
     pauseExecution(nodeId, exId, timeoutMs) {
         return this.sendWithResponse({
             address: nodeId,
