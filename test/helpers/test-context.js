@@ -88,7 +88,8 @@ class TestContext {
     }
 
     async addClusterMaster() {
-        if (this.clusterMaster) return;
+        if (this.clusterMaster) return this.clusterMaster;
+
         const port = await findPort();
         const networkLatencyBuffer = _.get(this.context, 'sysconfig.teraslice.network_latency_buffer');
         const actionTimeout = _.get(this.context, 'sysconfig.teraslice.action_timeout');
@@ -103,6 +104,7 @@ class TestContext {
 
         this.context.sysconfig.teraslice.port = port;
         this.attachCleanup(() => this.clusterMaster.shutdown());
+        return this.clusterMaster;
     }
 
     attachCleanup(fn) {
@@ -131,29 +133,39 @@ class TestContext {
     }
 
     async addAssetStore() {
-        if (this.stores.assetStore) return;
+        if (this.stores.assetStore) return this.stores.assetStore;
+
         this.stores.assetStore = await makeAssetStore(this.context);
         delete this.context.apis.assets;
+        return this.stores.assetStore;
     }
 
     async addStateStore() {
-        if (this.stores.stateStore) return;
+        if (this.stores.stateStore) return this.stores.stateStore;
+
         this.stores.stateStore = await makeStateStore(this.context);
+        return this.stores.stateStore;
     }
 
     async addAnalyticsStore() {
-        if (this.stores.analyticsStore) return;
+        if (this.stores.analyticsStore) return this.stores.analyticsStore;
+
         this.stores.analyticsStore = await makeAnalyticsStore(this.context);
+        return this.stores.analyticsStore;
     }
 
     async addJobStore() {
-        if (this.stores.jobStore) return;
+        if (this.stores.jobStore) return this.stores.jobStore;
+
         this.stores.jobStore = await makeJobStore(this.context);
+        return this.stores.jobStore;
     }
 
     async addExStore() {
-        if (this.stores.exStore) return;
+        if (this.stores.exStore) return this.stores.exStore;
+
         this.stores.exStore = await makeExStore(this.context);
+        return this.stores.exStore;
     }
 
     async cleanup() {

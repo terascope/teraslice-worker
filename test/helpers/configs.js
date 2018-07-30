@@ -27,6 +27,11 @@ const newConfig = (options = {}) => {
         maxRetries = 0,
         slicerPort = 0,
         lifecycle = 'once',
+        assets = [],
+        workers = 1,
+        slicers = 1,
+        recoveredExecution,
+        recoveredSliceType,
         operations = [
             pickBy({
                 _op: path.join(opsPath, 'example-reader'),
@@ -44,19 +49,20 @@ const newConfig = (options = {}) => {
                 results: options.opResults,
             })
         ],
-        assets = [],
-        workers = 1
     } = options;
     return {
         assignment,
         job: {
             name: chance.name({ middle: true }),
+            slicers,
             workers,
             assets,
             analytics,
             lifecycle,
             max_retries: maxRetries,
             operations,
+            recovered_execution: recoveredExecution,
+            recovered_slice_type: recoveredSliceType
         },
         ex_id: newId('ex-id', true),
         job_id: newId('job-id', true),
@@ -108,7 +114,6 @@ const newSysConfig = (options = {}) => {
 };
 
 module.exports = {
-    newId,
     opsPath,
     newConfig,
     newSliceConfig,

@@ -288,12 +288,12 @@ describe('Slice', () => {
             await testContext.cleanup();
         });
 
-        it('should throw an when marking it as failed', async () => {
+        it('should throw an error when marking it as failed', async () => {
             await expect(slice._markFailed(new Error('some error'))).rejects.toThrowError(/Failure to update failed state/);
             await expect(slice._markFailed()).rejects.toThrowError(/Failure to update failed state/);
         });
 
-        it('should throw an when marking it as complete', async () => {
+        it('should throw an error when marking it as complete', async () => {
             await expect(slice._markCompleted()).rejects.toThrowError(/Failure to update success state/);
         });
     });

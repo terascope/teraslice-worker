@@ -4,8 +4,8 @@ const _ = require('lodash');
 const { EventEmitter } = require('events');
 const { ExecutionController } = require('../../..');
 const WorkerMessenger = require('../../../lib/worker/messenger');
-const { TestContext, findPort, newId } = require('../../helpers');
-
+const { TestContext, findPort } = require('../../helpers');
+const newId = require('../../../lib/utils/new-id');
 
 describe('ExecutionController', () => {
     // [ message, config ]
