@@ -168,7 +168,7 @@ describe('ExecutionController', () => {
             }
         ],
         [
-            'recovering as slicer with no cleanup type',
+            'recovering a slicer with no cleanup type',
             {
                 slicerResults: [
                     { example: 'slice-recovery' },
@@ -177,14 +177,26 @@ describe('ExecutionController', () => {
                 recover: true,
                 recoverySlices: [
                     {
-                        state: 'start',
+                        state: 'error',
                         slice: {
-                            slice_id: newId(20),
+                            slice_id: newId(),
                             request: {
                                 example: 'slice-recovery'
                             },
                             slicer_id: 0,
                             slicer_order: 0,
+                            _created: new Date().toISOString()
+                        }
+                    },
+                    {
+                        state: 'start',
+                        slice: {
+                            slice_id: newId(),
+                            request: {
+                                example: 'slice-recovery'
+                            },
+                            slicer_id: 0,
+                            slicer_order: 1,
                             _created: new Date().toISOString()
                         }
                     }
@@ -195,6 +207,88 @@ describe('ExecutionController', () => {
                 useExecutionRunner: _.sample([true, false])
             }
         ],
+        [
+            'recovering a slicer with a cleanup type of errors',
+            {
+                slicerResults: [
+                    { example: 'slice-recovery-error-after' },
+                    null
+                ],
+                recover: true,
+                cleanupType: 'errors',
+                recoverySlices: [
+                    {
+                        state: 'idk',
+                        slice: {
+                            slice_id: newId(),
+                            request: {
+                                example: 'slice-recovery-error-idk'
+                            },
+                            slicer_id: 0,
+                            slicer_order: 0,
+                            _created: new Date().toISOString()
+                        }
+                    },
+                    {
+                        state: 'error',
+                        slice: {
+                            slice_id: newId(),
+                            request: {
+                                example: 'slice-recovery-error'
+                            },
+                            slicer_id: 0,
+                            slicer_order: 1,
+                            _created: new Date().toISOString()
+                        }
+                    },
+                ],
+                body: { example: 'slice-recovery-error' },
+                count: 1,
+                analytics: _.sample([true, false]),
+                useExecutionRunner: _.sample([true, false])
+            }
+        ],
+        [
+            'recovering a slicer with a cleanup type of all',
+            {
+                slicerResults: [
+                    { example: 'slice-recovery-all-after' },
+                    null
+                ],
+                recover: true,
+                cleanupType: 'all',
+                recoverySlices: [
+                    {
+                        state: 'error',
+                        slice: {
+                            slice_id: newId(),
+                            request: {
+                                example: 'slice-recovery-all'
+                            },
+                            slicer_id: 0,
+                            slicer_order: 0,
+                            _created: new Date().toISOString()
+                        }
+                    },
+                    {
+                        state: 'start',
+                        slice: {
+                            slice_id: newId(),
+                            request: {
+                                example: 'slice-recovery-all'
+                            },
+                            slicer_id: 0,
+                            slicer_order: 1,
+                            _created: new Date().toISOString()
+                        }
+                    }
+                ],
+                body: { example: 'slice-recovery-all' },
+                count: 2,
+                analytics: _.sample([true, false]),
+                useExecutionRunner: _.sample([true, false])
+            }
+        ]
     ];
 
     // fdescribe.each([testCases[testCases.length - 1]])('when %s', (m, options) => {
@@ -216,7 +310,7 @@ describe('ExecutionController', () => {
             emitSlicerRangeExpansion = false,
             useExecutionRunner = false,
             workerIds = [],
-            cleanType,
+            cleanupType,
             recover = false,
             recoverySlices = [],
         } = options;
@@ -253,7 +347,7 @@ describe('ExecutionController', () => {
             exStore = await testContext.addExStore();
 
             if (recover) {
-                testContext.executionContext.config.recovered_slice_type = cleanType;
+                testContext.executionContext.config.recovered_slice_type = cleanupType;
                 testContext.executionContext.config.recovered_execution = exId;
 
                 await Promise.map(recoverySlices, (recoverySlice) => {
@@ -291,7 +385,6 @@ describe('ExecutionController', () => {
             };
 
             let firedReconnect = false;
-
 
             async function startWorker(n) {
                 const workerId = workerIds[n] || newId('worker');
@@ -337,6 +430,9 @@ describe('ExecutionController', () => {
                             memory: _.times(opCount, () => _.random(0, 10000)),
                         };
                     }
+
+                    // add a natural delay for completing a slice
+                    await Promise.delay(100);
 
                     if (sliceFails) {
                         msg.error = 'Oh no, slice failure';
@@ -587,8 +683,8 @@ describe('ExecutionController', () => {
                         shutdown: () => Promise.reject(new Error('Store Error'))
                     };
 
-                    exController.engine = {};
-                    exController.engine.shutdown = () => Promise.reject(new Error('Engine Error'));
+                    exController.recover = {};
+                    exController.recover.shutdown = () => Promise.reject(new Error('Recover Error'));
 
                     exController.executionAnalytics = {};
                     exController.executionAnalytics.shutdown = () => Promise.reject(new Error('Execution Analytics Error'));
@@ -610,7 +706,7 @@ describe('ExecutionController', () => {
                         expect(errMsg).toStartWith('Error: Failed to shutdown correctly');
                         expect(errMsg).toInclude('Slicer Finish Error');
                         expect(errMsg).toInclude('Store Error');
-                        expect(errMsg).toInclude('Engine Error');
+                        expect(errMsg).toInclude('Recover Error');
                         expect(errMsg).toInclude('Execution Analytics Error');
                         expect(errMsg).toInclude('Cluster Master Client Error');
                         expect(errMsg).toInclude('Messenger Execution Finished Error');
