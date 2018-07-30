@@ -11,7 +11,7 @@ describe('ExecutionController', () => {
     // [ message, config ]
     const testCases = [
         [
-            'one slice',
+            'processing one slice',
             {
                 slicerResults: [
                     { example: 'single-slice' },
@@ -24,7 +24,7 @@ describe('ExecutionController', () => {
             }
         ],
         [
-            'a slicer requests a specific worker',
+            'processing a slicer requests a specific worker',
             {
                 slicerResults: [
                     { request_worker: 'specific-worker-1', example: 'specific-worker' },
@@ -38,7 +38,7 @@ describe('ExecutionController', () => {
             }
         ],
         [
-            'sub-slices',
+            'processing sub-slices',
             {
                 slicerResults: [
                     [
@@ -56,7 +56,7 @@ describe('ExecutionController', () => {
             }
         ],
         [
-            'slices with multiple workers and one reconnects',
+            'processing  slices with multiple workers and one reconnects',
             {
                 slicerResults: [
                     { example: 'slice-disconnect' },
@@ -73,7 +73,7 @@ describe('ExecutionController', () => {
             }
         ],
         [
-            'a slice with dynamic queue length',
+            'processing a slice with dynamic queue length',
             {
                 slicerResults: [
                     { example: 'slice-dynamic' },
@@ -92,7 +92,7 @@ describe('ExecutionController', () => {
             }
         ],
         [
-            'a slice and the slicer throws an error',
+            'processing a slice and the slicer throws an error',
             {
                 slicerResults: [
                     { example: 'slice-failure' },
@@ -107,7 +107,7 @@ describe('ExecutionController', () => {
             }
         ],
         [
-            'a slice fails',
+            'processing a slice fails',
             {
                 slicerResults: [
                     { example: 'slice-fail' },
@@ -121,7 +121,7 @@ describe('ExecutionController', () => {
             }
         ],
         [
-            'a slicer that emits a "slicer:execution:update" event',
+            'processing a slicer that emits a "slicer:execution:update" event',
             {
                 slicerResults: [
                     { example: 'slice-execution-update' },
@@ -140,7 +140,7 @@ describe('ExecutionController', () => {
             }
         ],
         [
-            'a slicer that emits a "slicer:slice:range_expansion" event',
+            'processing a slicer that emits a "slicer:slice:range_expansion" event',
             {
                 slicerResults: [
                     { example: 'slicer-slice-range-expansion' },
@@ -154,7 +154,7 @@ describe('ExecutionController', () => {
             }
         ],
         [
-            'a slice and the execution is paused and resumed',
+            'processing a slice and the execution is paused and resumed',
             {
                 slicerResults: [
                     { example: 'slice-pause-and-resume' },
@@ -167,10 +167,38 @@ describe('ExecutionController', () => {
                 useExecutionRunner: _.sample([true, false])
             }
         ],
+        [
+            'recovering as slicer with no cleanup type',
+            {
+                slicerResults: [
+                    { example: 'slice-recovery' },
+                    null
+                ],
+                recover: true,
+                recoverySlices: [
+                    {
+                        state: 'start',
+                        slice: {
+                            slice_id: newId(20),
+                            request: {
+                                example: 'slice-recovery'
+                            },
+                            slicer_id: 0,
+                            slicer_order: 0,
+                            _created: new Date().toISOString()
+                        }
+                    }
+                ],
+                body: { example: 'slice-recovery' },
+                count: 2,
+                analytics: _.sample([true, false]),
+                useExecutionRunner: _.sample([true, false])
+            }
+        ],
     ];
 
-        // fdescribe.each([testCases[testCases.length - 1]])('when processing %s', (m, options) => {
-    describe.each(testCases)('when processing %s', (m, options) => {
+    // fdescribe.each([testCases[testCases.length - 1]])('when %s', (m, options) => {
+    describe.each(testCases)('when %s', (m, options) => {
         const {
             slicerResults,
             slicerQueueLength,
@@ -188,6 +216,9 @@ describe('ExecutionController', () => {
             emitSlicerRangeExpansion = false,
             useExecutionRunner = false,
             workerIds = [],
+            cleanType,
+            recover = false,
+            recoverySlices = [],
         } = options;
 
         let exController;
@@ -218,6 +249,19 @@ describe('ExecutionController', () => {
 
             const { clusterMaster, exId, nodeId } = testContext;
 
+            stateStore = await testContext.addStateStore();
+            exStore = await testContext.addExStore();
+
+            if (recover) {
+                testContext.executionContext.config.recovered_slice_type = cleanType;
+                testContext.executionContext.config.recovered_execution = exId;
+
+                await Promise.map(recoverySlices, (recoverySlice) => {
+                    const { slice, state } = recoverySlice;
+                    return stateStore.createState(exId, slice, state);
+                });
+            }
+
             exController = new ExecutionController(
                 testContext.context,
                 testContext.executionContext,
@@ -229,10 +273,6 @@ describe('ExecutionController', () => {
             } = testContext.context.sysconfig.teraslice;
 
             testContext.attachCleanup(() => exController.shutdown());
-
-            await testContext.addStateStore();
-            await testContext.addExStore();
-            ({ stateStore, exStore } = testContext.stores);
 
             const opCount = testContext.executionContext.config.operations.length;
 
@@ -547,6 +587,9 @@ describe('ExecutionController', () => {
                         shutdown: () => Promise.reject(new Error('Store Error'))
                     };
 
+                    exController.engine = {};
+                    exController.engine.shutdown = () => Promise.reject(new Error('Engine Error'));
+
                     exController.executionAnalytics = {};
                     exController.executionAnalytics.shutdown = () => Promise.reject(new Error('Execution Analytics Error'));
 
@@ -567,6 +610,7 @@ describe('ExecutionController', () => {
                         expect(errMsg).toStartWith('Error: Failed to shutdown correctly');
                         expect(errMsg).toInclude('Slicer Finish Error');
                         expect(errMsg).toInclude('Store Error');
+                        expect(errMsg).toInclude('Engine Error');
                         expect(errMsg).toInclude('Execution Analytics Error');
                         expect(errMsg).toInclude('Cluster Master Client Error');
                         expect(errMsg).toInclude('Messenger Execution Finished Error');
