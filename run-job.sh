@@ -7,7 +7,7 @@ start_ex() {
 
     env NODE_TYPE='execution_controller' node command.js \
         --useDebugLogger \
-        --executionContext "$ex" &
+        --executionContext "${ex}" &
 }
 
 start_worker() {
@@ -16,7 +16,7 @@ start_worker() {
 
     env NODE_TYPE='worker' node command.js \
         --useDebugLogger \
-        --executionContext "$ex" &
+        --executionContext "${ex}" &
 }
 
 main() {
@@ -25,7 +25,7 @@ main() {
     local job
     local workers
 
-    job="$(node job-to-execution-context.js "$jobFile")"
+    job="$(env NODE_TYPE='util' node job-to-execution-context.js "$jobFile")"
 
     workers="$(echo "$job" | jq '.workers // 1')"
 
