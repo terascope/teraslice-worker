@@ -10,9 +10,9 @@ const yargs = require('yargs');
 const porty = require('porty');
 const _ = require('lodash');
 
-const { readSysConfig } = require('./lib/terafoundation');
-const { initializeJob } = require('./lib/teraslice');
-const { generateContext } = require('./lib/utils/context');
+const { readSysConfig } = require('../lib/terafoundation');
+const { initializeJob } = require('../lib/teraslice');
+const { generateContext } = require('../lib/utils/context');
 
 class Command {
     constructor() {
