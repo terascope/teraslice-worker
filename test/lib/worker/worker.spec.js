@@ -60,7 +60,7 @@ describe('Worker', () => {
 
             await worker.initialize();
 
-            const workerStart = worker.start();
+            const workerStart = worker.run();
 
             sliceConfig = await testContext.newSlice();
 
@@ -310,7 +310,7 @@ describe('Worker', () => {
 
             worker.shutdownTimeout = 500;
 
-            worker.slice.start = jest.fn(() => Promise.delay(1000));
+            worker.slice.run = jest.fn(() => Promise.delay(1000));
             const sliceConfig = await testContext.newSlice();
             const runOnce = worker.runOnce();
 

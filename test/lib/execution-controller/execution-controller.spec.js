@@ -508,7 +508,7 @@ describe('ExecutionController', () => {
 
             await Promise.all([
                 startWorkers(),
-                exController.start(),
+                exController.run(),
             ]);
 
             clearTimeout(requestAnayltics);
