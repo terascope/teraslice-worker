@@ -11,7 +11,7 @@ const porty = require('porty');
 const _ = require('lodash');
 
 const { readSysConfig } = require('../lib/terafoundation');
-const { initializeJob } = require('../lib/teraslice');
+const { convertJobToExecution } = require('../lib/teraslice');
 const { generateContext } = require('../lib/utils/context');
 
 class Command {
@@ -38,7 +38,7 @@ class Command {
         };
 
         try {
-            const { job, ex } = await initializeJob(this.context, this.jobFile);
+            const { job, ex } = await convertJobToExecution(this.context, this.jobFile);
             Object.assign(config, job, {
                 ex_id: ex.ex_id,
                 job_id: ex.job_id,

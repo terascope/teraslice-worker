@@ -37,7 +37,6 @@
     "debug": "^3.1.0",
     "fs-extra": "^7.0.0",
     "lodash": "^4.17.10",
-    "moment": "^2.22.2",
     "nanoid": "^1.1.0",
     "nested-error-stacks": "^2.0.1",
     "node-cache": "^4.2.0",
@@ -45,7 +44,7 @@
     "socket.io": "^2.1.1",
     "socket.io-client": "^2.1.1",
     "terafoundation": "^0.2.1",
-    "teraslice": "terascope/teraslice#938231e",
+    "teraslice": "terascope/teraslice#0863807",
     "uuid": "^3.3.2",
     "yargs": "^12.0.1"
   }

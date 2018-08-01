@@ -8,14 +8,7 @@ const ElasticsearchClient = require('elasticsearch').Client;
 const path = require('path');
 const fs = require('fs-extra');
 
-const {
-    makeAssetStore,
-    makeStateStore,
-    makeAnalyticsStore,
-    makeExStore,
-    makeJobStore,
-    initializeJob,
-} = require('../../lib/teraslice');
+const { storage, convertJobToExecution } = require('../../lib/teraslice');
 
 const makeExecutionContext = require('../../lib/execution-context');
 const newId = require('../../lib/utils/new-id');
@@ -64,12 +57,16 @@ class TestContext {
         cleanups[this.setupId] = () => this.cleanup();
     }
 
-    async initialize(makeItReal = false) {
-        if (makeItReal) {
+    async initialize(makeExecution = false) {
+        if (makeExecution) {
             await this.addJobStore();
             await this.addExStore();
 
-            const { job, ex } = await initializeJob(this.context, this.config.job, this.stores);
+            const { job, ex } = await convertJobToExecution(
+                this.context,
+                this.config.job,
+                this.stores
+            );
 
             this.config.job = job;
             this.config.job_id = ex.job_id;
@@ -135,7 +132,7 @@ class TestContext {
     async addAssetStore() {
         if (this.stores.assetStore) return this.stores.assetStore;
 
-        this.stores.assetStore = await makeAssetStore(this.context);
+        this.stores.assetStore = await storage.assets(this.context);
         delete this.context.apis.assets;
         return this.stores.assetStore;
     }
@@ -143,28 +140,28 @@ class TestContext {
     async addStateStore() {
         if (this.stores.stateStore) return this.stores.stateStore;
 
-        this.stores.stateStore = await makeStateStore(this.context);
+        this.stores.stateStore = await storage.state(this.context);
         return this.stores.stateStore;
     }
 
     async addAnalyticsStore() {
         if (this.stores.analyticsStore) return this.stores.analyticsStore;
 
-        this.stores.analyticsStore = await makeAnalyticsStore(this.context);
+        this.stores.analyticsStore = await storage.analytics(this.context);
         return this.stores.analyticsStore;
     }
 
     async addJobStore() {
         if (this.stores.jobStore) return this.stores.jobStore;
 
-        this.stores.jobStore = await makeJobStore(this.context);
+        this.stores.jobStore = await storage.jobs(this.context);
         return this.stores.jobStore;
     }
 
     async addExStore() {
         if (this.stores.exStore) return this.stores.exStore;
 
-        this.stores.exStore = await makeExStore(this.context);
+        this.stores.exStore = await storage.execution(this.context);
         return this.stores.exStore;
     }
 
